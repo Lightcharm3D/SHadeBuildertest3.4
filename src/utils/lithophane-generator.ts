@@ -154,6 +154,7 @@ export function generateLithophaneGeometry(
     }
   }
 
+  // Back face
   const backOffset = vertices.length / 3;
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
@@ -173,8 +174,10 @@ export function generateLithophaneGeometry(
       const d = (j + 1) * gridX + (i + 1);
 
       if (validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d]) {
+        // Front face
         indices.push(a, c, b);
         indices.push(b, c, d);
+        // Back face
         indices.push(a + backOffset, b + backOffset, c + backOffset);
         indices.push(b + backOffset, d + backOffset, c + backOffset);
       }
@@ -187,6 +190,7 @@ export function generateLithophaneGeometry(
       const idx = j * gridX + i;
       if (!validPoints[idx]) continue;
       
+      // Left edge
       if (i === 0 || !validPoints[idx - 1]) {
         const nextJ = (j === gridY - 1) ? j : j + 1;
         if (validPoints[nextJ * gridX + i]) {
@@ -194,6 +198,7 @@ export function generateLithophaneGeometry(
           indices.push(a, b, c); indices.push(b, d, c);
         }
       }
+      // Right edge
       if (i === gridX - 1 || !validPoints[idx + 1]) {
         const nextJ = (j === gridY - 1) ? j : j + 1;
         if (validPoints[nextJ * gridX + i]) {
@@ -201,6 +206,7 @@ export function generateLithophaneGeometry(
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
+      // Bottom edge
       if (j === 0 || !validPoints[idx - gridX]) {
         const nextI = (i === gridX - 1) ? i : i + 1;
         if (validPoints[j * gridX + nextI]) {
@@ -208,6 +214,7 @@ export function generateLithophaneGeometry(
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
+      // Top edge
       if (j === gridY - 1 || !validPoints[idx + gridX]) {
         const nextI = (i === gridX - 1) ? i : i + 1;
         if (validPoints[j * gridX + nextI]) {

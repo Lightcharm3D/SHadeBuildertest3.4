@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield } from 'lucide-react';
+import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield, Cylinder } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
@@ -102,6 +102,14 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               className="h-8 text-[10px] py-0 px-2"
             >
               <Box className="w-3 h-3 mr-1" /> Curved
+            </Button>
+            <Button 
+              variant={params.type === 'cylinder' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => updateParam('type', 'cylinder')}
+              className="h-8 text-[10px] py-0 px-2"
+            >
+              <Cylinder className="w-3 h-3 mr-1" /> Cylinder
             </Button>
             <Button 
               variant={params.type === 'circle' ? 'default' : 'outline'} 

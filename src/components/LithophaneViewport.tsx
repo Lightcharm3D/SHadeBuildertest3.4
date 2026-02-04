@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Button } from '@/components/ui/button';
+import { Lightbulb, LightbulbOff } from 'lucide-react';
 
 interface ViewportProps {
   geometry: THREE.BufferGeometry | null;
@@ -14,6 +16,9 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   const meshRef = useRef<THREE.Mesh | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const backlightRef = useRef<THREE.PointLight | null>(null);
+  
+  const [isBacklightOn, setIsBacklightOn] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -41,12 +46,14 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     mainLight.castShadow = true;
     scene.add(mainLight);
 
-    const backLight = new THREE.PointLight(0xfff4e0, 1, 200);
-    backLight.position.set(0, 20, -50);
-    scene.add(backLight);
+    // Backlight for Lithophane Effect
+    const backlight = new THREE.PointLight(0xfff4e0, 0, 200);
+    backlight.position.set(0, 20, -50);
+    scene.add(backlight);
+    backlightRef.current = backlight;
 
     // Buildplate (Print Bed)
-    const bedSize = 250; // 250mm typical bed
+    const bedSize = 250; 
     const bedGroup = new THREE.Group();
     
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
@@ -64,7 +71,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     grid.position.y = 0.1;
     bedGroup.add(grid);
 
-    // Brand Label - Centered at Front Edge
+    // Brand Label
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -87,7 +94,6 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     });
     const brandMesh = new THREE.Mesh(brandGeom, brandMat);
     brandMesh.rotation.x = -Math.PI / 2;
-    // Position at the front edge (positive Z)
     brandMesh.position.set(0, 0.2, bedSize / 2 - 18); 
     bedGroup.add(brandMesh);
 
@@ -151,11 +157,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      
-      // Rotate to sit flat on the bed (XY to XZ)
       mesh.rotation.x = -Math.PI / 2;
-      
-      // Position it slightly above the bed to avoid z-fighting
       mesh.position.y = 0.5; 
       
       sceneRef.current.add(mesh);
@@ -163,7 +165,33 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     }
   }, [geometry]);
 
-  return <div ref={containerRef} className="w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950" />;
+  useEffect(() => {
+    if (backlightRef.current) {
+      backlightRef.current.intensity = isBacklightOn ? 2.5 : 0;
+      if (meshRef.current) {
+        const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+        mat.emissive.set(isBacklightOn ? 0xffaa44 : 0x000000);
+        mat.emissiveIntensity = isBacklightOn ? 0.3 : 0;
+      }
+    }
+  }, [isBacklightOn]);
+
+  return (
+    <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
+      <div ref={containerRef} className="w-full h-full" />
+      <div className="absolute bottom-3 right-3">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => setIsBacklightOn(!isBacklightOn)}
+          className={`gap-2 h-8 text-[10px] font-bold uppercase tracking-wider shadow-lg ${isBacklightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+        >
+          {isBacklightOn ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
+          {isBacklightOn ? 'Backlight On' : 'Backlight Off'}
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export default LithophaneViewport;

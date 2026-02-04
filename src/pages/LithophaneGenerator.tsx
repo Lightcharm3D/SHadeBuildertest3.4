@@ -162,10 +162,7 @@ const LithophaneGenerator = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="h-8 w-px bg-slate-200 mx-2" />
-          <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-slate-100 h-11 w-11">
-            <Sparkles className="w-5 h-5 text-slate-400" />
-          </Button>
+          {/* Star icon removed from here */}
         </div>
       </header>
       

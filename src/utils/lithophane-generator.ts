@@ -17,8 +17,6 @@ export interface LithophaneParams {
   smoothing: number;
   hasHole: boolean;
   holeSize: number;
-  holeX: number;
-  holeY: number;
 }
 
 export function generateLithophaneGeometry(
@@ -28,7 +26,7 @@ export function generateLithophaneGeometry(
   const { 
     width, height, minThickness, maxThickness, baseThickness, 
     resolution, type, curveRadius, inverted,
-    brightness, contrast, smoothing, hasHole, holeSize, holeX, holeY
+    brightness, contrast, smoothing, hasHole, holeSize
   } = params;
   
   const aspect = imageData.width / imageData.height;
@@ -46,14 +44,12 @@ export function generateLithophaneGeometry(
     const x = u - 0.5;
     const y = v - 0.5;
 
-    // Keyring hole check (Adjustable position)
+    // Keyring hole check (3mm hole at top)
     if (hasHole) {
-      const hX = (holeX / 100) - 0.5;
-      const hY = (holeY / 100) - 0.5;
-      const distToHole = Math.sqrt(Math.pow(x - hX, 2) + Math.pow(y - hY, 2));
-      // holeSize is in mm, width/height in cm. Convert to normalized space.
-      const normalizedHoleRadius = (holeSize / 10) / Math.max(width, height) / 2;
-      if (distToHole < normalizedHoleRadius) return false; 
+      const holeX = 0;
+      const holeY = 0.4; // Near top
+      const distToHole = Math.sqrt(Math.pow(x - holeX, 2) + Math.pow(y - holeY, 2));
+      if (distToHole < (holeSize / 100)) return false; 
     }
 
     switch (type) {
@@ -61,9 +57,9 @@ export function generateLithophaneGeometry(
         return (x * x + y * y) <= 0.25;
       case 'heart':
         // Heart curve: (x^2 + y^2 - 1)^3 - x^2 * y^3 = 0
-        const heartX = x * 2.2;
-        const heartY = y * 2.2 + 0.2;
-        return Math.pow(heartX * heartX + heartY * heartY - 1, 3) - heartX * heartX * Math.pow(heartY, 3) <= 0;
+        const hX = x * 2.2;
+        const hY = y * 2.2 + 0.2;
+        return Math.pow(hX * hX + hY * hY - 1, 3) - hX * hX * Math.pow(hY, 3) <= 0;
       case 'badge':
         return Math.abs(x) <= 0.4 && (y <= 0.4 && y >= -0.5 + Math.abs(x));
       default:

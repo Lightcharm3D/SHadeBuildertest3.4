@@ -18,7 +18,7 @@ const Index = () => {
     topRadius: 5,
     bottomRadius: 8,
     thickness: 0.2,
-    segments: 64,
+    segments: 32, // Lower default for mobile performance
     ribCount: 24,
     ribDepth: 0.4,
     twistAngle: 0,
@@ -36,7 +36,7 @@ const Index = () => {
     gapDistance: 0.5,
     seed: Math.random() * 1000,
   });
-
+  
   const [showWireframe, setShowWireframe] = useState(false);
   const meshRef = useRef<THREE.Mesh | null>(null);
 
@@ -49,7 +49,6 @@ const Index = () => {
       showError("Geometry not ready for export");
       return;
     }
-
     try {
       const exporter = new STLExporter();
       const result = exporter.parse(meshRef.current);
@@ -58,19 +57,29 @@ const Index = () => {
       const link = document.createElement('a');
       link.href = url;
       link.download = `lampshade-${params.type}-${Date.now()}.stl`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
       showSuccess("STL file exported successfully!");
     } catch (err) {
+      console.error("Export error:", err);
       showError("Failed to export STL");
     }
   };
 
   const handleRandomize = () => {
     const types: LampshadeType[] = [
-      'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 
-      'geometric_poly', 'lattice', 'origami', 'perlin_noise', 
-      'slotted', 'double_wall'
+      'ribbed_drum',
+      'spiral_twist',
+      'voronoi',
+      'wave_shell',
+      'geometric_poly',
+      'lattice',
+      'origami',
+      'perlin_noise',
+      'slotted',
+      'double_wall'
     ];
     
     const newType = types[Math.floor(Math.random() * types.length)];
@@ -97,78 +106,69 @@ const Index = () => {
       slotWidth: 0.05 + Math.random() * 0.2,
       seed: Math.random() * 1000,
     });
+    
     showSuccess("New design generated!");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <Zap className="w-6 h-6" fill="currentColor" />
+      <header className="h-14 border-b border-slate-200 bg-white px-4 flex items-center justify-between shrink-0 z-10">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <Zap className="w-4 h-4" fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-none">ShadeBuilder</h1>
-            <p className="text-xs text-slate-500 font-medium">by LightCharm 3D</p>
+            <h1 className="text-base font-bold text-slate-900 leading-none">ShadeBuilder</h1>
+            <p className="text-[10px] text-slate-500 font-medium">by LightCharm 3D</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to="/lithophane">
+            <Button variant="outline" size="sm" className="gap-1 border-indigo-100 text-indigo-600 hover:bg-indigo-50 h-8 px-2 text-xs">
+              <ImageIcon className="w-3 h-3" />
+              Lithophane
+            </Button>
+          </Link>
+        </div>
+      </header>
+      
+      <main className="flex-1 flex flex-col p-2 gap-4 overflow-hidden">
+        <div className="flex-1 relative min-h-[300px] bg-slate-950 rounded-xl shadow-lg border border-slate-800">
+          <LampshadeViewport 
+            params={params} 
+            showWireframe={showWireframe} 
+            onSceneReady={handleSceneReady} 
+          />
+          <div className="absolute top-3 left-3 flex flex-col gap-1 pointer-events-none">
+            <div className="bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700 shadow-lg">
+              <div className="flex items-center gap-1 text-indigo-400 mb-1">
+                <Ruler className="w-3 h-3" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">Dimensions</span>
+              </div>
+              <div className="grid grid-cols-1 gap-0.5">
+                <div className="text-[9px] text-slate-300">Height: <span className="font-mono text-white">{params.height * 10}mm</span></div>
+                <div className="text-[9px] text-slate-300">Max Width: <span className="font-mono text-white">{Math.max(params.topRadius, params.bottomRadius) * 20}mm</span></div>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50">
-              <ImageIcon className="w-4 h-4" />
-              Lithophane Generator
-            </Button>
-          </Link>
-          <div className="hidden md:flex items-center gap-6 ml-4">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <Box className="w-4 h-4" />
-              <span>E27 Compatible</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <Layers className="w-4 h-4" />
-              <span>3D Print Ready</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 flex flex-col md:flex-row p-4 md:p-6 gap-6 overflow-hidden">
-        <div className="flex-1 relative min-h-[400px] bg-slate-950 rounded-xl shadow-2xl border border-slate-800">
-          <LampshadeViewport 
-            params={params} 
-            showWireframe={showWireframe}
-            onSceneReady={handleSceneReady} 
-          />
-          
-          <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
-            <div className="bg-slate-900/80 backdrop-blur-md p-3 rounded-lg border border-slate-700 shadow-xl">
-              <div className="flex items-center gap-2 text-indigo-400 mb-2">
-                <Ruler className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Dimensions</span>
-              </div>
-              <div className="grid grid-cols-1 gap-1">
-                <div className="text-xs text-slate-300">Height: <span className="font-mono text-white">{params.height * 10}mm</span></div>
-                <div className="text-xs text-slate-300">Max Width: <span className="font-mono text-white">{Math.max(params.topRadius, params.bottomRadius) * 20}mm</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full md:w-[380px] shrink-0">
+        <div className="w-full">
           <ControlPanel 
             params={params} 
             setParams={setParams} 
-            showWireframe={showWireframe}
-            setShowWireframe={setShowWireframe}
-            onExport={handleExport}
-            onRandomize={handleRandomize}
+            showWireframe={showWireframe} 
+            setShowWireframe={setShowWireframe} 
+            onExport={handleExport} 
+            onRandomize={handleRandomize} 
           />
         </div>
       </main>
-
-      <footer className="py-4 border-t border-slate-200 bg-white text-center">
-        <p className="text-xs text-slate-400">© {new Date().getFullYear()} LightCharm 3D. All rights reserved.</p>
+      
+      <footer className="py-2 border-t border-slate-200 bg-white text-center">
+        <p className="text-[10px] text-slate-400">
+          © {new Date().getFullYear()} LightCharm 3D. All rights reserved.
+        </p>
       </footer>
     </div>
   );

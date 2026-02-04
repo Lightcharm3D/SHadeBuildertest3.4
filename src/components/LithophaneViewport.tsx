@@ -13,6 +13,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -24,9 +25,9 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     const camera = new THREE.PerspectiveCamera(50, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000);
     camera.position.set(0, 0, 50);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -46,6 +47,9 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controlsRef.current = controls;
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -60,11 +64,17 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
       camera.updateProjectionMatrix();
       renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     };
+
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      renderer.dispose();
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+      if (containerRef.current && renderer.domElement) {
+        containerRef.current.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
@@ -72,8 +82,14 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     if (sceneRef.current && geometry) {
       if (meshRef.current) {
         sceneRef.current.remove(meshRef.current);
+        if (meshRef.current.geometry) {
+          meshRef.current.geometry.dispose();
+        }
+        if (meshRef.current.material) {
+          (meshRef.current.material as THREE.Material).dispose();
+        }
       }
-      
+
       const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         side: THREE.DoubleSide,
@@ -82,14 +98,14 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
         transparent: true,
         opacity: 0.9
       });
-      
+
       const mesh = new THREE.Mesh(geometry, material);
       sceneRef.current.add(mesh);
       meshRef.current = mesh;
     }
   }, [geometry]);
 
-  return <div ref={containerRef} className="w-full h-full min-h-[500px] rounded-xl overflow-hidden bg-slate-950" />;
+  return <div ref={containerRef} className="w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950" />;
 };
 
 export default LithophaneViewport;

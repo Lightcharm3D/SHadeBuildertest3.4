@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import LithophaneViewport from '@/components/LithophaneViewport';
 import LithophaneControls from '@/components/LithophaneControls';
-import { LithophaneParams, generateLithophaneGeometry, getImageData } from '@/utils/lithophane-generator';
+import ImageCropper from '@/components/ImageCropper';
+import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
@@ -31,30 +32,53 @@ const LithophaneGenerator = () => {
     borderHeight: 2,
   });
   
+  const [rawImage, setRawImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageData, setImageData] = useState<ImageData | null>(null);
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
 
-  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
+      setRawImage(e.target?.result as string);
+      setIsCropping(true);
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  const processCroppedImage = useCallback(async (croppedImageUrl: string) => {
+    setIsCropping(false);
+    setImagePreview(croppedImageUrl);
+    setIsProcessing(true);
 
     try {
-      setIsProcessing(true);
-      const data = await getImageData(file);
-      setImageData(data);
-      showSuccess("Image processed for 3D relief!");
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, img.width, img.height);
+        setImageData(data);
+        
+        // Auto-adjust height based on crop aspect ratio
+        const aspect = img.width / img.height;
+        setParams(prev => ({ ...prev, height: parseFloat((prev.width / aspect).toFixed(2)) }));
+        
+        setIsProcessing(false);
+        showSuccess("Image cropped and processed!");
+      };
+      img.src = croppedImageUrl;
     } catch (err) {
-      console.error("Image processing error:", err);
-      showError("Failed to process image");
-    } finally {
+      console.error("Processing error:", err);
+      showError("Failed to process cropped image");
       setIsProcessing(false);
     }
   }, []);
@@ -91,7 +115,7 @@ const LithophaneGenerator = () => {
 
   const handleExport = useCallback(() => {
     if (!geometry) {
-      showError("Please upload an image first");
+      showError("Please upload and crop an image first");
       return;
     }
     try {
@@ -157,12 +181,23 @@ const LithophaneGenerator = () => {
             onImageUpload={handleImageUpload} 
             onExport={handleExport} 
             onApplyPreset={handleApplyPreset} 
+            onTriggerCrop={() => setIsCropping(true)}
             isProcessing={isProcessing} 
             imagePreview={imagePreview}
             imageData={imageData}
           />
         </div>
       </main>
+
+      {rawImage && (
+        <ImageCropper
+          image={rawImage}
+          aspect={params.width / params.height}
+          open={isCropping}
+          onCropComplete={processCroppedImage}
+          onCancel={() => setIsCropping(false)}
+        />
+      )}
       
       <footer className="py-3 border-t border-slate-200 bg-white text-center">
         <p className="text-[10px] text-slate-400">

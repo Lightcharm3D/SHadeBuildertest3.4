@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Frame, Layers, Maximize } from 'lucide-react';
+import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
@@ -16,6 +16,7 @@ interface LithophaneControlsProps {
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExport: () => void;
   onApplyPreset: (preset: string) => void;
+  onTriggerCrop: () => void;
   isProcessing: boolean;
   imagePreview?: string | null;
   imageData?: ImageData | null;
@@ -26,7 +27,7 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
   setParams, 
   onImageUpload, 
   onExport, 
-  onApplyPreset, 
+  onTriggerCrop,
   isProcessing,
   imagePreview,
   imageData
@@ -55,21 +56,33 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">1. Source Image</Label>
-          <Input 
-            type="file" 
-            accept="image/*" 
-            onChange={onImageUpload} 
-            className="cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-          />
+          <div className="flex gap-2">
+            <Input 
+              type="file" 
+              accept="image/*" 
+              onChange={onImageUpload} 
+              className="cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+            />
+            {imagePreview && (
+              <Button variant="outline" size="icon" onClick={onTriggerCrop} className="shrink-0 h-10 w-10 border-slate-200">
+                <Crop className="w-4 h-4 text-slate-600" />
+              </Button>
+            )}
+          </div>
           
           {imagePreview && (
             <div className="mt-2 flex justify-center">
-              <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+              <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 group">
                 <img 
                   src={imagePreview} 
                   alt="Preview" 
                   className="max-h-32 w-auto object-contain"
                 />
+                <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <Button size="sm" variant="secondary" onClick={onTriggerCrop} className="h-7 text-[10px] gap-1">
+                    <Crop className="w-3 h-3" /> Recrop
+                  </Button>
+                </div>
                 {isProcessing && (
                   <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center">
                     <div className="text-white text-center">

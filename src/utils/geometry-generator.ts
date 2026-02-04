@@ -169,11 +169,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'honeycomb_lattice': {
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
-      const strutRadius = thickness / 1.5; // Slightly thicker for honeycomb
+      const strutRadius = thickness / 1.5;
       const hStep = height / density;
       const aStep = (Math.PI * 2) / segments;
       
-      // Helper to create a strut between two points
       const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
         const dist = start.distanceTo(end);
         const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
@@ -184,36 +183,40 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         return strut;
       };
 
-      // We use a grid of vertices and connect them in a hexagonal pattern
-      // A hexagonal grid is a subset of a triangular grid
-      for (let j = 0; j <= density * 2; j++) {
-        const y = -height / 2 + (j / (density * 2)) * height;
-        const r = getRadiusAtHeight(y, params);
+      // Hexagonal grid logic:
+      // We define nodes in a staggered pattern.
+      // Each node connects to 3 neighbors to form hexagons.
+      for (let j = 0; j <= density; j++) {
+        const y = -height / 2 + j * hStep;
+        const nextY = y + hStep / 2;
         
         for (let i = 0; i < segments; i++) {
-          const angle = (i / segments) * Math.PI * 2;
-          const nextAngle = ((i + 1) / segments) * Math.PI * 2;
-          const nextRowY = -height / 2 + ((j + 1) / (density * 2)) * height;
-          const nextRowR = getRadiusAtHeight(nextRowY, params);
+          const angle = i * aStep;
+          const nextAngle = (i + 0.5) * aStep;
+          
+          const r = getRadiusAtHeight(y, params);
+          const nr = getRadiusAtHeight(nextY, params);
 
-          const pCurrent = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+          const p2 = new THREE.Vector3(Math.cos(nextAngle) * nr, nextY, Math.sin(nextAngle) * nr);
           
-          // Honeycomb connectivity logic:
-          // Each vertex connects to 3 others.
-          // In our grid (i, j):
-          // If (i + j) is even, connect to (i, j+1)
-          // If (i + j) is odd, connect to (i+1, j) and (i-1, j) is redundant
+          // Vertical-ish strut
+          if (j < density) {
+            geoms.push(createStrut(p1, p2));
+          }
+
+          // Horizontal-ish strut (angled to form hex)
+          const p3 = new THREE.Vector3(Math.cos(angle - 0.5 * aStep) * nr, nextY, Math.sin(angle - 0.5 * aStep) * nr);
+          if (j < density) {
+            geoms.push(createStrut(p1, p3));
+          }
           
-          if ((i + j) % 2 === 0) {
-            // Vertical-ish connector
-            if (j < density * 2) {
-              const pUp = new THREE.Vector3(Math.cos(angle) * nextRowR, nextRowY, Math.sin(angle) * nextRowR);
-              geoms.push(createStrut(pCurrent, pUp));
-            }
-          } else {
-            // Horizontal-ish connector
-            const pRight = new THREE.Vector3(Math.cos(nextAngle) * r, y, Math.sin(nextAngle) * r);
-            geoms.push(createStrut(pCurrent, pRight));
+          // Connect the mid-nodes to form the top/bottom of hexagons
+          if (j > 0 && j < density) {
+            const prevY = y - hStep / 2;
+            const pr = getRadiusAtHeight(prevY, params);
+            const p0 = new THREE.Vector3(Math.cos(nextAngle) * pr, prevY, Math.sin(nextAngle) * pr);
+            geoms.push(createStrut(p1, p0));
           }
         }
       }

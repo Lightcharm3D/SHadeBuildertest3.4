@@ -200,16 +200,6 @@ const Index = () => {
           </p>
           <div className="h-5 w-px bg-slate-200" />
           <div className="flex items-center gap-3">
-            <div className="flex -space-x-2">
-              <Avatar className="w-6 h-6 border-2 border-white shadow-sm">
-                <AvatarImage src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=64&h=64&fit=crop" />
-                <AvatarFallback>AD</AvatarFallback>
-              </Avatar>
-              <Avatar className="w-6 h-6 border-2 border-white shadow-sm">
-                <AvatarImage src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop" />
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-            </div>
             <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Geometry Engine v2.6.0-PREMIUM</span>
           </div>
         </div>

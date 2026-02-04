@@ -86,8 +86,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const { type, silhouette, height, topRadius, bottomRadius, segments, seed, thickness } = params;
   
   // Create a closed profile loop: Outer wall (bottom to top) -> Inner wall (top to bottom)
-  const getClosedProfilePoints = (steps = 60) => {
+  const getClosedProfilePoints = (steps = 60, customThickness?: number) => {
     const points = [];
+    const tVal = customThickness || thickness;
     
     // Outer wall: bottom to top
     for (let i = 0; i <= steps; i++) {
@@ -101,7 +102,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     for (let i = steps; i >= 0; i--) {
       const t = i / steps;
       const y = -height / 2 + height * t;
-      const r = Math.max(0.05, getRadiusAtHeight(y, params) - thickness);
+      const r = Math.max(0.05, getRadiusAtHeight(y, params) - tVal);
       points.push(new THREE.Vector2(r, y));
     }
     
@@ -138,18 +139,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'double_wall': {
       const gap = params.gapDistance || 0.5;
       // For double wall, we still want two separate closed shells
-      const outerProfile = [];
-      for (let i = 0; i <= 60; i++) {
-        const t = i / 60;
-        const y = -height / 2 + height * t;
-        outerProfile.push(new THREE.Vector2(getRadiusAtHeight(y, params), y));
-      }
-      for (let i = 60; i >= 0; i--) {
-        const t = i / 60;
-        const y = -height / 2 + height * t;
-        outerProfile.push(new THREE.Vector2(getRadiusAtHeight(y, params) - thickness, y));
-      }
-
+      const outerProfile = getClosedProfilePoints(60, thickness);
       const innerProfile = [];
       for (let i = 0; i <= 60; i++) {
         const t = i / 60;
@@ -189,32 +179,57 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'slotted': {
       const count = params.slotCount || 16;
-      const slotW = params.slotWidth || 0.2;
       const geoms: THREE.BufferGeometry[] = [];
+      
+      // 1. Create the inner structural cylinder
+      // We make it slightly smaller than the main radius so fins can attach
+      const coreOffset = 0.8; // 8mm core depth
+      const coreProfile = [];
+      for (let i = 0; i <= 40; i++) {
+        const t = i / 40;
+        const y = -height / 2 + height * t;
+        const r = getRadiusAtHeight(y, params) - coreOffset;
+        coreProfile.push(new THREE.Vector2(r, y));
+      }
+      for (let i = 40; i >= 0; i--) {
+        const t = i / 40;
+        const y = -height / 2 + height * t;
+        const r = getRadiusAtHeight(y, params) - coreOffset - thickness;
+        coreProfile.push(new THREE.Vector2(r, y));
+      }
+      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      geoms.push(coreGeom);
+
+      // 2. Create the fins
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
-        // Create a solid fin with thickness
-        const finGeom = new THREE.BoxGeometry(2, height, thickness);
+        // Fin depth is coreOffset + a bit extra
+        const finDepth = coreOffset + 0.5; 
+        const finGeom = new THREE.BoxGeometry(finDepth, height, thickness);
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
           const r = getRadiusAtHeight(py, params);
           const px = pos.getX(j);
-          // Offset the fin so it attaches to the rings
+          // Align fin to the core
           if (px > 0) pos.setX(j, r);
-          else pos.setX(j, r - 2); 
+          else pos.setX(j, r - finDepth); 
         }
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
-      const ringTop = new THREE.TorusGeometry(topRadius, thickness / 2, 8, segments);
+
+      // 3. Top and Bottom Rings for extra strength
+      const ringTop = new THREE.TorusGeometry(topRadius - thickness/2, thickness, 8, segments);
       ringTop.rotateX(Math.PI / 2);
       ringTop.translate(0, height / 2, 0);
       geoms.push(ringTop);
-      const ringBottom = new THREE.TorusGeometry(bottomRadius, thickness / 2, 8, segments);
+
+      const ringBottom = new THREE.TorusGeometry(bottomRadius - thickness/2, thickness, 8, segments);
       ringBottom.rotateX(Math.PI / 2);
       ringBottom.translate(0, -height / 2, 0);
       geoms.push(ringBottom);
+
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, LightbulbOff } from 'lucide-react';
+import { Lightbulb, LightbulbOff, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -19,6 +19,7 @@ interface ViewportProps {
   params: LampshadeParams;
   material: MaterialParams;
   showWireframe?: boolean;
+  showPrintability?: boolean;
   onSceneReady?: (scene: THREE.Scene, mesh: THREE.Mesh) => void;
 }
 
@@ -26,6 +27,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   params, 
   material,
   showWireframe = false, 
+  showPrintability = false,
   onSceneReady 
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +44,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Ensure we have dimensions before starting
     const width = containerRef.current.clientWidth || 800;
     const height = containerRef.current.clientHeight || 600;
 
@@ -52,7 +53,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     camera.position.set(30, 30, 30);
-    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
@@ -63,7 +63,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Studio Lighting
+    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
     
@@ -71,15 +71,9 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.position.set(20, 40, 20);
     mainLight.castShadow = true;
     scene.add(mainLight);
-    
-    const fillLight = new THREE.PointLight(0x6366f1, 0.8);
-    fillLight.position.set(-20, 10, -20);
-    scene.add(fillLight);
 
-    // Internal Light Bulb
+    // Internal Light
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 100);
-    bulbLight.position.set(0, 0, 0);
-    bulbLight.castShadow = true;
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
@@ -102,39 +96,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
     grid.position.y = 0.01;
     bedGroup.add(grid);
-
-    // Brand Label
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = 'rgba(0,0,0,0)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 96px sans-serif';
-      ctx.fillStyle = '#6366f1';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('LightCharm 3D', 512, 128);
-    }
-    const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(15, 4);
-    const brandMat = new THREE.MeshBasicMaterial({ 
-      map: brandTexture, 
-      transparent: true,
-      opacity: 0.5
-    });
-    const brandMesh = new THREE.Mesh(brandGeom, brandMat);
-    brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(0, 0.02, bedSize / 2 - 3); 
-    bedGroup.add(brandMesh);
-
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 1.8;
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
@@ -163,18 +128,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       renderer.render(scene, camera);
       requestRef.current = requestAnimationFrame(animate);
     };
-    
     requestRef.current = requestAnimationFrame(animate);
 
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      camera.aspect = w / h;
+      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
       camera.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
+      rendererRef.current.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     };
-
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -195,7 +156,28 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.position.y = params.height / 2;
       
       const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-      mat.color.set(material.color);
+      
+      if (showPrintability) {
+        // Custom shader-like effect for overhangs
+        mat.onBeforeCompile = (shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <color_fragment>',
+            `
+            #include <color_fragment>
+            float angle = acos(dot(normalize(vNormal), vec3(0.0, 1.0, 0.0)));
+            if (angle > 0.785) { // > 45 degrees
+              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.1, 0.1), 0.8);
+            }
+            `
+          );
+        };
+        mat.needsUpdate = true;
+      } else {
+        mat.onBeforeCompile = () => {};
+        mat.color.set(material.color);
+        mat.needsUpdate = true;
+      }
+
       mat.roughness = material.roughness;
       mat.metalness = material.metalness;
       mat.transmission = material.transmission;
@@ -211,22 +193,19 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         mat.emissiveIntensity = 0;
       }
     }
-  }, [params, material, showWireframe, isLightOn]);
+  }, [params, material, showWireframe, isLightOn, showPrintability]);
 
   useEffect(() => {
     if (bulbLightRef.current && bulbMeshRef.current) {
       bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
       (bulbMeshRef.current.material as THREE.MeshBasicMaterial).opacity = isLightOn ? 1 : 0;
-      if (sceneRef.current) {
-        sceneRef.current.background = new THREE.Color(isLightOn ? 0x020617 : 0x0f172a);
-      }
     }
   }, [isLightOn]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full" />
-      <div className="absolute bottom-3 right-3">
+      <div className="absolute bottom-3 right-3 flex gap-2">
         <Button 
           variant="secondary" 
           size="sm" 
@@ -237,6 +216,12 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
           {isLightOn ? 'Light On' : 'Light Off'}
         </Button>
       </div>
+      {showPrintability && (
+        <div className="absolute top-3 right-3 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-3 py-1.5 rounded-full flex items-center gap-2">
+          <ShieldAlert className="w-3 h-3 text-red-400" />
+          <span className="text-[9px] font-bold text-red-100 uppercase tracking-widest">Overhang Analysis Active</span>
+        </div>
+      )}
     </div>
   );
 };

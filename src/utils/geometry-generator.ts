@@ -11,7 +11,8 @@ export type LampshadeType =
   | 'origami' 
   | 'perlin_noise' 
   | 'slotted' 
-  | 'double_wall';
+  | 'double_wall'
+  | 'organic_cell';
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave';
 export type FitterType = 'none' | 'spider' | 'uno';
@@ -53,8 +54,8 @@ export interface LampshadeParams {
   gapDistance?: number;
 }
 
-function pseudoNoise(x: number, y: number, seed: number) {
-  const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
+function pseudoNoise(x: number, y: number, z: number, seed: number) {
+  const n = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719 + seed) * 43758.5453;
   return n - Math.floor(n);
 }
 
@@ -91,14 +92,37 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const profile = getProfilePoints();
 
   switch (type) {
+    case 'organic_cell': {
+      const density = params.cellCount || 15;
+      const scale = params.noiseScale || 1.5;
+      geometry = new THREE.LatheGeometry(profile, segments);
+      const pos = geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const pz = pos.getZ(i);
+        const angle = Math.atan2(pz, px);
+        const normY = (py + height / 2) / height;
+        
+        const noise = (
+          pseudoNoise(Math.cos(angle) * scale, py * scale, Math.sin(angle) * scale, seed) * 0.6 +
+          pseudoNoise(Math.cos(angle) * scale * 2, py * scale * 2, Math.sin(angle) * scale * 2, seed) * 0.4
+        );
+        
+        const r = Math.sqrt(px * px + pz * pz);
+        const factor = (r + noise * (params.noiseStrength || 1.0)) / r;
+        pos.setX(i, px * factor);
+        pos.setZ(i, pz * factor);
+      }
+      break;
+    }
+
     case 'double_wall': {
       const gap = params.gapDistance || 0.5;
       const outerProfile = getProfilePoints(60, 0);
       const innerProfile = getProfilePoints(60, -gap);
-      
       const outerGeom = new THREE.LatheGeometry(outerProfile, segments);
       const innerGeom = new THREE.LatheGeometry(innerProfile, segments);
-      
       geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
       break;
     }
@@ -159,8 +183,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const pos = geometry.attributes.position;
       const points: THREE.Vector3[] = [];
       for (let i = 0; i < cells; i++) {
-        const angle = pseudoNoise(i, 0, seed) * Math.PI * 2;
-        const h = (pseudoNoise(0, i, seed) - 0.5) * height;
+        const angle = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
+        const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
         const r = topRadius + (bottomRadius - topRadius) * ((h + height / 2) / height);
         points.push(new THREE.Vector3(Math.cos(angle) * r, h, Math.sin(angle) * r));
       }
@@ -210,8 +234,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const angle = Math.atan2(pz, px);
         const normY = (py + height / 2) / height;
         const noise = (
-          pseudoNoise(angle * scale, normY * scale, seed) * 1.0 +
-          pseudoNoise(angle * scale * 2, normY * scale * 2, seed) * 0.5
+          pseudoNoise(angle * scale, normY * scale, 0, seed) * 1.0 +
+          pseudoNoise(angle * scale * 2, normY * scale * 2, 0, seed) * 0.5
         ) * strength;
         const r = Math.sqrt(px * px + pz * pz);
         const factor = (r + noise) / r;

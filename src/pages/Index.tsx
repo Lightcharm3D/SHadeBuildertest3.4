@@ -54,6 +54,7 @@ const Index = () => {
   const [params, setParams] = useState<LampshadeParams>(DEFAULT_PARAMS);
   const [material, setMaterial] = useState<MaterialParams>(DEFAULT_MATERIAL);
   const [showWireframe, setShowWireframe] = useState(false);
+  const [showPrintability, setShowPrintability] = useState(false);
   const meshRef = useRef<THREE.Mesh | null>(null);
 
   const handleSceneReady = (scene: THREE.Scene, mesh: THREE.Mesh) => {
@@ -91,7 +92,7 @@ const Index = () => {
   };
 
   const handleRandomize = () => {
-    const types: LampshadeType[] = ['ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall'];
+    const types: LampshadeType[] = ['ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 'organic_cell'];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     
     const newType = types[Math.floor(Math.random() * types.length)];
@@ -139,6 +140,7 @@ const Index = () => {
             params={params} 
             material={material}
             showWireframe={showWireframe} 
+            showPrintability={showPrintability}
             onSceneReady={handleSceneReady} 
           />
           <div className="absolute top-3 left-3 flex flex-col gap-1 pointer-events-none">
@@ -163,6 +165,8 @@ const Index = () => {
             setMaterial={setMaterial}
             showWireframe={showWireframe} 
             setShowWireframe={setShowWireframe} 
+            showPrintability={showPrintability}
+            setShowPrintability={setShowPrintability}
             onExport={handleExport} 
             onRandomize={handleRandomize}
             onReset={handleReset}

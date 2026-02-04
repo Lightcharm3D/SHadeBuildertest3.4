@@ -418,7 +418,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   }
   
   geometry.computeVertexNormals();
-  // Ensure the final geometry is manifold and solid
   return mergeVertices(geometry);
 }
 
@@ -449,7 +448,8 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
   const wallThicknessCm = thickness;
-  const safetyMarginCm = 0.1; // 1mm safety margin
+  const safetyMarginCm = 0.1; 
+  const connectionOverlapCm = 0.2; // 2mm overlap into the ring for strength
   
   let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
@@ -470,12 +470,11 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
 
-    // Create a long spoke that we will clip
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
     const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, 40, 1, 1);
     
-    // Move to final position BEFORE vertex manipulation
-    spoke.translate(outerRadius + maxPossibleLength / 2, yPos, 0);
+    // Translate with overlap to ensure strong connection to the ring
+    spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, yPos, 0);
     spoke.rotateY(angle);
     
     const pos = spoke.attributes.position;
@@ -484,26 +483,21 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vy = pos.getY(j);
       const vz = pos.getZ(j);
       
-      // Calculate radial distance from center (Y-axis)
       const currentR = Math.sqrt(vx * vx + vz * vz);
       const currentAngle = Math.atan2(vz, vx);
       
-      // Get the organic wall boundaries at this specific vertex's height and angle
       const localDisp = getDisplacementAt(currentAngle, vy, params);
       const localOuterR = getRadiusAtHeight(vy, params) + localDisp;
       const localInnerR = localOuterR - wallThicknessCm;
       
-      // Absolute safety limit: never exceed outer wall minus margin
       const absoluteLimitR = localOuterR - safetyMarginCm;
       const targetFusionR = localInnerR + fuseDepthCm;
       
-      // Clamp the vertex radius
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       
-      // If the vertex is part of the "outer" end of the spoke, pull it back
+      // Only pull back vertices that are outside the ring's outer boundary
       if (currentR > outerRadius + 0.01) {
         const factor = safeR / currentR;
-        // Only pull back, never push out beyond the original box length
         if (factor < 1.0) {
           pos.setX(j, vx * factor);
           pos.setZ(j, vz * factor);

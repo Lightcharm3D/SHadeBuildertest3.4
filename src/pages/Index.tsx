@@ -219,7 +219,7 @@ const Index = () => {
                 <AvatarFallback>U3</AvatarFallback>
               </Avatar>
               <div className="w-7 h-7 rounded-full border-2 border-white bg-indigo-50 flex items-center justify-center shadow-sm">
-                <span className="text-[8px] font-black text-indigo-600">+12</span>
+                <span className="text-[8px] font-black text-indigo-600">782</span>
               </div>
             </div>
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">1.5k Designs Exported Today</span>

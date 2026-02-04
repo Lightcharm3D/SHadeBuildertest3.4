@@ -25,7 +25,7 @@ export function generateLithophaneGeometry(
 ): THREE.BufferGeometry {
   const { 
     width, height, minThickness, maxThickness, baseThickness, 
-    resolution, type, curveRadius, inverted,
+    resolution, type, inverted,
     brightness, contrast, smoothing, hasHole, holeSize
   } = params;
   
@@ -44,10 +44,9 @@ export function generateLithophaneGeometry(
     const x = u - 0.5;
     const y = v - 0.5;
 
-    // Keyring hole check (3mm hole at top)
     if (hasHole) {
       const holeX = 0;
-      const holeY = 0.4; // Near top
+      const holeY = 0.4; 
       const distToHole = Math.sqrt(Math.pow(x - holeX, 2) + Math.pow(y - holeY, 2));
       if (distToHole < (holeSize / 100)) return false; 
     }
@@ -56,7 +55,6 @@ export function generateLithophaneGeometry(
       case 'circle':
         return (x * x + y * y) <= 0.25;
       case 'heart':
-        // Heart curve: (x^2 + y^2 - 1)^3 - x^2 * y^3 = 0
         const hX = x * 2.2;
         const hY = y * 2.2 + 0.2;
         return Math.pow(hX * hX + hY * hY - 1, 3) - hX * hX * Math.pow(hY, 3) <= 0;
@@ -91,7 +89,7 @@ export function generateLithophaneGeometry(
            (getPixelGray(x2, y2) * dx * dy);
   };
 
-  // 1. Generate Vertices
+  // 1. Generate Vertices (Front and Back)
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const u = i / (gridX - 1);
@@ -105,7 +103,7 @@ export function generateLithophaneGeometry(
       const xPos = (u - 0.5) * width;
       const yPos = (v - 0.5) * height;
 
-      // Front
+      // Front vertex
       vertices.push(xPos, yPos, thickness);
     }
   }
@@ -117,12 +115,12 @@ export function generateLithophaneGeometry(
       const v = j / (gridY - 1);
       const xPos = (u - 0.5) * width;
       const yPos = (v - 0.5) * height;
-      // Back
+      // Back vertex (flat base)
       vertices.push(xPos, yPos, 0);
     }
   }
 
-  // 2. Generate Indices
+  // 2. Generate Indices for Front and Back Faces
   for (let j = 0; j < gridY - 1; j++) {
     for (let i = 0; i < gridX - 1; i++) {
       const a = j * gridX + i;
@@ -131,16 +129,19 @@ export function generateLithophaneGeometry(
       const d = (j + 1) * gridX + (i + 1);
 
       if (validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d]) {
+        // Front face (CCW)
         indices.push(a, c, b);
         indices.push(b, c, d);
+        // Back face (CW to face outwards)
         indices.push(a + backOffset, b + backOffset, c + backOffset);
         indices.push(b + backOffset, d + backOffset, c + backOffset);
       }
     }
   }
 
-  // 3. Side Walls (Edge Detection)
+  // 3. Side Walls (Manifold closure)
   const addSide = (idx1: number, idx2: number, idx3: number, idx4: number) => {
+    // idx1, idx2 are front; idx3, idx4 are back
     indices.push(idx1, idx2, idx3);
     indices.push(idx2, idx4, idx3);
   };
@@ -152,23 +153,23 @@ export function generateLithophaneGeometry(
       const c = (j + 1) * gridX + i;
       const d = (j + 1) * gridX + (i + 1);
 
-      // Check horizontal edges
-      if (validPoints[a] !== validPoints[c]) {
-        if (validPoints[a]) addSide(a, c, a + backOffset, c + backOffset);
-        else addSide(c, a, c + backOffset, a + backOffset);
-      }
-      if (validPoints[b] !== validPoints[d]) {
-        if (validPoints[b]) addSide(d, b, d + backOffset, b + backOffset);
-        else addSide(b, d, b + backOffset, d + backOffset);
-      }
-      // Check vertical edges
+      // Vertical edges
       if (validPoints[a] !== validPoints[b]) {
-        if (validPoints[a]) addSide(b, a, b + backOffset, a + backOffset);
-        else addSide(a, b, a + backOffset, b + backOffset);
+        if (validPoints[a]) addSide(a, b, a + backOffset, b + backOffset);
+        else addSide(b, a, b + backOffset, a + backOffset);
       }
       if (validPoints[c] !== validPoints[d]) {
-        if (validPoints[c]) addSide(c, d, c + backOffset, d + backOffset);
-        else addSide(d, c, d + backOffset, c + backOffset);
+        if (validPoints[c]) addSide(d, c, d + backOffset, c + backOffset);
+        else addSide(c, d, c + backOffset, d + backOffset);
+      }
+      // Horizontal edges
+      if (validPoints[a] !== validPoints[c]) {
+        if (validPoints[a]) addSide(c, a, c + backOffset, a + backOffset);
+        else addSide(a, c, a + backOffset, c + backOffset);
+      }
+      if (validPoints[b] !== validPoints[d]) {
+        if (validPoints[b]) addSide(b, d, b + backOffset, d + backOffset);
+        else addSide(d, b, d + backOffset, b + backOffset);
       }
     }
   }

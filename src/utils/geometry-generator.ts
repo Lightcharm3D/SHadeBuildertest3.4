@@ -40,17 +40,11 @@ export interface LampshadeParams {
   gapDistance?: number;
 }
 
-// Simple deterministic pseudo-random generator based on seed
-function pseudoRandom(seed: number) {
-  const x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
-}
-
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { type, height, topRadius, bottomRadius, segments, seed } = params;
   let geometry: THREE.BufferGeometry;
 
-  // Base profile for Lathe-based shapes
+  // Base profile for Lathe-based shapes (open ended)
   const getProfile = (steps = 50) => {
     const points = [];
     for (let i = 0; i <= steps; i++) {
@@ -99,14 +93,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 1;
-      // Use higher segments for origami to capture the sharp folds
       geometry = new THREE.LatheGeometry(getProfile(20), folds * 2);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        // Determine if we are at a peak or valley of the fold
         const foldStep = (angle / (Math.PI * 2)) * folds * 2;
         const isPeak = Math.round(foldStep) % 2 === 0;
         const offset = isPeak ? depth : -depth;
@@ -119,7 +111,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'geometric_poly': {
       const sides = params.sides || 6;
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, false);
+      // Set openEnded to true for single-walled shell
+      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, true);
       break;
     }
 
@@ -139,7 +132,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'perlin_noise': {
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), false);
+      // Set openEnded to true
+      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
       const strength = params.noiseStrength || 1;
       const scale = params.noiseScale || 0.5;
@@ -148,7 +142,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const y = pos.getY(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        // Deterministic noise approximation using multiple sines
         const noise = (
           Math.sin(angle * 7 * scale + seed) * 0.5 + 
           Math.cos(y * 3 * scale - seed) * 0.5 +
@@ -162,15 +155,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'voronoi': {
-      const cells = params.cellCount || 12;
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), false);
+      // Set openEnded to true
+      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const y = pos.getY(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        // Cellular noise approximation
         const v = Math.abs(Math.sin(angle * cells + seed) * Math.cos(y * (cells/2) - seed));
         const cellNoise = Math.pow(v, 0.5) * 0.8;
         const r = Math.sqrt(x * x + z * z) + cellNoise;
@@ -181,8 +173,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'lattice': {
-      const density = params.gridDensity || 10;
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), false);
+      // Set openEnded to true
+      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
@@ -199,14 +191,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'double_wall': {
       const gap = params.gapDistance || 1;
-      const outer = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, false);
-      const inner = new THREE.CylinderGeometry(topRadius - gap, bottomRadius - gap, height, segments, 1, false);
+      // Both cylinders open ended
+      const outer = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
+      const inner = new THREE.CylinderGeometry(topRadius - gap, bottomRadius - gap, height, segments, 1, true);
       geometry = BufferGeometryUtils.mergeGeometries([outer, inner]);
       break;
     }
 
     default:
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, false);
+      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
   }
 
   geometry.computeVertexNormals();

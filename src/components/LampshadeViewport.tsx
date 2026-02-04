@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, LightbulbOff, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Lightbulb, LightbulbOff, ShieldAlert } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -63,7 +63,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
     
@@ -72,7 +71,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.castShadow = true;
     scene.add(mainLight);
 
-    // Internal Light
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 100);
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
@@ -83,7 +81,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(bulbMesh);
     bulbMeshRef.current = bulbMesh;
 
-    // Print Bed
     const bedGroup = new THREE.Group();
     const bedSize = 40;
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
@@ -157,8 +154,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       
       const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
       
+      // Force a recompile when toggling printability
+      mat.customProgramCacheKey = () => showPrintability ? 'printability-on' : 'printability-off';
+      
       if (showPrintability) {
-        // Custom shader-like effect for overhangs
         mat.onBeforeCompile = (shader) => {
           shader.fragmentShader = shader.fragmentShader.replace(
             '#include <color_fragment>',
@@ -171,13 +170,11 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
             `
           );
         };
-        mat.needsUpdate = true;
       } else {
         mat.onBeforeCompile = () => {};
-        mat.color.set(material.color);
-        mat.needsUpdate = true;
       }
 
+      mat.color.set(material.color);
       mat.roughness = material.roughness;
       mat.metalness = material.metalness;
       mat.transmission = material.transmission;
@@ -192,6 +189,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         mat.emissive.set(0x000000);
         mat.emissiveIntensity = 0;
       }
+      
+      mat.needsUpdate = true;
     }
   }, [params, material, showWireframe, isLightOn, showPrintability]);
 

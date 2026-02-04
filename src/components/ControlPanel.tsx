@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -104,11 +105,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-8 p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl h-full overflow-y-auto studio-shadow">
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="flex flex-col gap-8 p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl h-full overflow-y-auto studio-shadow"
+    >
       <div className="flex items-center justify-between">
         <div className="space-y-1.5">
           <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em] flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-indigo-600" />
+            <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
             Studio Controls
           </h2>
           <div className="h-1 w-16 brand-gradient rounded-full"></div>
@@ -224,7 +229,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <RefreshCw className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Like Minecraft, the same seed produces the same pattern.</p>
             </div>
 
             {(params.type === 'organic_cell' || params.type === 'faceted_gem') && (
@@ -237,24 +241,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Strength</Label>
                   <Input type="number" step={0.1} value={params.noiseStrength} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                 </div>
-              </div>
-            )}
-            {(params.type === 'bricks' || params.type === 'lattice') && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Grid Density</Label>
-                  <span className="text-[10px] font-mono font-bold text-indigo-600">{params.gridDensity}</span>
-                </div>
-                <Slider value={[params.gridDensity || 10]} min={4} max={30} step={1} onValueChange={([v]) => updateParam('gridDensity', v)} className="py-2" />
-              </div>
-            )}
-            {(params.type === 'spiral_twist') && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Twist Angle</Label>
-                  <span className="text-[10px] font-mono font-bold text-indigo-600">{params.twistAngle}°</span>
-                </div>
-                <Slider value={[params.twistAngle || 360]} min={0} max={1440} step={10} onValueChange={([v]) => updateParam('twistAngle', v)} className="py-2" />
               </div>
             )}
           </div>
@@ -297,14 +283,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </div>
                   <Slider value={[material.metalness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('metalness', v)} className="py-2" />
                 </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    <span className="flex items-center gap-2.5"><Droplets className="w-4 h-4" /> Transmission</span>
-                    <span className="text-indigo-600 font-mono font-bold">{material.transmission.toFixed(2)}</span>
-                  </div>
-                  <Slider value={[material.transmission]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('transmission', v)} className="py-2" />
-                </div>
               </div>
             </div>
           </div>
@@ -332,61 +310,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
               <Slider value={[params.thickness]} min={0.04} max={0.5} step={0.01} onValueChange={([v]) => updateParam('thickness', v)} className="py-2" />
             </div>
-
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Fitter Type</Label>
-              <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
-                <SelectTrigger className="bg-slate-50 border-slate-200 h-12 text-xs font-bold rounded-2xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="spider">Spider (3 Spokes)</SelectItem>
-                  <SelectItem value="uno">Uno (4 Spokes)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {params.fitterType !== 'none' && (
-              <div className="space-y-8 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
-                <div className="space-y-4">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    <span className="flex items-center gap-2.5"><MoveVertical className="w-4 h-4" /> Height Offset</span>
-                    <span className="text-indigo-600 font-mono font-bold">{params.fitterHeight.toFixed(1)} cm</span>
-                  </div>
-                  <Slider value={[params.fitterHeight]} min={0} max={params.height} step={0.1} onValueChange={([v]) => updateParam('fitterHeight', v)} className="py-2" />
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Ring Diameter (mm)</Label>
-                  <Input type="number" value={params.fitterDiameter} onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-white rounded-2xl border-slate-200" />
-                </div>
-
-                <div className="space-y-6 pt-6 border-t border-slate-200">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2.5">
-                    <Anchor className="w-4 h-4" /> Spoke Strength
-                  </Label>
-                  
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
-                        <span>Vertical</span>
-                        <span className="font-mono font-bold">{params.spokeThickness.toFixed(2)} cm</span>
-                      </div>
-                      <Slider value={[params.spokeThickness]} min={0.1} max={0.8} step={0.05} onValueChange={([v]) => updateParam('spokeThickness', v)} className="py-1" />
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
-                        <span>Horizontal</span>
-                        <span className="font-mono font-bold">{params.spokeWidth.toFixed(2)} cm</span>
-                      </div>
-                      <Slider value={[params.spokeWidth]} min={0.1} max={1.0} step={0.05} onValueChange={([v]) => updateParam('spokeWidth', v)} className="py-1" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
@@ -396,28 +319,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 flex items-center gap-2">
                 <Share2 className="w-4 h-4" /> Share Design
               </Label>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-relaxed">Copy this code to share your exact design with others.</p>
               <Button onClick={generateShareCode} className="w-full gap-2 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 h-12 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm">
                 <ClipboardCheck className="w-4 h-4" />
                 Copy Design Code
               </Button>
-            </div>
-
-            <div className="space-y-4 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
-              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
-                <Import className="w-4 h-4" /> Import Design
-              </Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={importCode} 
-                  onChange={(e) => setImportCode(e.target.value)} 
-                  placeholder="Paste code here..." 
-                  className="h-12 text-[10px] font-mono bg-white rounded-2xl border-slate-200"
-                />
-                <Button onClick={handleImportCode} disabled={!importCode} className="h-12 px-6 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest">
-                  Import
-                </Button>
-              </div>
             </div>
 
             <div className="space-y-4">
@@ -464,7 +369,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           Export STL
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

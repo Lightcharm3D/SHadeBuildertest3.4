@@ -37,6 +37,9 @@
   .studio-shadow {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.02);
   }
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
   /* Mobile Safe Areas */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
@@ -59,7 +62,6 @@
   }
   body {
     @apply bg-[#f8fafc] text-foreground antialiased selection:bg-indigo-100 selection:text-indigo-900;
-    /* Prevent scrolling issues on mobile */
     overscroll-behavior-y: none;
     position: fixed;
     width: 100%;

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry-generator';
@@ -121,7 +122,11 @@ const Index = () => {
   };
 
   return (
-    <div className="h-full bg-[#f8fafc] flex flex-col font-sans pt-safe pb-safe">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-full bg-[#f8fafc] flex flex-col font-sans pt-safe pb-safe"
+    >
       <header className="h-16 lg:h-20 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-4 lg:px-10 flex items-center justify-between shrink-0 z-40 sticky top-0">
         <div className="flex items-center gap-3 lg:gap-6">
           <div className="relative group">
@@ -213,7 +218,7 @@ const Index = () => {
           </div>
         )}
       </main>
-    </div>
+    </motion.div>
   );
 };
 

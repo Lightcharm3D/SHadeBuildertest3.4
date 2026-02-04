@@ -448,7 +448,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
   const wallThicknessCm = thickness;
-  const safetyMarginCm = 0.06; // 0.6mm safety margin
+  const safetyMarginCm = 0.1; // Increased to 1mm for absolute safety
   
   let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
@@ -469,28 +469,15 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
 
+    // Initial length calculation for the box geometry
     const disp = getDisplacementAt(angle, yPos, params);
     const outerHitR = baseRadiusAtZ + disp;
     const innerHitR = outerHitR - wallThicknessCm;
-    
-    // Corner-Safe Trimming:
-    // A box's corner is further from the center than its face.
-    // We must ensure the corner radius doesn't exceed the outerHitR - safetyMargin.
-    const maxAllowedCornerR = outerHitR - safetyMarginCm;
-    const halfWidth = spokeWidthCm / 2;
-    
-    // (outerRadius + length)^2 + halfWidth^2 = maxAllowedCornerR^2
-    const maxOuterR = Math.sqrt(Math.pow(maxAllowedCornerR, 2) - Math.pow(halfWidth, 2));
-    
-    // Structural fusion target
-    const fusionTargetR = innerHitR + fuseDepthCm;
-    
-    // Final spoke end radius must be the minimum of fusion target and the corner-safe limit
-    const finalSpokeEndR = Math.min(fusionTargetR, maxOuterR);
-    
+    const finalSpokeEndR = innerHitR + fuseDepthCm;
     const spokeLength = Math.max(0.1, finalSpokeEndR - outerRadius);
     
-    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm, 10, 1, 1);
+    // Use more segments for better organic conformity
+    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm, 20, 1, 1);
     const pos = spoke.attributes.position;
     
     for (let j = 0; j < pos.count; j++) {
@@ -498,18 +485,29 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const py = pos.getY(j);
       const pz = pos.getZ(j);
       
-      if (px > spokeLength / 2 - 0.01) {
-        const localAngle = angle + Math.atan2(pz, finalSpokeEndR);
+      // Adjust all vertices except the very start (inner ring connection)
+      if (px > -spokeLength / 2 + 0.01) {
+        // Calculate the current distance from center for angle calculation
+        const currentR = outerRadius + (px + spokeLength / 2);
+        const localAngle = angle + Math.atan2(pz, currentR);
+        
         const localDisp = getDisplacementAt(localAngle, yPos + py, params);
         const localOuterR = baseRadiusAtZ + localDisp;
         const localInnerR = localOuterR - wallThicknessCm;
         
-        const localMaxCornerR = localOuterR - safetyMarginCm;
-        const localMaxOuterR = Math.sqrt(Math.pow(localMaxCornerR, 2) - Math.pow(pz, 2));
-        const localFusionTargetR = localInnerR + fuseDepthCm;
+        // Absolute limit to prevent any protrusion (Corner-Safe)
+        const absoluteLimitR = localOuterR - safetyMarginCm;
+        const fusionTargetR = localInnerR + fuseDepthCm;
         
-        const localEndR = Math.min(localFusionTargetR, localMaxOuterR);
-        pos.setX(j, localEndR - outerRadius - spokeLength / 2);
+        // The distance from center 'd' must satisfy: d^2 = r_axis^2 + pz^2 <= absoluteLimitR^2
+        // So r_axis <= sqrt(absoluteLimitR^2 - pz^2)
+        const maxRAxis = Math.sqrt(Math.max(0, Math.pow(absoluteLimitR, 2) - Math.pow(pz, 2)));
+        
+        // We want to reach fusionTargetR if possible, but never exceed maxRAxis
+        const targetRAxis = Math.min(fusionTargetR, maxRAxis);
+        
+        // Set the new X position (relative to box center)
+        pos.setX(j, targetRAxis - outerRadius - spokeLength / 2);
       }
     }
     

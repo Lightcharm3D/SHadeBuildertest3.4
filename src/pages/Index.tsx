@@ -151,7 +151,7 @@ const Index = () => {
         <div className="flex items-center gap-2">
           <Link to="/lithophane">
             <Button variant="outline" size="sm" className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[9px] lg:text-[10px] uppercase tracking-widest">
-              <ImageIcon className="w-3.5 h-3.5" />
+              <img src="/litho-icon.png" alt="Lithophane" className="w-5 h-5 object-contain" />
               <span className="hidden xs:inline">Lithophane</span>
             </Button>
           </Link>

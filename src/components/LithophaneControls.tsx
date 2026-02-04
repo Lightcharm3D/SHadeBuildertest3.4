@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams, LithophaneType } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles } from 'lucide-react';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Star, Square } from 'lucide-react';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -38,7 +38,7 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           <ImageIcon className="w-5 h-5 text-indigo-600" />
           Lithophane Studio
         </h2>
-        <p className="text-sm text-slate-500">Professional 3D Relief Generator</p>
+        <p className="text-sm text-slate-500">Custom Shape & Keychain Generator</p>
       </div>
 
       <div className="space-y-6">
@@ -52,11 +52,50 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="sm" onClick={() => onApplyPreset('portrait')} className="text-[10px] h-8">Portrait</Button>
-          <Button variant="outline" size="sm" onClick={() => onApplyPreset('landscape')} className="text-[10px] h-8">Landscape</Button>
-          <Button variant="outline" size="sm" onClick={() => onApplyPreset('keychain')} className="text-[10px] h-8">Keychain</Button>
-          <Button variant="outline" size="sm" onClick={() => onApplyPreset('high_detail')} className="text-[10px] h-8">High Detail</Button>
+        <div className="space-y-3">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">2. Select Shape</Label>
+          <div className="grid grid-cols-4 gap-2">
+            <Button 
+              variant={params.type === 'flat' ? 'default' : 'outline'} 
+              size="icon" 
+              onClick={() => updateParam('type', 'flat')}
+              className="h-10 w-full"
+            >
+              <Square className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant={params.type === 'circle' ? 'default' : 'outline'} 
+              size="icon" 
+              onClick={() => updateParam('type', 'circle')}
+              className="h-10 w-full"
+            >
+              <Circle className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant={params.type === 'heart' ? 'default' : 'outline'} 
+              size="icon" 
+              onClick={() => updateParam('type', 'heart')}
+              className="h-10 w-full"
+            >
+              <Heart className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant={params.type === 'star' ? 'default' : 'outline'} 
+              size="icon" 
+              onClick={() => updateParam('type', 'star')}
+              className="h-10 w-full"
+            >
+              <Star className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-indigo-900">Keyring Hole</span>
+            <span className="text-[10px] text-indigo-600">Adds 3mm attachment point</span>
+          </div>
+          <Switch checked={params.hasHole} onCheckedChange={(v) => updateParam('hasHole', v)} />
         </div>
 
         <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -92,19 +131,8 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
         </div>
 
         <div className="space-y-4">
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">2. Model Settings</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">3. Model Settings</Label>
           
-          <Select value={params.type} onValueChange={(v) => updateParam('type', v as LithophaneType)}>
-            <SelectTrigger className="bg-slate-50 border-slate-200">
-              <SelectValue placeholder="Select shape" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="flat">Flat Panel</SelectItem>
-              <SelectItem value="curved">Curved Arc</SelectItem>
-              <SelectItem value="cylinder">Full Cylinder</SelectItem>
-            </SelectContent>
-          </Select>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-[10px]">Width (cm)</Label>

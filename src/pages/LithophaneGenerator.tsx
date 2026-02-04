@@ -23,7 +23,9 @@ const LithophaneGenerator = () => {
     inverted: false,
     brightness: 0,
     contrast: 20,
-    smoothing: 1.5, // Default smoothing
+    smoothing: 1.5,
+    hasHole: false,
+    holeSize: 3,
   });
 
   const [imageData, setImageData] = useState<ImageData | null>(null);
@@ -55,7 +57,7 @@ const LithophaneGenerator = () => {
         setParams({ ...params, width: 15, height: 10, resolution: 200, contrast: 25, smoothing: 1.5 });
         break;
       case 'keychain':
-        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5 });
+        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true });
         break;
       case 'high_detail':
         setParams({ ...params, resolution: 300, contrast: 40, smoothing: 0.5 });
@@ -85,10 +87,10 @@ const LithophaneGenerator = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `lithophane-${Date.now()}.stl`;
+      link.download = `lithophane-${params.type}-${Date.now()}.stl`;
       link.click();
       URL.revokeObjectURL(url);
-      showSuccess("Smooth watertight STL exported!");
+      showSuccess("Custom shaped STL exported!");
     } catch (err) {
       showError("Failed to export STL");
     }
@@ -106,7 +108,7 @@ const LithophaneGenerator = () => {
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900 leading-none">ShadeBuilder</h1>
-            <p className="text-xs text-slate-500 font-medium">Pro Lithophane Studio</p>
+            <p className="text-xs text-slate-500 font-medium">Custom Shape Studio</p>
           </div>
         </div>
       </header>
@@ -121,8 +123,8 @@ const LithophaneGenerator = () => {
                 <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <ImageIcon className="w-8 h-8 text-indigo-400" />
                 </div>
-                <h3 className="text-white font-bold text-xl mb-2">Ready to Generate</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Upload a high-contrast photo to begin. Our engine uses bilinear interpolation for ultra-smooth 3D prints.</p>
+                <h3 className="text-white font-bold text-xl mb-2">Custom Shape Studio</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">Upload a photo and choose a shape. Perfect for keychains, ornaments, and personalized gifts.</p>
               </div>
             </div>
           )}

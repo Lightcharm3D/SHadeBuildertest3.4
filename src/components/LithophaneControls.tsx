@@ -4,11 +4,10 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { LithophaneParams, LithophaneType } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square } from 'lucide-react';
+import { LithophaneParams } from '@/utils/lithophane-generator';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Move } from 'lucide-react';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -82,12 +81,42 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-indigo-900">Keyring Hole</span>
-            <span className="text-[10px] text-indigo-600">Adds 3mm attachment point</span>
+        <div className="space-y-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-indigo-900">Keyring Hole</span>
+              <span className="text-[10px] text-indigo-600">Adjustable attachment point</span>
+            </div>
+            <Switch checked={params.hasHole} onCheckedChange={(v) => updateParam('hasHole', v)} />
           </div>
-          <Switch checked={params.hasHole} onCheckedChange={(v) => updateParam('hasHole', v)} />
+
+          {params.hasHole && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-medium text-indigo-900">
+                  <span className="flex items-center gap-1"><Move className="w-3 h-3" /> Horizontal Position</span>
+                  <span>{params.holeX}%</span>
+                </div>
+                <Slider value={[params.holeX]} min={5} max={95} step={1} onValueChange={([v]) => updateParam('holeX', v)} />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-medium text-indigo-900">
+                  <span className="flex items-center gap-1"><Move className="w-3 h-3" /> Vertical Position</span>
+                  <span>{params.holeY}%</span>
+                </div>
+                <Slider value={[params.holeY]} min={5} max={95} step={1} onValueChange={([v]) => updateParam('holeY', v)} />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-medium text-indigo-900">
+                  <span>Hole Diameter (mm)</span>
+                  <span>{params.holeSize}mm</span>
+                </div>
+                <Slider value={[params.holeSize]} min={2} max={10} step={0.5} onValueChange={([v]) => updateParam('holeSize', v)} />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">

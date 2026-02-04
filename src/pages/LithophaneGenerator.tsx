@@ -26,6 +26,8 @@ const LithophaneGenerator = () => {
     smoothing: 1.5,
     hasHole: false,
     holeSize: 3,
+    holeX: 50,
+    holeY: 90,
   });
 
   const [imageData, setImageData] = useState<ImageData | null>(null);
@@ -57,7 +59,7 @@ const LithophaneGenerator = () => {
         setParams({ ...params, width: 15, height: 10, resolution: 200, contrast: 25, smoothing: 1.5 });
         break;
       case 'keychain':
-        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true });
+        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true, holeX: 50, holeY: 90 });
         break;
       case 'high_detail':
         setParams({ ...params, resolution: 300, contrast: 40, smoothing: 0.5 });

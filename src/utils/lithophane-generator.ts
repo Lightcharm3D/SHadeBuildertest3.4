@@ -174,6 +174,35 @@ export function generateLithophaneGeometry(
     }
   }
 
+  // 4. Add bottom face to make it completely solid
+  // Create a bottom face that covers the entire base
+  const bottomVerticesStart = vertices.length / 3;
+  
+  // Add bottom vertices (same as back vertices but at z=0)
+  for (let j = 0; j < gridY; j++) {
+    for (let i = 0; i < gridX; i++) {
+      const u = i / (gridX - 1);
+      const v = j / (gridY - 1);
+      const xPos = (u - 0.5) * width;
+      const yPos = (v - 0.5) * height;
+      vertices.push(xPos, yPos, 0); // Bottom face at z=0
+    }
+  }
+
+  // Create bottom face indices
+  for (let j = 0; j < gridY - 1; j++) {
+    for (let i = 0; i < gridX - 1; i++) {
+      const a = j * gridX + i + bottomVerticesStart;
+      const b = j * gridX + (i + 1) + bottomVerticesStart;
+      const c = (j + 1) * gridX + i + bottomVerticesStart;
+      const d = (j + 1) * gridX + (i + 1) + bottomVerticesStart;
+
+      // Bottom face (CCW when viewed from below)
+      indices.push(a, b, c);
+      indices.push(b, d, c);
+    }
+  }
+
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setIndex(indices);

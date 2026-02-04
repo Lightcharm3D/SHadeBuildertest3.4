@@ -218,7 +218,7 @@ const Index = () => {
                 <AvatarImage src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop" />
                 <AvatarFallback>U3</AvatarFallback>
               </Avatar>
-              <div className="w-7 h-7 rounded-full border-2 border-white bg-indigo-50 flex items-center justify-center shadow-sm">
+              <div className="relative z-10 w-7 h-7 rounded-full border-2 border-white bg-indigo-50 flex items-center justify-center shadow-sm">
                 <span className="text-[8px] font-black text-indigo-600">782</span>
               </div>
             </div>

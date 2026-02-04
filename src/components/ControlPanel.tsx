@@ -6,9 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { Download, RefreshCw, Eye, Box, Settings2, Sparkles, Zap, Waves, Sun } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2 } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -28,7 +27,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRandomize 
 }) => {
   const updateParam = (key: keyof LampshadeParams, value: any) => {
-    setParams({ ...params, [key]: value });
+    let finalValue = value;
+    if (typeof value === 'number') {
+      finalValue = Math.round(value * 100) / 100;
+    }
+    setParams({ ...params, [key]: finalValue });
+  };
+
+  const formatValue = (val: number | undefined) => {
+    if (val === undefined) return 0;
+    return parseFloat(val.toFixed(2));
   };
 
   return (
@@ -38,7 +46,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <Box className="w-5 h-5 text-indigo-600" />
           Design Studio
         </h2>
-        <p className="text-sm text-slate-500">Parametric Generative Engine</p>
+        <p className="text-sm text-slate-500">Customize your parametric lampshade</p>
       </div>
 
       <div className="space-y-6">
@@ -63,111 +71,145 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </Select>
         </div>
 
-        <div className="space-y-5">
-          <div className="flex items-center gap-2 text-slate-900 mb-1">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            <Label className="text-xs font-bold uppercase tracking-wider">Generative Controls</Label>
-          </div>
-
-          {/* Random Seed */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <Label className="text-xs flex items-center gap-2">
-                <Zap className="w-3 h-3 text-amber-500" /> Random Seed
-              </Label>
-              <span className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded">{params.seed.toFixed(0)}</span>
-            </div>
-            <div className="flex gap-2">
-              <Input 
-                type="number" 
-                value={params.seed} 
-                onChange={(e) => updateParam('seed', parseFloat(e.target.value) || 0)}
-                className="h-8 text-xs"
-              />
-              <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" onClick={() => updateParam('seed', Math.random() * 10000)}>
-                <RefreshCw className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Pattern Density */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <Label className="text-xs flex items-center gap-2">
-                <Waves className="w-3 h-3 text-blue-500" /> Pattern Density
-              </Label>
-              <span className="text-[10px] font-mono">{params.density}%</span>
-            </div>
-            <Slider 
-              value={[params.density]} 
-              min={1} 
-              max={100} 
-              step={1} 
-              onValueChange={([v]) => updateParam('density', v)} 
-            />
-          </div>
-
-          {/* Light Diffusion */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <Label className="text-xs flex items-center gap-2">
-                <Sun className="w-3 h-3 text-orange-500" /> Light Diffusion
-              </Label>
-              <span className="text-[10px] font-mono">{params.diffusion}%</span>
-            </div>
-            <Slider 
-              value={[params.diffusion]} 
-              min={1} 
-              max={100} 
-              step={1} 
-              onValueChange={([v]) => updateParam('diffusion', v)} 
-            />
-          </div>
-
-          {/* Smoothness */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <Label className="text-xs flex items-center gap-2">
-                <Settings2 className="w-3 h-3 text-emerald-500" /> Smoothness
-              </Label>
-              <span className="text-[10px] font-mono">{params.smoothness}%</span>
-            </div>
-            <Slider 
-              value={[params.smoothness]} 
-              min={1} 
-              max={100} 
-              step={1} 
-              onValueChange={([v]) => updateParam('smoothness', v)} 
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4 pt-2 border-t border-slate-100">
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Dimensions</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[10px]">Height (cm)</Label>
-              <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px]">Top Radius</Label>
-              <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-[10px]">Bottom Radius</Label>
-            <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
-          </div>
-        </div>
-
         <div className="p-3 bg-slate-50 rounded-lg space-y-3 border border-slate-100">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Preview Settings</Label>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Eye className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-medium text-slate-700">Wireframe Preview</span>
+              <span className="text-sm font-medium text-slate-700">Wireframe Mode</span>
             </div>
             <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
           </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-slate-900 mb-2">
+            <Settings2 className="w-4 h-4 text-indigo-600" />
+            <Label className="text-xs font-bold uppercase tracking-wider">Parameters</Label>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Height (cm)</Label>
+              <Input type="number" step={0.01} value={formatValue(params.height)} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Segments</Label>
+              <Input type="number" step={1} value={params.segments} onChange={(e) => updateParam('segments', parseInt(e.target.value) || 3)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Top Radius</Label>
+              <Input type="number" step={0.01} value={formatValue(params.topRadius)} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Bottom Radius</Label>
+              <Input type="number" step={0.01} value={formatValue(params.bottomRadius)} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} />
+            </div>
+          </div>
+
+          {/* Dynamic Type-Specific Inputs */}
+          {params.type === 'ribbed_drum' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Rib Count</Label>
+                <Input type="number" value={params.ribCount} onChange={(e) => updateParam('ribCount', parseInt(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Rib Depth</Label>
+                <Input type="number" step={0.1} value={params.ribDepth} onChange={(e) => updateParam('ribDepth', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'spiral_twist' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Twist Angle</Label>
+              <Input type="number" value={params.twistAngle} onChange={(e) => updateParam('twistAngle', parseFloat(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'origami' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Fold Count</Label>
+                <Input type="number" value={params.foldCount} onChange={(e) => updateParam('foldCount', parseInt(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Fold Depth</Label>
+                <Input type="number" step={0.1} value={params.foldDepth} onChange={(e) => updateParam('foldDepth', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'geometric_poly' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Sides</Label>
+              <Input type="number" min={3} max={20} value={params.sides} onChange={(e) => updateParam('sides', parseInt(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'wave_shell' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Amplitude</Label>
+                <Input type="number" step={0.1} value={params.amplitude} onChange={(e) => updateParam('amplitude', parseFloat(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Frequency</Label>
+                <Input type="number" step={0.1} value={params.frequency} onChange={(e) => updateParam('frequency', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'perlin_noise' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Noise Scale</Label>
+                <Input type="number" step={0.1} value={params.noiseScale} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Strength</Label>
+                <Input type="number" step={0.1} value={params.noiseStrength} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'slotted' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Slot Count</Label>
+                <Input type="number" value={params.slotCount} onChange={(e) => updateParam('slotCount', parseInt(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Slot Width</Label>
+                <Input type="number" step={0.01} value={params.slotWidth} onChange={(e) => updateParam('slotWidth', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'voronoi' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Cell Count</Label>
+              <Input type="number" value={params.cellCount} onChange={(e) => updateParam('cellCount', parseInt(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'lattice' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Grid Density</Label>
+              <Input type="number" value={params.gridDensity} onChange={(e) => updateParam('gridDensity', parseInt(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'double_wall' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Gap Distance</Label>
+              <Input type="number" step={0.1} value={params.gapDistance} onChange={(e) => updateParam('gapDistance', parseFloat(e.target.value))} />
+            </div>
+          )}
         </div>
       </div>
 

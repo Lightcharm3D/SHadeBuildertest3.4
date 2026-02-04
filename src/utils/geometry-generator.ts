@@ -18,36 +18,36 @@ export interface LampshadeParams {
   topRadius: number;
   bottomRadius: number;
   thickness: number;
+  segments: number;
   
-  // Global Generative Parameters
-  seed: number;
-  density: number;      // 1 - 100
-  smoothness: number;   // 1 - 100 (maps to segments)
-  diffusion: number;    // 1 - 100 (maps to hole size/depth)
-  
-  // Legacy/Specific overrides (optional)
+  // Type-specific params
+  ribCount?: number;
+  ribDepth?: number;
   twistAngle?: number;
+  cellCount?: number;
+  seed?: number;
+  amplitude?: number;
+  frequency?: number;
   sides?: number;
+  gridDensity?: number;
+  strutThickness?: number;
+  foldCount?: number;
+  foldDepth?: number;
+  noiseScale?: number;
+  noiseStrength?: number;
+  slotCount?: number;
+  slotWidth?: number;
+  gapDistance?: number;
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { type, height, topRadius, bottomRadius, seed, density, smoothness, diffusion } = params;
-  
-  // Map smoothness to segments (24 to 256)
-  const segments = Math.floor(24 + (smoothness / 100) * 232);
-  
+  const { type, height, topRadius, bottomRadius, segments, thickness } = params;
   let geometry: THREE.BufferGeometry;
-
-  // Helper for seeded random
-  const seededRandom = (s: number) => {
-    const x = Math.sin(s) * 10000;
-    return x - Math.floor(x);
-  };
 
   switch (type) {
     case 'ribbed_drum': {
-      const ribCount = Math.floor(4 + (density / 100) * 60);
-      const ribDepth = (diffusion / 100) * 2;
+      const count = params.ribCount || 20;
+      const depth = params.ribDepth || 0.5;
       const points = [];
       for (let i = 0; i <= 40; i++) {
         const t = i / 40;
@@ -61,7 +61,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const x = pos.getX(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        const rib = 1 + Math.sin(angle * ribCount + seed) * (ribDepth / (topRadius + bottomRadius));
+        const rib = 1 + Math.sin(angle * count) * (depth / (topRadius + bottomRadius));
         pos.setX(i, x * rib);
         pos.setZ(i, z * rib);
       }
@@ -84,7 +84,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const x = pos.getX(i);
         const z = pos.getZ(i);
         const normY = (y + height / 2) / height;
-        const angle = normY * twist + seed;
+        const angle = normY * twist;
         const newX = x * Math.cos(angle) - z * Math.sin(angle);
         const newZ = x * Math.sin(angle) + z * Math.cos(angle);
         pos.setXYZ(i, newX, y, newZ);
@@ -93,8 +93,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'origami': {
-      const folds = Math.floor(6 + (density / 100) * 40);
-      const depth = (diffusion / 100) * 3;
+      const folds = params.foldCount || 12;
+      const depth = params.foldDepth || 1;
       const points = [];
       for (let i = 0; i <= 10; i++) {
         const t = i / 10;
@@ -107,8 +107,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const z = pos.getZ(i);
+        const y = pos.getY(i);
         const angle = Math.atan2(z, x);
-        const foldIdx = Math.round(((angle + seed) / (Math.PI * 2)) * folds * 2);
+        const foldIdx = Math.round((angle / (Math.PI * 2)) * folds * 2);
         const offset = foldIdx % 2 === 0 ? depth : -depth;
         const r = Math.sqrt(x * x + z * z) + offset;
         pos.setX(i, r * Math.cos(angle));
@@ -118,19 +119,19 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'geometric_poly': {
-      const sides = params.sides || Math.floor(3 + (density / 100) * 12);
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, true);
+      const sides = params.sides || 6;
+      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 10, true);
       break;
     }
 
     case 'wave_shell': {
-      const amp = (diffusion / 100) * 4;
-      const freq = 2 + (density / 100) * 15;
+      const amp = params.amplitude || 1;
+      const freq = params.frequency || 5;
       const points = [];
       for (let i = 0; i <= 50; i++) {
         const t = i / 50;
         const rBase = topRadius + (bottomRadius - topRadius) * t;
-        const wave = Math.sin(t * Math.PI * freq + seed) * amp;
+        const wave = Math.sin(t * Math.PI * freq) * amp;
         const y = -height / 2 + height * t;
         points.push(new THREE.Vector2(rBase + wave, y));
       }
@@ -139,16 +140,17 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'perlin_noise': {
+      // Simple noise simulation using sine combinations
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 40, true);
       const pos = geometry.attributes.position;
-      const strength = (diffusion / 100) * 3;
-      const scale = 0.1 + (density / 100) * 2;
+      const strength = params.noiseStrength || 1;
+      const scale = params.noiseScale || 0.5;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const y = pos.getY(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        const noise = (Math.sin(angle * 5 * scale + seed) + Math.cos(y * 2 * scale + seed)) * strength;
+        const noise = (Math.sin(angle * 5 * scale) + Math.cos(y * 2 * scale)) * strength;
         const r = Math.sqrt(x * x + z * z) + noise;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
@@ -157,15 +159,17 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'slotted': {
-      const slots = Math.floor(8 + (density / 100) * 64);
-      const slotWidth = 0.05 + (diffusion / 100) * 0.4;
+      const slots = params.slotCount || 16;
+      const width = params.slotWidth || 0.5;
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
+      // Visualizing slots via wireframe or custom logic is complex for STL, 
+      // so we'll create a "slotted" profile
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        const slotFactor = Math.abs(Math.sin(angle * slots / 2 + seed)) < slotWidth ? 0.8 : 1.2;
+        const slotFactor = Math.abs(Math.sin(angle * slots / 2)) < width ? 0.9 : 1.1;
         pos.setX(i, x * slotFactor);
         pos.setZ(i, z * slotFactor);
       }
@@ -173,16 +177,16 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'voronoi': {
+      // Pseudo-voronoi using cellular noise approximation
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 30, true);
       const pos = geometry.attributes.position;
-      const cells = Math.floor(5 + (density / 100) * 40);
-      const holeSize = (diffusion / 100) * 1.5;
+      const cells = params.cellCount || 10;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const y = pos.getY(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        const cellNoise = Math.pow(Math.abs(Math.sin(angle * cells + seed) * Math.cos(y * cells * 0.5 + seed)), 0.5) * holeSize;
+        const cellNoise = Math.pow(Math.abs(Math.sin(angle * cells) * Math.cos(y * cells * 0.5)), 0.5) * 0.5;
         const r = Math.sqrt(x * x + z * z) + cellNoise;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
@@ -191,8 +195,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'lattice': {
-      const gridDensity = Math.floor(5 + (density / 100) * 30);
-      const latticeStrength = (diffusion / 100) * 0.8;
+      const density = params.gridDensity || 10;
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 20, true);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
@@ -200,7 +203,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const y = pos.getY(i);
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
-        const lattice = (Math.sin(angle * gridDensity + seed) * Math.sin(y * gridDensity + seed)) * latticeStrength;
+        const lattice = (Math.sin(angle * density) * Math.sin(y * density)) * 0.2;
         const r = Math.sqrt(x * x + z * z) + lattice;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
@@ -209,12 +212,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'double_wall': {
-      const gap = 0.2 + (diffusion / 100) * 2;
+      const gap = params.gapDistance || 1;
+      // Create two cylinders
       const outer = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
       const inner = new THREE.CylinderGeometry(topRadius - gap, bottomRadius - gap, height, segments, 1, true);
-      
-      // Simple merge if BufferGeometryUtils isn't available, otherwise just return outer for now
-      geometry = outer; 
+      geometry = THREE.BufferGeometryUtils ? (THREE as any).BufferGeometryUtils.mergeGeometries([outer, inner]) : outer;
       break;
     }
 

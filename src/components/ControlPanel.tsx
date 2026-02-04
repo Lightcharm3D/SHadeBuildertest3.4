@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -61,245 +62,217 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </Button>
       </div>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Template</Label>
-            <Select value={params.type} onValueChange={(v) => updateParam('type', v)}>
-              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-                <SelectValue placeholder="Select shape" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ribbed_drum" className="text-xs">Ribbed Drum</SelectItem>
-                <SelectItem value="spiral_twist" className="text-xs">Spiral Twist</SelectItem>
-                <SelectItem value="voronoi" className="text-xs">Voronoi Organic</SelectItem>
-                <SelectItem value="wave_shell" className="text-xs">Wave Shell</SelectItem>
-                <SelectItem value="geometric_poly" className="text-xs">Geometric Polygon</SelectItem>
-                <SelectItem value="lattice" className="text-xs">Parametric Lattice</SelectItem>
-                <SelectItem value="origami" className="text-xs">Origami Fold</SelectItem>
-                <SelectItem value="perlin_noise" className="text-xs">Perlin Noise</SelectItem>
-                <SelectItem value="slotted" className="text-xs">Parametric Slotted</SelectItem>
-                <SelectItem value="double_wall" className="text-xs">Double-Wall Diffuser</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Silhouette</Label>
-            <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v)}>
-              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-                <SelectValue placeholder="Select silhouette" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="straight" className="text-xs">Straight Taper</SelectItem>
-                <SelectItem value="hourglass" className="text-xs">Hourglass Curve</SelectItem>
-                <SelectItem value="bell" className="text-xs">Bell Shape</SelectItem>
-                <SelectItem value="convex" className="text-xs">Convex (Bulge)</SelectItem>
-                <SelectItem value="concave" className="text-xs">Concave (Inward)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      <Tabs defaultValue="shape" className="w-full">
+        <TabsList className="grid grid-cols-4 w-full h-9 bg-slate-50 p-1">
+          <TabsTrigger value="shape" className="text-[10px] font-bold uppercase tracking-wider">Shape</TabsTrigger>
+          <TabsTrigger value="pattern" className="text-[10px] font-bold uppercase tracking-wider">Pattern</TabsTrigger>
+          <TabsTrigger value="structure" className="text-[10px] font-bold uppercase tracking-wider">Build</TabsTrigger>
+          <TabsTrigger value="finish" className="text-[10px] font-bold uppercase tracking-wider">Finish</TabsTrigger>
+        </TabsList>
 
-        <div className="space-y-3 pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 text-slate-900 mb-1">
-            <Layers className="w-3.5 h-3.5 text-indigo-600" />
-            <Label className="text-[10px] font-bold uppercase tracking-wider">Silhouette & Structure</Label>
-          </div>
+        <TabsContent value="shape" className="space-y-4 pt-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Internal Ribs</Label>
-              <Input 
-                type="number" 
-                value={params.internalRibs} 
-                onChange={(e) => updateParam('internalRibs', parseInt(e.target.value) || 0)} 
-                className="h-9 text-xs font-mono"
-              />
+              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Template</Label>
+              <Select value={params.type} onValueChange={(v) => updateParam('type', v)}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                  <SelectValue placeholder="Select shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ribbed_drum" className="text-xs">Ribbed Drum</SelectItem>
+                  <SelectItem value="spiral_twist" className="text-xs">Spiral Twist</SelectItem>
+                  <SelectItem value="wave_shell" className="text-xs">Wave Shell</SelectItem>
+                  <SelectItem value="geometric_poly" className="text-xs">Geometric Polygon</SelectItem>
+                  <SelectItem value="lattice" className="text-xs">Parametric Lattice</SelectItem>
+                  <SelectItem value="perlin_noise" className="text-xs">Perlin Noise</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Rib Thick (mm)</Label>
-              <Input 
-                type="number" 
-                step={0.1}
-                value={params.ribThickness} 
-                onChange={(e) => updateParam('ribThickness', parseFloat(e.target.value) || 0)} 
-                className="h-9 text-xs font-mono"
-              />
+              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Silhouette</Label>
+              <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v)}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                  <SelectValue placeholder="Select silhouette" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="straight" className="text-xs">Straight Taper</SelectItem>
+                  <SelectItem value="hourglass" className="text-xs">Hourglass Curve</SelectItem>
+                  <SelectItem value="bell" className="text-xs">Bell Shape</SelectItem>
+                  <SelectItem value="convex" className="text-xs">Convex (Bulge)</SelectItem>
+                  <SelectItem value="concave" className="text-xs">Concave (Inward)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-3 pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 text-slate-900 mb-1">
-            <Palette className="w-3.5 h-3.5 text-indigo-600" />
-            <Label className="text-[10px] font-bold uppercase tracking-wider">Material & Finish</Label>
-          </div>
-          <Select 
-            onValueChange={(v) => {
-              const mat = MATERIALS.find(m => m.name === v);
-              if (mat) setMaterial(mat);
-            }}
-          >
-            <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-              <SelectValue placeholder="Select filament preset" />
-            </SelectTrigger>
-            <SelectContent>
-              {MATERIALS.map(m => (
-                <SelectItem key={m.name} value={m.name} className="text-xs">{m.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex gap-2">
-            <Input 
-              type="color" 
-              value={material.color} 
-              onChange={(e) => setMaterial({ ...material, color: e.target.value })} 
-              className="h-9 w-12 p-1 cursor-pointer"
-            />
-            <Input 
-              type="text" 
-              value={material.color} 
-              onChange={(e) => setMaterial({ ...material, color: e.target.value })} 
-              className="h-9 text-xs font-mono flex-1"
-            />
-          </div>
-        </div>
-
-        <div className="p-3 bg-slate-50 rounded-lg space-y-4 border border-slate-100">
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> Random Seed</span>
-                <span className="text-indigo-600">{params.seed.toFixed(0)}</span>
-              </div>
-              <Slider 
-                value={[params.seed]} 
-                min={0} max={9999} step={1} 
-                onValueChange={([v]) => updateParam('seed', v)} 
-                className="py-1"
-              />
+            <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+              <Ruler className="w-3.5 h-3.5 text-indigo-600" />
+              <Label className="text-[10px] font-bold uppercase tracking-wider">Dimensions</Label>
             </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Smoothness</span>
-                <span className="text-indigo-600">{params.segments}</span>
-              </div>
-              <Slider 
-                value={[params.segments]} 
-                min={12} max={128} step={1} 
-                onValueChange={([v]) => updateParam('segments', v)} 
-                className="py-1"
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-700">Wireframe Mode</span>
-            </div>
-            <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-1.5 text-slate-900 mb-1">
-            <Settings2 className="w-3.5 h-3.5 text-indigo-600" />
-            <Label className="text-[10px] font-bold uppercase tracking-wider">Geometry Parameters</Label>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Height (cm)</Label>
-              <Input 
-                type="number" step={0.1} 
-                value={params.height} 
-                onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} 
-                className="h-9 text-xs font-mono"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Top Radius</Label>
-              <Input 
-                type="number" step={0.1} 
-                value={params.topRadius} 
-                onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} 
-                className="h-9 text-xs font-mono"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Bottom Radius</Label>
-              <Input 
-                type="number" step={0.1} 
-                value={params.bottomRadius} 
-                onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} 
-                className="h-9 text-xs font-mono"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Thickness (mm)</Label>
-              <Input 
-                type="number" step={0.1} 
-                value={params.thickness} 
-                onChange={(e) => updateParam('thickness', parseFloat(e.target.value) || 0)} 
-                className="h-9 text-xs font-mono"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3 pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 text-slate-900 mb-1">
-            <Anchor className="w-3.5 h-3.5 text-indigo-600" />
-            <Label className="text-[10px] font-bold uppercase tracking-wider">Lamp Fitter (Hardware)</Label>
-          </div>
-          <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
-            <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-              <SelectValue placeholder="Select fitter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none" className="text-xs">None (Shell Only)</SelectItem>
-              <SelectItem value="spider" className="text-xs">Spider (3-Spoke)</SelectItem>
-              <SelectItem value="uno" className="text-xs">UNO (4-Spoke)</SelectItem>
-            </SelectContent>
-          </Select>
-          {params.fitterType !== 'none' && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-medium text-slate-500">Ring ID (mm)</Label>
-                <Input 
-                  type="number" 
-                  value={params.fitterDiameter} 
-                  onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} 
-                  className="h-9 text-xs font-mono"
-                />
+                <Label className="text-[10px] font-medium text-slate-500">Height (cm)</Label>
+                <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-medium text-slate-500">Drop (cm)</Label>
-                <Input 
-                  type="number" step={0.1}
-                  value={params.fitterHeight} 
-                  onChange={(e) => updateParam('fitterHeight', parseFloat(e.target.value))} 
-                  className="h-9 text-xs font-mono"
-                />
+                <Label className="text-[10px] font-medium text-slate-500">Top Radius</Label>
+                <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
               </div>
             </div>
-          )}
-        </div>
-      </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Bottom Radius</Label>
+                <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Thickness (mm)</Label>
+                <Input type="number" step={0.1} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pattern" className="space-y-4 pt-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+              <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+              <Label className="text-[10px] font-bold uppercase tracking-wider">Pattern Controls</Label>
+            </div>
+            
+            {params.type === 'wave_shell' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Amplitude</Label>
+                  <Input type="number" step={0.1} value={params.amplitude} onChange={(e) => updateParam('amplitude', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Frequency</Label>
+                  <Input type="number" value={params.frequency} onChange={(e) => updateParam('frequency', parseInt(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+              </div>
+            )}
+
+            {params.type === 'perlin_noise' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Strength</Label>
+                  <Input type="number" step={0.1} value={params.noiseStrength} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Scale</Label>
+                  <Input type="number" step={0.1} value={params.noiseScale} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3 pt-2">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> Random Seed</span>
+                  <span className="text-indigo-600">{params.seed.toFixed(0)}</span>
+                </div>
+                <Slider value={[params.seed]} min={0} max={9999} step={1} onValueChange={([v]) => updateParam('seed', v)} className="py-1" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Smoothness</span>
+                  <span className="text-indigo-600">{params.segments}</span>
+                </div>
+                <Slider value={[params.segments]} min={12} max={128} step={1} onValueChange={([v]) => updateParam('segments', v)} className="py-1" />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="structure" className="space-y-4 pt-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <Label className="text-[10px] font-bold uppercase tracking-wider">Reinforcement</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Internal Ribs</Label>
+                <Input type="number" value={params.internalRibs} onChange={(e) => updateParam('internalRibs', parseInt(e.target.value) || 0)} className="h-9 text-xs font-mono" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Rib Thick (mm)</Label>
+                <Input type="number" step={0.1} value={params.ribThickness} onChange={(e) => updateParam('ribThickness', parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+              <Anchor className="w-3.5 h-3.5 text-indigo-600" />
+              <Label className="text-[10px] font-bold uppercase tracking-wider">Lamp Fitter</Label>
+            </div>
+            <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
+              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                <SelectValue placeholder="Select fitter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none" className="text-xs">None (Shell Only)</SelectItem>
+                <SelectItem value="spider" className="text-xs">Spider (3-Spoke)</SelectItem>
+                <SelectItem value="uno" className="text-xs">UNO (4-Spoke)</SelectItem>
+              </SelectContent>
+            </Select>
+            {params.fitterType !== 'none' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Ring ID (mm)</Label>
+                  <Input type="number" value={params.fitterDiameter} onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Drop (cm)</Label>
+                  <Input type="number" step={0.1} value={params.fitterHeight} onChange={(e) => updateParam('fitterHeight', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="finish" className="space-y-4 pt-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+              <Palette className="w-3.5 h-3.5 text-indigo-600" />
+              <Label className="text-[10px] font-bold uppercase tracking-wider">Material & Finish</Label>
+            </div>
+            <Select onValueChange={(v) => {
+              const mat = MATERIALS.find(m => m.name === v);
+              if (mat) setMaterial(mat);
+            }}>
+              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                <SelectValue placeholder="Select filament preset" />
+              </SelectTrigger>
+              <SelectContent>
+                {MATERIALS.map(m => (
+                  <SelectItem key={m.name} value={m.name} className="text-xs">{m.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Input type="color" value={material.color} onChange={(e) => setMaterial({ ...material, color: e.target.value })} className="h-9 w-12 p-1 cursor-pointer" />
+              <Input type="text" value={material.color} onChange={(e) => setMaterial({ ...material, color: e.target.value })} className="h-9 text-xs font-mono flex-1" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-slate-400" />
+                <span className="text-xs font-semibold text-slate-700">Wireframe Mode</span>
+              </div>
+              <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <div className="mt-auto pt-4 space-y-2.5">
-        <Button 
-          variant="outline" 
-          onClick={onRandomize} 
-          className="w-full gap-2 border-slate-200 hover:bg-slate-50 h-10 text-xs font-bold uppercase tracking-wider"
-        >
+        <Button variant="outline" onClick={onRandomize} className="w-full gap-2 border-slate-200 hover:bg-slate-50 h-10 text-xs font-bold uppercase tracking-wider">
           <RefreshCw className="w-3.5 h-3.5" />
           Randomize Design
         </Button>
-        <Button 
-          onClick={onExport} 
-          className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 h-10 text-xs font-bold uppercase tracking-wider"
-        >
+        <Button onClick={onExport} className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 h-10 text-xs font-bold uppercase tracking-wider">
           <Download className="w-3.5 h-3.5" />
           Export STL
         </Button>

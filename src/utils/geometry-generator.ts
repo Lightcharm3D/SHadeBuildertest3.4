@@ -53,6 +53,12 @@ export interface LampshadeParams {
   gapDistance?: number;
 }
 
+// Simple pseudo-random noise for Perlin-like effects
+function pseudoNoise(x: number, y: number, seed: number) {
+  const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
+  return n - Math.floor(n);
+}
+
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { type, silhouette, height, topRadius, bottomRadius, segments, seed, thickness } = params;
   
@@ -63,7 +69,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       let r = topRadius + (bottomRadius - topRadius) * t;
       const y = -height / 2 + height * t;
       
-      // Apply silhouette curves
       switch (silhouette) {
         case 'hourglass':
           r *= 1 + Math.pow(Math.sin(t * Math.PI), 2) * -0.3;
@@ -87,6 +92,52 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const profile = getProfilePoints();
 
   switch (type) {
+    case 'wave_shell': {
+      const amp = params.amplitude || 0.5;
+      const freq = params.frequency || 8;
+      geometry = new THREE.LatheGeometry(profile, segments);
+      const pos = geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const pz = pos.getZ(i);
+        const angle = Math.atan2(pz, px);
+        const normY = (py + height / 2) / height;
+        const wave = Math.sin(angle * freq + normY * Math.PI * 2) * amp;
+        const r = Math.sqrt(px * px + pz * pz);
+        const factor = (r + wave) / r;
+        pos.setX(i, px * factor);
+        pos.setZ(i, pz * factor);
+      }
+      break;
+    }
+
+    case 'perlin_noise': {
+      const strength = params.noiseStrength || 0.4;
+      const scale = params.noiseScale || 2.0;
+      geometry = new THREE.LatheGeometry(profile, segments);
+      const pos = geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const pz = pos.getZ(i);
+        const angle = Math.atan2(pz, px);
+        const normY = (py + height / 2) / height;
+        
+        // Layered noise for organic feel
+        const noise = (
+          pseudoNoise(angle * scale, normY * scale, seed) * 1.0 +
+          pseudoNoise(angle * scale * 2, normY * scale * 2, seed) * 0.5
+        ) * strength;
+        
+        const r = Math.sqrt(px * px + pz * pz);
+        const factor = (r + noise) / r;
+        pos.setX(i, px * factor);
+        pos.setZ(i, pz * factor);
+      }
+      break;
+    }
+
     case 'ribbed_drum': {
       const count = params.ribCount || 20;
       const depth = params.ribDepth || 0.5;
@@ -157,13 +208,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(profile, segments);
   }
 
-  // Add Internal Reinforcement Ribs
   if (params.internalRibs > 0) {
     const ribGeoms: THREE.BufferGeometry[] = [];
     for (let i = 0; i < params.internalRibs; i++) {
       const angle = (i / params.internalRibs) * Math.PI * 2;
       const ribWidth = params.ribThickness || 0.2;
-      const ribDepth = 0.5; // 5mm deep
+      const ribDepth = 0.5;
       const rib = new THREE.BoxGeometry(ribWidth, height, ribDepth);
       const midR = (topRadius + bottomRadius) / 2 - ribDepth / 2;
       rib.translate(0, 0, midR);
@@ -174,7 +224,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     geometry = BufferGeometryUtils.mergeGeometries([geometry, ribsMerged]);
   }
 
-  // Add Fitter
   if (params.fitterType !== 'none') {
     const fitterGeom = generateFitterGeometry(params);
     geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);

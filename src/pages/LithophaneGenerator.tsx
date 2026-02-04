@@ -8,7 +8,7 @@ import { LithophaneParams, generateLithophaneGeometry, getImageData } from '@/ut
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Zap, ArrowLeft, Info, Sparkles } from 'lucide-react';
+import { Zap, ArrowLeft, Info, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 const LithophaneGenerator = () => {
   const [params, setParams] = useState<LithophaneParams>({

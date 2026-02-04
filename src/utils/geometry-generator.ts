@@ -53,7 +53,6 @@ export interface LampshadeParams {
   gapDistance?: number;
 }
 
-// Simple pseudo-random noise for Perlin-like effects
 function pseudoNoise(x: number, y: number, seed: number) {
   const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
   return n - Math.floor(n);
@@ -92,6 +91,77 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const profile = getProfilePoints();
 
   switch (type) {
+    case 'slotted': {
+      const count = params.slotCount || 16;
+      const width = params.slotWidth || 0.2;
+      const geoms: THREE.BufferGeometry[] = [];
+      
+      // Vertical Fins
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        const finProfile = getProfilePoints(20);
+        const finGeom = new THREE.PlaneGeometry(1, height, 1, 20);
+        const pos = finGeom.attributes.position;
+        
+        for (let j = 0; j < pos.count; j++) {
+          const py = pos.getY(j);
+          const normY = (py + height / 2) / height;
+          const r = topRadius + (bottomRadius - topRadius) * normY;
+          // Adjust X based on profile radius
+          const px = pos.getX(j);
+          if (px > 0) pos.setX(j, r);
+          else pos.setX(j, r - 2); // 2cm deep fins
+        }
+        
+        finGeom.rotateY(angle);
+        geoms.push(finGeom);
+      }
+      
+      // Support Rings
+      const ringTop = new THREE.TorusGeometry(topRadius, width, 8, segments);
+      ringTop.rotateX(Math.PI / 2);
+      ringTop.translate(0, height / 2, 0);
+      geoms.push(ringTop);
+      
+      const ringBottom = new THREE.TorusGeometry(bottomRadius, width, 8, segments);
+      ringBottom.rotateX(Math.PI / 2);
+      ringBottom.translate(0, -height / 2, 0);
+      geoms.push(ringBottom);
+      
+      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      break;
+    }
+
+    case 'voronoi': {
+      const cells = params.cellCount || 12;
+      geometry = new THREE.LatheGeometry(profile, segments);
+      const pos = geometry.attributes.position;
+      const points: THREE.Vector3[] = [];
+      
+      // Generate random seed points on the surface
+      for (let i = 0; i < cells; i++) {
+        const angle = pseudoNoise(i, 0, seed) * Math.PI * 2;
+        const h = (pseudoNoise(0, i, seed) - 0.5) * height;
+        const r = topRadius + (bottomRadius - topRadius) * ((h + height / 2) / height);
+        points.push(new THREE.Vector3(Math.cos(angle) * r, h, Math.sin(angle) * r));
+      }
+
+      for (let i = 0; i < pos.count; i++) {
+        const v = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+        let minDist = Infinity;
+        points.forEach(p => {
+          const d = v.distanceTo(p);
+          if (d < minDist) minDist = d;
+        });
+        
+        // Create "valleys" at cell boundaries
+        const factor = 1 - Math.exp(-minDist * 0.5) * 0.2;
+        pos.setX(i, v.x * factor);
+        pos.setZ(i, v.z * factor);
+      }
+      break;
+    }
+
     case 'wave_shell': {
       const amp = params.amplitude || 0.5;
       const freq = params.frequency || 8;
@@ -123,13 +193,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const pz = pos.getZ(i);
         const angle = Math.atan2(pz, px);
         const normY = (py + height / 2) / height;
-        
-        // Layered noise for organic feel
         const noise = (
           pseudoNoise(angle * scale, normY * scale, seed) * 1.0 +
           pseudoNoise(angle * scale * 2, normY * scale * 2, seed) * 0.5
         ) * strength;
-        
         const r = Math.sqrt(px * px + pz * pz);
         const factor = (r + noise) / r;
         pos.setX(i, px * factor);

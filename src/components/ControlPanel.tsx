@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders, Star } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -32,6 +32,13 @@ const MATERIALS = [
   { name: 'Galaxy Black', color: '#1a1a1a', roughness: 0.4, metalness: 0.2, transmission: 0, opacity: 1 },
 ];
 
+const PRESETS: Record<string, Partial<LampshadeParams>> = {
+  'Modern Minimalist': { type: 'slotted', silhouette: 'straight', slotCount: 24, slotWidth: 0.1, height: 18, topRadius: 6, bottomRadius: 6 },
+  'Organic Cell': { type: 'voronoi', silhouette: 'convex', cellCount: 18, height: 15, topRadius: 5, bottomRadius: 8 },
+  'Industrial Ribbed': { type: 'ribbed_drum', silhouette: 'straight', ribCount: 32, ribDepth: 0.6, height: 20, topRadius: 7, bottomRadius: 7 },
+  'Twisted Deco': { type: 'spiral_twist', silhouette: 'hourglass', twistAngle: 120, height: 16, topRadius: 4, bottomRadius: 6 },
+};
+
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
   params, 
   setParams, 
@@ -45,6 +52,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   const updateParam = (key: keyof LampshadeParams, value: any) => {
     setParams({ ...params, [key]: value });
+  };
+
+  const applyPreset = (name: string) => {
+    setParams({ ...params, ...PRESETS[name] });
   };
 
   return (
@@ -71,6 +82,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </TabsList>
 
         <TabsContent value="shape" className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <Star className="w-3 h-3" /> Design Presets
+            </Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {Object.keys(PRESETS).map(name => (
+                <Button key={name} variant="outline" size="sm" onClick={() => applyPreset(name)} className="h-7 text-[9px] px-2 border-slate-100 hover:bg-indigo-50 hover:text-indigo-600">
+                  {name}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Template</Label>
@@ -82,6 +106,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectItem value="ribbed_drum" className="text-xs">Ribbed Drum</SelectItem>
                   <SelectItem value="spiral_twist" className="text-xs">Spiral Twist</SelectItem>
                   <SelectItem value="wave_shell" className="text-xs">Wave Shell</SelectItem>
+                  <SelectItem value="voronoi" className="text-xs">Voronoi Cells</SelectItem>
+                  <SelectItem value="slotted" className="text-xs">Slotted Fins</SelectItem>
                   <SelectItem value="geometric_poly" className="text-xs">Geometric Polygon</SelectItem>
                   <SelectItem value="lattice" className="text-xs">Parametric Lattice</SelectItem>
                   <SelectItem value="perlin_noise" className="text-xs">Perlin Noise</SelectItem>
@@ -140,6 +166,26 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Label className="text-[10px] font-bold uppercase tracking-wider">Pattern Controls</Label>
             </div>
             
+            {params.type === 'slotted' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Fin Count</Label>
+                  <Input type="number" value={params.slotCount} onChange={(e) => updateParam('slotCount', parseInt(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Fin Width</Label>
+                  <Input type="number" step={0.1} value={params.slotWidth} onChange={(e) => updateParam('slotWidth', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+              </div>
+            )}
+
+            {params.type === 'voronoi' && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Cell Density</Label>
+                <Input type="number" value={params.cellCount} onChange={(e) => updateParam('cellCount', parseInt(e.target.value))} className="h-9 text-xs font-mono" />
+              </div>
+            )}
+
             {params.type === 'wave_shell' && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -149,19 +195,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-medium text-slate-500">Frequency</Label>
                   <Input type="number" value={params.frequency} onChange={(e) => updateParam('frequency', parseInt(e.target.value))} className="h-9 text-xs font-mono" />
-                </div>
-              </div>
-            )}
-
-            {params.type === 'perlin_noise' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Strength</Label>
-                  <Input type="number" step={0.1} value={params.noiseStrength} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Scale</Label>
-                  <Input type="number" step={0.1} value={params.noiseScale} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
                 </div>
               </div>
             )}

@@ -30,13 +30,11 @@ export function generateLithophaneGeometry(
     width, height, minThickness, maxThickness, 
     resolution, type, inverted,
     brightness, contrast, smoothing, hasHole, holeSize,
-    hasBorder, borderThickness, borderHeight
+    hasBorder, borderThickness, borderHeight, curveRadius
   } = params;
   
-  // Convert cm to mm for internal calculations to ensure 1:1 scale for STL export
   const widthMm = width * 10;
   const heightMm = height * 10;
-  
   const aspect = imageData.width / imageData.height;
   const gridX = Math.floor(resolution * aspect);
   const gridY = resolution;
@@ -113,6 +111,27 @@ export function generateLithophaneGeometry(
            (getPixelGray(x2, y2) * dx * dy);
   };
 
+  const getPosition = (u: number, v: number, thickness: number) => {
+    const x = (u - 0.5) * widthMm;
+    const y = (v - 0.5) * heightMm;
+    
+    if (type === 'curved') {
+      const radius = curveRadius * 10;
+      const angle = x / radius;
+      const px = Math.sin(angle) * (radius + thickness);
+      const pz = Math.cos(angle) * (radius + thickness) - radius;
+      return { x: px, y, z: pz };
+    } else if (type === 'cylinder') {
+      const radius = widthMm / (2 * Math.PI);
+      const angle = u * Math.PI * 2;
+      const px = Math.sin(angle) * (radius + thickness);
+      const pz = Math.cos(angle) * (radius + thickness);
+      return { x: px, y, z: pz };
+    }
+    
+    return { x, y, z: thickness };
+  };
+
   // 1. Generate Vertices
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
@@ -130,9 +149,8 @@ export function generateLithophaneGeometry(
         thickness = borderHeight;
       }
       
-      const xPos = (u - 0.5) * widthMm;
-      const yPos = (v - 0.5) * heightMm;
-      vertices.push(xPos, yPos, thickness);
+      const pos = getPosition(u, v, thickness);
+      vertices.push(pos.x, pos.y, pos.z);
     }
   }
 
@@ -141,9 +159,8 @@ export function generateLithophaneGeometry(
     for (let i = 0; i < gridX; i++) {
       const u = i / (gridX - 1);
       const v = j / (gridY - 1);
-      const xPos = (u - 0.5) * widthMm;
-      const yPos = (v - 0.5) * heightMm;
-      vertices.push(xPos, yPos, 0);
+      const pos = getPosition(u, v, 0);
+      vertices.push(pos.x, pos.y, pos.z);
     }
   }
 

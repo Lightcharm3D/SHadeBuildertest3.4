@@ -423,7 +423,9 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const innerRadius = fitterDiameter / 20; 
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
-  const yPos = -height / 2 + fitterHeight;
+  
+  // 6. Adaptive Z Position
+  const yPos = -height / 2 + (fitterHeight || height * 0.05);
   
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
@@ -436,38 +438,70 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
-  const outerRadiusCm = getRadiusAtHeight(yPos, params);
-  const diameterMm = outerRadiusCm * 2 * 10;
-  const wallThicknessMm = thickness * 10;
-  const lampInnerRadiusMm = (diameterMm / 2) - wallThicknessMm;
+  // 1. Inner Wall Calculation & Adaptive Strength Scaling
+  const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
+  const diameterMm = baseRadiusAtZ * 2 * 10;
   
-  let adaptiveSpokeThickness = Math.max(2, Math.min(6, diameterMm * 0.015));
-  let adaptiveSpokeCount = Math.max(4, Math.round(diameterMm / 20));
+  // 4. Spoke Thickness Scaling
+  let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
+  // 5. Adaptive Spoke Count
+  let spokeCount = Math.max(4, Math.round(diameterMm / 20));
   
-  if (lampInnerRadiusMm < 20) {
-    adaptiveSpokeThickness *= 1.5;
-    adaptiveSpokeCount = Math.max(adaptiveSpokeCount, 4);
+  // 🛡 Small Lamp Safety Mode
+  if (baseRadiusAtZ < 2) { // 20mm
+    spokeThickMm *= 1.5;
+    spokeCount = Math.max(spokeCount, 4);
   }
 
-  const spokeThickCm = adaptiveSpokeThickness / 10;
+  const spokeThickCm = spokeThickMm / 10;
   const spokeWidthCm = (params.spokeWidth || 10) / 10;
-  const spokeFuseDepthMm = wallThicknessMm * 0.3;
-  const finalSpokeLengthMm = lampInnerRadiusMm + spokeFuseDepthMm;
-  const finalSpokeLengthCm = finalSpokeLengthMm / 10;
+  const wallThicknessCm = thickness;
+  
+  // 3. Structural Fusion Into Lamp Wall
+  const spokeFuseDepth = wallThicknessCm * 0.3;
 
-  for (let i = 0; i < adaptiveSpokeCount; i++) {
-    let angle = (i / adaptiveSpokeCount) * Math.PI * 2;
+  for (let i = 0; i < spokeCount; i++) {
+    let angle = (i / spokeCount) * Math.PI * 2;
     if (type === 'geometric_poly') {
       const step = (Math.PI * 2) / sides;
       angle = Math.round(angle / step) * step;
     }
 
+    // 2. Surface-Conforming Spoke Length
+    // Sample displacement at the specific angle to find the exact hit point
     const disp = getDisplacementAt(angle, yPos, params);
-    const adjustedLength = finalSpokeLengthCm + disp;
-    const spokeSegmentLength = Math.max(0.1, adjustedLength - outerRadius);
+    const hitPointR = baseRadiusAtZ + disp;
     
-    const spoke = new THREE.BoxGeometry(spokeSegmentLength, spokeThickCm, spokeWidthCm);
-    spoke.translate(outerRadius + spokeSegmentLength / 2, yPos, 0);
+    // Spoke must stop exactly at the lamp's inner surface + fusion depth
+    const innerSurfaceR = hitPointR - wallThicknessCm;
+    const finalSpokeEndR = innerSurfaceR + spokeFuseDepth;
+    
+    const spokeLength = Math.max(0.1, finalSpokeEndR - outerRadius);
+    
+    // 7. Spoke End Geometry (Curvature Matching)
+    // We use a box with segments to allow the end to conform to the organic surface
+    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm, 10, 1, 1);
+    const pos = spoke.attributes.position;
+    
+    for (let j = 0; j < pos.count; j++) {
+      const px = pos.getX(j);
+      const py = pos.getY(j);
+      const pz = pos.getZ(j);
+      
+      // If vertex is at the outer end of the spoke
+      if (px > spokeLength / 2 - 0.01) {
+        // Calculate local angle for this vertex to match curvature
+        const localAngle = angle + Math.atan2(pz, finalSpokeEndR);
+        const localDisp = getDisplacementAt(localAngle, yPos + py, params);
+        const localHitR = baseRadiusAtZ + localDisp;
+        const localEndR = (localHitR - wallThicknessCm) + spokeFuseDepth;
+        
+        // Adjust X to match the organic surface hit point
+        pos.setX(j, localEndR - outerRadius - spokeLength / 2);
+      }
+    }
+    
+    spoke.translate(outerRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
     geoms.push(spoke);
   }

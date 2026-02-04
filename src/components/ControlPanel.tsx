@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { LampshadeParams, FitterType } from '@/utils/geometry-generator';
+import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -62,25 +62,70 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Design Template</Label>
-          <Select value={params.type} onValueChange={(v) => updateParam('type', v)}>
-            <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-              <SelectValue placeholder="Select shape" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ribbed_drum" className="text-xs">Ribbed Drum</SelectItem>
-              <SelectItem value="spiral_twist" className="text-xs">Spiral Twist</SelectItem>
-              <SelectItem value="voronoi" className="text-xs">Voronoi Organic</SelectItem>
-              <SelectItem value="wave_shell" className="text-xs">Wave Shell</SelectItem>
-              <SelectItem value="geometric_poly" className="text-xs">Geometric Polygon</SelectItem>
-              <SelectItem value="lattice" className="text-xs">Parametric Lattice</SelectItem>
-              <SelectItem value="origami" className="text-xs">Origami Fold</SelectItem>
-              <SelectItem value="perlin_noise" className="text-xs">Perlin Noise</SelectItem>
-              <SelectItem value="slotted" className="text-xs">Parametric Slotted</SelectItem>
-              <SelectItem value="double_wall" className="text-xs">Double-Wall Diffuser</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Template</Label>
+            <Select value={params.type} onValueChange={(v) => updateParam('type', v)}>
+              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                <SelectValue placeholder="Select shape" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ribbed_drum" className="text-xs">Ribbed Drum</SelectItem>
+                <SelectItem value="spiral_twist" className="text-xs">Spiral Twist</SelectItem>
+                <SelectItem value="voronoi" className="text-xs">Voronoi Organic</SelectItem>
+                <SelectItem value="wave_shell" className="text-xs">Wave Shell</SelectItem>
+                <SelectItem value="geometric_poly" className="text-xs">Geometric Polygon</SelectItem>
+                <SelectItem value="lattice" className="text-xs">Parametric Lattice</SelectItem>
+                <SelectItem value="origami" className="text-xs">Origami Fold</SelectItem>
+                <SelectItem value="perlin_noise" className="text-xs">Perlin Noise</SelectItem>
+                <SelectItem value="slotted" className="text-xs">Parametric Slotted</SelectItem>
+                <SelectItem value="double_wall" className="text-xs">Double-Wall Diffuser</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Silhouette</Label>
+            <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v)}>
+              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                <SelectValue placeholder="Select silhouette" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="straight" className="text-xs">Straight Taper</SelectItem>
+                <SelectItem value="hourglass" className="text-xs">Hourglass Curve</SelectItem>
+                <SelectItem value="bell" className="text-xs">Bell Shape</SelectItem>
+                <SelectItem value="convex" className="text-xs">Convex (Bulge)</SelectItem>
+                <SelectItem value="concave" className="text-xs">Concave (Inward)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-3 pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+            <Layers className="w-3.5 h-3.5 text-indigo-600" />
+            <Label className="text-[10px] font-bold uppercase tracking-wider">Silhouette & Structure</Label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-medium text-slate-500">Internal Ribs</Label>
+              <Input 
+                type="number" 
+                value={params.internalRibs} 
+                onChange={(e) => updateParam('internalRibs', parseInt(e.target.value) || 0)} 
+                className="h-9 text-xs font-mono"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-medium text-slate-500">Rib Thick (mm)</Label>
+              <Input 
+                type="number" 
+                step={0.1}
+                value={params.ribThickness} 
+                onChange={(e) => updateParam('ribThickness', parseFloat(e.target.value) || 0)} 
+                className="h-9 text-xs font-mono"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-3 pt-2 border-t border-slate-100">
@@ -88,44 +133,34 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <Palette className="w-3.5 h-3.5 text-indigo-600" />
             <Label className="text-[10px] font-bold uppercase tracking-wider">Material & Finish</Label>
           </div>
-          
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-medium text-slate-500">Filament Preset</Label>
-            <Select 
-              onValueChange={(v) => {
-                const mat = MATERIALS.find(m => m.name === v);
-                if (mat) setMaterial(mat);
-              }}
-            >
-              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-                <SelectValue placeholder="Select material" />
-              </SelectTrigger>
-              <SelectContent>
-                {MATERIALS.map(m => (
-                  <SelectItem key={m.name} value={m.name} className="text-xs">{m.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex-1 space-y-1.5">
-              <Label className="text-[10px] font-medium text-slate-500">Custom Color</Label>
-              <div className="flex gap-2">
-                <Input 
-                  type="color" 
-                  value={material.color} 
-                  onChange={(e) => setMaterial({ ...material, color: e.target.value })} 
-                  className="h-9 w-12 p-1 cursor-pointer"
-                />
-                <Input 
-                  type="text" 
-                  value={material.color} 
-                  onChange={(e) => setMaterial({ ...material, color: e.target.value })} 
-                  className="h-9 text-xs font-mono flex-1"
-                />
-              </div>
-            </div>
+          <Select 
+            onValueChange={(v) => {
+              const mat = MATERIALS.find(m => m.name === v);
+              if (mat) setMaterial(mat);
+            }}
+          >
+            <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+              <SelectValue placeholder="Select filament preset" />
+            </SelectTrigger>
+            <SelectContent>
+              {MATERIALS.map(m => (
+                <SelectItem key={m.name} value={m.name} className="text-xs">{m.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2">
+            <Input 
+              type="color" 
+              value={material.color} 
+              onChange={(e) => setMaterial({ ...material, color: e.target.value })} 
+              className="h-9 w-12 p-1 cursor-pointer"
+            />
+            <Input 
+              type="text" 
+              value={material.color} 
+              onChange={(e) => setMaterial({ ...material, color: e.target.value })} 
+              className="h-9 text-xs font-mono flex-1"
+            />
           </div>
         </div>
 
@@ -138,9 +173,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
               <Slider 
                 value={[params.seed]} 
-                min={0} 
-                max={9999} 
-                step={1} 
+                min={0} max={9999} step={1} 
                 onValueChange={([v]) => updateParam('seed', v)} 
                 className="py-1"
               />
@@ -152,9 +185,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
               <Slider 
                 value={[params.segments]} 
-                min={12} 
-                max={128} 
-                step={1} 
+                min={12} max={128} step={1} 
                 onValueChange={([v]) => updateParam('segments', v)} 
                 className="py-1"
               />
@@ -174,13 +205,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <Settings2 className="w-3.5 h-3.5 text-indigo-600" />
             <Label className="text-[10px] font-bold uppercase tracking-wider">Geometry Parameters</Label>
           </div>
-          
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-[10px] font-medium text-slate-500">Height (cm)</Label>
               <Input 
-                type="number" 
-                step={0.1} 
+                type="number" step={0.1} 
                 value={params.height} 
                 onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} 
                 className="h-9 text-xs font-mono"
@@ -189,21 +218,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="space-y-1.5">
               <Label className="text-[10px] font-medium text-slate-500">Top Radius</Label>
               <Input 
-                type="number" 
-                step={0.1} 
+                type="number" step={0.1} 
                 value={params.topRadius} 
                 onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} 
                 className="h-9 text-xs font-mono"
               />
             </div>
           </div>
-          
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-[10px] font-medium text-slate-500">Bottom Radius</Label>
               <Input 
-                type="number" 
-                step={0.1} 
+                type="number" step={0.1} 
                 value={params.bottomRadius} 
                 onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} 
                 className="h-9 text-xs font-mono"
@@ -212,8 +238,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="space-y-1.5">
               <Label className="text-[10px] font-medium text-slate-500">Thickness (mm)</Label>
               <Input 
-                type="number" 
-                step={0.1} 
+                type="number" step={0.1} 
                 value={params.thickness} 
                 onChange={(e) => updateParam('thickness', parseFloat(e.target.value) || 0)} 
                 className="h-9 text-xs font-mono"
@@ -227,21 +252,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <Anchor className="w-3.5 h-3.5 text-indigo-600" />
             <Label className="text-[10px] font-bold uppercase tracking-wider">Lamp Fitter (Hardware)</Label>
           </div>
-          
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-medium text-slate-500">Fitter Type</Label>
-            <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
-              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
-                <SelectValue placeholder="Select fitter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none" className="text-xs">None (Shell Only)</SelectItem>
-                <SelectItem value="spider" className="text-xs">Spider (3-Spoke)</SelectItem>
-                <SelectItem value="uno" className="text-xs">UNO (4-Spoke)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
+          <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
+            <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+              <SelectValue placeholder="Select fitter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none" className="text-xs">None (Shell Only)</SelectItem>
+              <SelectItem value="spider" className="text-xs">Spider (3-Spoke)</SelectItem>
+              <SelectItem value="uno" className="text-xs">UNO (4-Spoke)</SelectItem>
+            </SelectContent>
+          </Select>
           {params.fitterType !== 'none' && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -256,8 +276,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-medium text-slate-500">Drop (cm)</Label>
                 <Input 
-                  type="number" 
-                  step={0.1}
+                  type="number" step={0.1}
                   value={params.fitterHeight} 
                   onChange={(e) => updateParam('fitterHeight', parseFloat(e.target.value))} 
                   className="h-9 text-xs font-mono"

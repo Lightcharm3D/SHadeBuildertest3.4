@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
-import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
+import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
@@ -13,11 +13,14 @@ import { Button } from '@/components/ui/button';
 
 const DEFAULT_PARAMS: LampshadeParams = {
   type: 'ribbed_drum',
+  silhouette: 'straight',
   height: 15,
   topRadius: 5,
   bottomRadius: 8,
   thickness: 0.2,
   segments: 64,
+  internalRibs: 0,
+  ribThickness: 0.2,
   ribCount: 24,
   ribDepth: 0.4,
   twistAngle: 0,
@@ -88,57 +91,21 @@ const Index = () => {
   };
 
   const handleRandomize = () => {
-    const types: LampshadeType[] = [
-      'ribbed_drum',
-      'spiral_twist',
-      'voronoi',
-      'wave_shell',
-      'geometric_poly',
-      'lattice',
-      'origami',
-      'perlin_noise',
-      'slotted',
-      'double_wall'
-    ];
+    const types: LampshadeType[] = ['ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall'];
+    const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     
     const newType = types[Math.floor(Math.random() * types.length)];
-    
-    let newParams: Partial<LampshadeParams> = {};
-    switch (newType) {
-      case 'ribbed_drum':
-        newParams = { ribCount: Math.floor(12 + Math.random() * 36), ribDepth: 0.2 + Math.random() * 0.8 };
-        break;
-      case 'spiral_twist':
-        newParams = { twistAngle: 90 + Math.random() * 630 };
-        break;
-      case 'origami':
-        newParams = { foldCount: Math.floor(8 + Math.random() * 20), foldDepth: 0.4 + Math.random() * 1.2 };
-        break;
-      case 'geometric_poly':
-        newParams = { sides: Math.floor(3 + Math.random() * 9) };
-        break;
-      case 'wave_shell':
-        newParams = { amplitude: 0.5 + Math.random() * 1.5, frequency: 3 + Math.random() * 8 };
-        break;
-      case 'perlin_noise':
-        newParams = { noiseScale: 0.3 + Math.random() * 0.7, noiseStrength: 0.2 + Math.random() * 0.8 };
-        break;
-      case 'voronoi':
-        newParams = { cellCount: Math.floor(8 + Math.random() * 16) };
-        break;
-      case 'lattice':
-        newParams = { gridDensity: Math.floor(8 + Math.random() * 16) };
-        break;
-    }
+    const newSilhouette = silhouettes[Math.floor(Math.random() * silhouettes.length)];
     
     setParams({
       ...params,
       type: newType,
+      silhouette: newSilhouette,
       height: 12 + Math.random() * 12,
       topRadius: 4 + Math.random() * 6,
       bottomRadius: 6 + Math.random() * 8,
       seed: Math.random() * 10000,
-      ...newParams
+      internalRibs: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
     });
     
     showSuccess("New design generated!");

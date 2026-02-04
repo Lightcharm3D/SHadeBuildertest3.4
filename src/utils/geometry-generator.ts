@@ -13,7 +13,7 @@ export type LampshadeType =
   | 'slotted' 
   | 'double_wall'
   | 'organic_cell'
-  | 'honeycomb_lattice'
+  | 'bricks'
   | 'petal_bloom'
   | 'dna_spiral'
   | 'faceted_gem';
@@ -166,7 +166,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const closedProfile = getClosedProfilePoints();
 
   switch (type) {
-    case 'honeycomb_lattice': {
+    case 'bricks': {
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
@@ -183,9 +183,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         return strut;
       };
 
-      // Hexagonal grid logic:
-      // We define nodes in a staggered pattern.
-      // Each node connects to 3 neighbors to form hexagons.
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
         const nextY = y + hStep / 2;
@@ -200,18 +197,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
           const p2 = new THREE.Vector3(Math.cos(nextAngle) * nr, nextY, Math.sin(nextAngle) * nr);
           
-          // Vertical-ish strut
           if (j < density) {
             geoms.push(createStrut(p1, p2));
           }
 
-          // Horizontal-ish strut (angled to form hex)
           const p3 = new THREE.Vector3(Math.cos(angle - 0.5 * aStep) * nr, nextY, Math.sin(angle - 0.5 * aStep) * nr);
           if (j < density) {
             geoms.push(createStrut(p1, p3));
           }
           
-          // Connect the mid-nodes to form the top/bottom of hexagons
           if (j > 0 && j < density) {
             const prevY = y - hStep / 2;
             const pr = getRadiusAtHeight(prevY, params);
@@ -221,7 +215,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
       }
       
-      // Add top and bottom rings for stability
       const topRing = new THREE.TorusGeometry(topRadius, strutRadius, 8, segments);
       topRing.rotateX(Math.PI / 2);
       topRing.translate(0, height / 2, 0);
@@ -255,7 +248,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         geoms.push(spiral);
       }
       
-      // Add rungs
       const rungCount = 12;
       for (let i = 0; i < rungCount; i++) {
         const t = i / (rungCount - 1);
@@ -273,7 +265,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'faceted_gem': {
-      geometry = new THREE.LatheGeometry(closedProfile, 8); // Low segments for facets
+      geometry = new THREE.LatheGeometry(closedProfile, 8);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);

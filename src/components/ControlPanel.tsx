@@ -30,7 +30,7 @@ interface ControlPanelProps {
 const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Modern Minimalist': { type: 'slotted', silhouette: 'straight', slotCount: 24, slotWidth: 0.1, height: 18, topRadius: 6, bottomRadius: 6 },
   'Organic Cell': { type: 'organic_cell', silhouette: 'convex', noiseStrength: 1.2, noiseScale: 2.0, height: 15, topRadius: 5, bottomRadius: 8 },
-  'Honeycomb Pro': { type: 'honeycomb_lattice', silhouette: 'straight', gridDensity: 12, thickness: 0.15, height: 16, topRadius: 7, bottomRadius: 7 },
+  'Brick Wall': { type: 'bricks', silhouette: 'straight', gridDensity: 12, thickness: 0.15, height: 16, topRadius: 7, bottomRadius: 7 },
   'DNA Helix': { type: 'dna_spiral', silhouette: 'hourglass', twistAngle: 720, thickness: 0.2, height: 20, topRadius: 4, bottomRadius: 4 },
   'Crystal Gem': { type: 'faceted_gem', silhouette: 'concave', noiseStrength: 1.5, height: 14, topRadius: 5, bottomRadius: 9 },
   'Petal Bloom': { type: 'petal_bloom', silhouette: 'bell', ribCount: 12, height: 15, topRadius: 3, bottomRadius: 10 },
@@ -76,13 +76,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
     setParams({ ...params, [key]: value });
-  };
-
-  const estimateWeight = () => {
-    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
-    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
-    const volume = surfaceArea * (params.thickness / 10); 
-    return (volume * 1.24).toFixed(1); 
   };
 
   return (
@@ -135,7 +128,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="honeycomb_lattice">Honeycomb Lattice</SelectItem>
+                  <SelectItem value="bricks">Bricks Pattern</SelectItem>
                   <SelectItem value="petal_bloom">Petal Bloom</SelectItem>
                   <SelectItem value="dna_spiral">DNA Spiral</SelectItem>
                   <SelectItem value="faceted_gem">Faceted Gem</SelectItem>
@@ -190,7 +183,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </div>
               </div>
             )}
-            {(params.type === 'honeycomb_lattice' || params.type === 'lattice') && (
+            {(params.type === 'bricks' || params.type === 'lattice') && (
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Grid Density</Label>
                 <Slider value={[params.gridDensity || 10]} min={4} max={30} step={1} onValueChange={([v]) => updateParam('gridDensity', v)} className="py-2" />

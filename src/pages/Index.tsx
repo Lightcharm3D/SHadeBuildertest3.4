@@ -106,7 +106,7 @@ const Index = () => {
     const types: LampshadeType[] = [
       'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
       'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 
-      'organic_cell', 'honeycomb_lattice', 'petal_bloom', 'dna_spiral', 'faceted_gem'
+      'organic_cell', 'bricks', 'petal_bloom', 'dna_spiral', 'faceted_gem'
     ];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     
@@ -168,7 +168,6 @@ const Index = () => {
             onSceneReady={handleSceneReady} 
           />
           
-          {/* Floating HUD */}
           <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
             <div className="bg-slate-900/60 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-2xl">
               <div className="flex items-center gap-2 text-indigo-400 mb-2">

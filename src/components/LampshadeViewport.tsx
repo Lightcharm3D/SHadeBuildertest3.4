@@ -126,14 +126,25 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.fillStyle = '#1e293b';
+      // Background
+      ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, 1024, 1024);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.font = 'bold 40px sans-serif';
+      
+      // Border
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+      ctx.lineWidth = 20;
+      ctx.strokeRect(10, 10, 1004, 1004);
+      
+      // Branding Text
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = 'bold 60px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 950);
-      ctx.fillText('200 x 200 mm', 512, 990);
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 900);
+      
+      ctx.font = 'bold 40px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.fillText('200 x 200 mm', 512, 960);
     }
     const bedTexture = new THREE.CanvasTexture(canvas);
     

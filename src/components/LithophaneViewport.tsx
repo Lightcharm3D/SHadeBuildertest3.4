@@ -25,43 +25,47 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // 1. Scene Setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
-    camera.position.set(0, 80, 180);
+    // 2. Camera Setup
+    const camera = new THREE.PerspectiveCamera(45, 1, 1, 5000);
+    camera.position.set(0, 150, 250);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // 3. Renderer Setup
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: "high-performance"
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    
-    // Ensure canvas fills container
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    renderer.domElement.style.display = 'block';
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // 4. Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    mainLight.position.set(50, 100, 50);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    mainLight.position.set(100, 200, 100);
     mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 1024;
+    mainLight.shadow.mapSize.height = 1024;
     scene.add(mainLight);
 
-    // Backlight for Lithophane Effect
-    const backlight = new THREE.PointLight(0xfff4e0, 0, 300);
-    backlight.position.set(0, 30, -60);
+    const backlight = new THREE.PointLight(0xfff4e0, 0, 500);
+    backlight.position.set(0, 50, -100);
     scene.add(backlight);
     backlightRef.current = backlight;
 
-    // Buildplate (Print Bed)
-    const bedSize = 250; 
+    // 5. Buildplate
+    const bedSize = 300; 
     const bedGroup = new THREE.Group();
     
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
@@ -75,52 +79,64 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     bed.receiveShadow = true;
     bedGroup.add(bed);
     
-    const grid = new THREE.GridHelper(bedSize, 25, 0x475569, 0x334155);
+    const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
     grid.position.y = 0.1;
     bedGroup.add(grid);
 
     scene.add(bedGroup);
 
+    // 6. Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 1.8;
+    controls.maxPolarAngle = Math.PI / 2.1;
     controlsRef.current = controls;
 
+    // 7. Resize Logic
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
       
+      if (width === 0 || height === 0) return;
+
       cameraRef.current.aspect = width / height;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(width, height, false);
     };
 
-    // Initial resize
-    handleResize();
-
     const animate = () => {
-      controls.update();
-      renderer.render(scene, camera);
+      if (controlsRef.current) controlsRef.current.update();
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
       requestRef.current = requestAnimationFrame(animate);
     };
     
     requestRef.current = requestAnimationFrame(animate);
 
-    const resizeObserver = new ResizeObserver(() => handleResize());
+    // Use ResizeObserver for robust sizing
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
     resizeObserver.observe(containerRef.current);
+
+    // Initial call
+    setTimeout(handleResize, 100);
 
     return () => {
       resizeObserver.disconnect();
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      if (rendererRef.current) rendererRef.current.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+        if (rendererRef.current.domElement && containerRef.current) {
+          containerRef.current.removeChild(rendererRef.current.domElement);
+        }
       }
     };
   }, []);
 
+  // Update Geometry
   useEffect(() => {
     if (sceneRef.current && geometry) {
       if (meshRef.current) {
@@ -132,10 +148,10 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
       const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         side: THREE.DoubleSide,
-        roughness: 0.4,
+        roughness: 0.5,
         metalness: 0.1,
         transparent: true,
-        opacity: 0.95
+        opacity: 0.98
       });
 
       const mesh = new THREE.Mesh(geometry, material);
@@ -149,28 +165,29 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     }
   }, [geometry]);
 
+  // Backlight Effect
   useEffect(() => {
     if (backlightRef.current) {
-      backlightRef.current.intensity = isBacklightOn ? 3.5 : 0;
+      backlightRef.current.intensity = isBacklightOn ? 4.0 : 0;
       if (meshRef.current) {
         const mat = meshRef.current.material as THREE.MeshStandardMaterial;
         mat.emissive.set(isBacklightOn ? 0xffaa44 : 0x000000);
-        mat.emissiveIntensity = isBacklightOn ? 0.4 : 0;
+        mat.emissiveIntensity = isBacklightOn ? 0.5 : 0;
       }
     }
   }, [isBacklightOn]);
 
   return (
-    <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
+    <div className="w-full h-full relative bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-4 right-4">
+      <div className="absolute bottom-6 right-6 z-30">
         <Button 
           variant="secondary" 
           size="sm" 
           onClick={() => setIsBacklightOn(!isBacklightOn)}
-          className={`gap-2 h-9 text-[10px] font-bold uppercase tracking-wider shadow-2xl ${isBacklightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          className={`gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all ${isBacklightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 scale-105' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
         >
-          {isBacklightOn ? <Lightbulb className="w-3.5 h-3.5" /> : <LightbulbOff className="w-3.5 h-3.5" />}
+          {isBacklightOn ? <Lightbulb className="w-4 h-4" /> : <LightbulbOff className="w-4 h-4" />}
           {isBacklightOn ? 'Backlight On' : 'Backlight Off'}
         </Button>
       </div>

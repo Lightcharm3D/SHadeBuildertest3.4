@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -430,15 +430,26 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </TabsContent>
       </Tabs>
 
-      <div className="mt-auto pt-8 space-y-4">
-        <Button variant="outline" onClick={onRandomize} className="w-full gap-3 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 h-14 text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-sm">
-          <RefreshCw className="w-4 h-4" />
-          Randomize
-        </Button>
-        <Button onClick={onExport} className="w-full gap-3 brand-gradient text-white shadow-2xl shadow-indigo-200 h-14 text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-          <Download className="w-4 h-4" />
-          Export STL
-        </Button>
+      <div className="mt-auto pt-8 space-y-6">
+        <div className="space-y-4">
+          <Button variant="outline" onClick={onRandomize} className="w-full gap-3 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 h-14 text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-sm">
+            <RefreshCw className="w-4 h-4" />
+            Randomize
+          </Button>
+          <Button onClick={onExport} className="w-full gap-3 brand-gradient text-white shadow-2xl shadow-indigo-200 h-14 text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+            <Download className="w-4 h-4" />
+            Export STL
+          </Button>
+        </div>
+
+        <div className="p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+          <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2 mb-1.5">
+            <Info className="w-3 h-3 text-indigo-500" /> License Notice
+          </p>
+          <p className="text-[9px] text-slate-500 leading-relaxed font-medium">
+            All generated models are under a <span className="text-indigo-600 font-bold">Standard Digital File License</span>. For personal use only. Commercial resale of files or physical prints is strictly prohibited.
+          </p>
+        </div>
       </div>
     </motion.div>
   );

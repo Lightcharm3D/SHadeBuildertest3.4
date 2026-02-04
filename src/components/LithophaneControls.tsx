@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield, Cylinder, Type } from 'lucide-react';
+import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield, Cylinder, Type, Info } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
@@ -215,11 +215,20 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
         </div>
       </div>
 
-      <div className="mt-auto pt-2">
+      <div className="mt-auto pt-4 space-y-4">
         <Button onClick={onExport} disabled={isProcessing || !imageData} className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow shadow-indigo-100 h-10 text-xs font-bold uppercase tracking-wider">
           <Download className="w-4 h-4" />
           {isProcessing ? 'Processing...' : 'Export STL'}
         </Button>
+
+        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2 mb-1">
+            <Info className="w-3 h-3 text-indigo-500" /> License Notice
+          </p>
+          <p className="text-[9px] text-slate-500 leading-relaxed">
+            All generated models are under a <span className="text-indigo-600 font-bold">Standard Digital File License</span>. For personal use only. Commercial resale of files or prints is prohibited.
+          </p>
+        </div>
       </div>
     </div>
   );

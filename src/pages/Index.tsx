@@ -38,10 +38,12 @@ const DEFAULT_PARAMS: LampshadeParams = {
   gapDistance: 0.5,
   seed: 1234,
   fitterType: 'spider',
-  fitterDiameter: 27,
-  fitterHeight: 3,
-  spokeThickness: 0.2,
-  spokeWidth: 0.3,
+  fitterDiameter: 27.6,      // Ledge Diameter
+  fitterOuterDiameter: 36,   // Cylinder Diameter
+  fitterRingHeight: 10,      // Ledge Height
+  fitterHeight: 3,           // Offset from top
+  spokeThickness: 5,         // 5mm vertical
+  spokeWidth: 10,            // 10mm horizontal
 };
 
 const DEFAULT_MATERIAL: MaterialParams = {

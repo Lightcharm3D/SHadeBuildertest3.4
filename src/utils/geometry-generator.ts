@@ -33,10 +33,12 @@ export interface LampshadeParams {
   
   // Fitter params
   fitterType: FitterType;
-  fitterDiameter: number;
-  fitterHeight: number; 
-  spokeThickness: number;
-  spokeWidth: number;
+  fitterDiameter: number; // Ledge ID in mm
+  fitterHeight: number;  // Offset from top in cm
+  fitterRingHeight: number; // Ledge Height in mm
+  fitterOuterDiameter: number; // Cylinder Diameter in mm
+  spokeThickness: number; // Vertical height in mm
+  spokeWidth: number;     // Horizontal depth in mm
   
   // Type-specific params
   ribCount?: number;
@@ -319,42 +321,53 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, height, thickness, type, sides = 6, spokeThickness, spokeWidth } = params;
+  const { 
+    fitterType, fitterDiameter, fitterOuterDiameter, fitterRingHeight, 
+    fitterHeight, height, thickness, type, sides = 6, 
+    spokeThickness, spokeWidth 
+  } = params;
+  
   const geoms: THREE.BufferGeometry[] = [];
-  const fitterRadius = fitterDiameter / 20; 
+  
+  // Convert mm to cm (1 unit = 1cm)
+  const innerRadius = fitterDiameter / 20; 
+  const outerRadius = fitterOuterDiameter / 20;
+  const ringHeightCm = fitterRingHeight / 10;
+  const spokeThickCm = spokeThickness / 10;
+  const spokeWidthCm = spokeWidth / 10;
+  
   const yPos = height / 2 - fitterHeight;
   
-  let baseRadius = getRadiusAtHeight(yPos, params);
-  
-  // Match the core scaling used in generateLampshadeGeometry
-  if (type === 'slotted') {
-    baseRadius *= 0.8; 
-  }
-
-  const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
-  ring.rotateX(Math.PI / 2);
+  // Create the Ledge/Cylinder Ring
+  const ringProfile = [
+    new THREE.Vector2(innerRadius, -ringHeightCm / 2),
+    new THREE.Vector2(outerRadius, -ringHeightCm / 2),
+    new THREE.Vector2(outerRadius, ringHeightCm / 2),
+    new THREE.Vector2(innerRadius, ringHeightCm / 2),
+    new THREE.Vector2(innerRadius, -ringHeightCm / 2)
+  ];
+  const ring = new THREE.LatheGeometry(ringProfile, 64);
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
   const spokeCount = fitterType === 'spider' ? 3 : 4;
+  let baseRadius = getRadiusAtHeight(yPos, params);
+  if (type === 'slotted') baseRadius *= 0.8;
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
-    
     if (type === 'geometric_poly') {
       const step = (Math.PI * 2) / sides;
       angle = Math.round(angle / step) * step;
     }
 
     const disp = getDisplacementAt(angle, yPos, params);
-    
-    // Target 75% deep into the wall thickness to ensure a strong anchor without poking through
     const safetyMargin = thickness * 0.75; 
     const targetRadius = (baseRadius + disp) - safetyMargin;
-    const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
+    const spokeLength = Math.max(0.1, targetRadius - outerRadius);
     
-    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickness, spokeWidth);
-    spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
+    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm);
+    spoke.translate(outerRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
     geoms.push(spoke);
   }

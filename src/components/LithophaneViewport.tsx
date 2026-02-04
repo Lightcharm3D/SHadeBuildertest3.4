@@ -30,17 +30,23 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
-    camera.position.set(0, 50, 150);
+    camera.position.set(0, 80, 180);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    
+    // Ensure canvas fills container
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.display = 'block';
+    
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
     const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -49,8 +55,8 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     scene.add(mainLight);
 
     // Backlight for Lithophane Effect
-    const backlight = new THREE.PointLight(0xfff4e0, 0, 200);
-    backlight.position.set(0, 20, -50);
+    const backlight = new THREE.PointLight(0xfff4e0, 0, 300);
+    backlight.position.set(0, 30, -60);
     scene.add(backlight);
     backlightRef.current = backlight;
 
@@ -73,40 +79,26 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     grid.position.y = 0.1;
     bedGroup.add(grid);
 
-    // Brand Label
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = 'rgba(0,0,0,0)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 96px sans-serif';
-      ctx.fillStyle = '#6366f1';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('LIGHTCHARM 3D', 512, 128);
-    }
-    const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(120, 30);
-    const brandMat = new THREE.MeshBasicMaterial({ 
-      map: brandTexture, 
-      transparent: true,
-      opacity: 0.5
-    });
-    const brandMesh = new THREE.Mesh(brandGeom, brandMat);
-    brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(0, 0.2, bedSize / 2 - 18); 
-    bedGroup.add(brandMesh);
-
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
     controls.maxPolarAngle = Math.PI / 1.8;
     controlsRef.current = controls;
+
+    const handleResize = () => {
+      if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
+      
+      cameraRef.current.aspect = width / height;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(width, height, false);
+    };
+
+    // Initial resize
+    handleResize();
 
     const animate = () => {
       controls.update();
@@ -116,15 +108,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     
     requestRef.current = requestAnimationFrame(animate);
 
-    // Robust Resize Handling
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (!entries[0] || !rendererRef.current || !cameraRef.current) return;
-      const { width, height } = entries[0].contentRect;
-      cameraRef.current.aspect = width / height;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(width, height, false);
-    });
-
+    const resizeObserver = new ResizeObserver(() => handleResize());
     resizeObserver.observe(containerRef.current);
 
     return () => {
@@ -141,12 +125,8 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     if (sceneRef.current && geometry) {
       if (meshRef.current) {
         sceneRef.current.remove(meshRef.current);
-        if (meshRef.current.geometry) {
-          meshRef.current.geometry.dispose();
-        }
-        if (meshRef.current.material) {
-          (meshRef.current.material as THREE.Material).dispose();
-        }
+        if (meshRef.current.geometry) meshRef.current.geometry.dispose();
+        if (meshRef.current.material) (meshRef.current.material as THREE.Material).dispose();
       }
 
       const material = new THREE.MeshStandardMaterial({
@@ -171,11 +151,11 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
 
   useEffect(() => {
     if (backlightRef.current) {
-      backlightRef.current.intensity = isBacklightOn ? 2.5 : 0;
+      backlightRef.current.intensity = isBacklightOn ? 3.5 : 0;
       if (meshRef.current) {
         const mat = meshRef.current.material as THREE.MeshStandardMaterial;
         mat.emissive.set(isBacklightOn ? 0xffaa44 : 0x000000);
-        mat.emissiveIntensity = isBacklightOn ? 0.3 : 0;
+        mat.emissiveIntensity = isBacklightOn ? 0.4 : 0;
       }
     }
   }, [isBacklightOn]);
@@ -183,14 +163,14 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-3 right-3">
+      <div className="absolute bottom-4 right-4">
         <Button 
           variant="secondary" 
           size="sm" 
           onClick={() => setIsBacklightOn(!isBacklightOn)}
-          className={`gap-2 h-8 text-[10px] font-bold uppercase tracking-wider shadow-lg ${isBacklightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          className={`gap-2 h-9 text-[10px] font-bold uppercase tracking-wider shadow-2xl ${isBacklightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
         >
-          {isBacklightOn ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
+          {isBacklightOn ? <Lightbulb className="w-3.5 h-3.5" /> : <LightbulbOff className="w-3.5 h-3.5" />}
           {isBacklightOn ? 'Backlight On' : 'Backlight Off'}
         </Button>
       </div>

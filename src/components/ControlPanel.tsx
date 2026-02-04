@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { Download, RefreshCw, Eye, Box, Settings2 } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -27,16 +28,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRandomize 
 }) => {
   const updateParam = (key: keyof LampshadeParams, value: any) => {
-    let finalValue = value;
-    if (typeof value === 'number') {
-      finalValue = Math.round(value * 100) / 100;
-    }
-    setParams({ ...params, [key]: finalValue });
-  };
-
-  const formatValue = (val: number | undefined) => {
-    if (val === undefined) return 0;
-    return parseFloat(val.toFixed(2));
+    setParams({ ...params, [key]: value });
   };
 
   return (
@@ -44,14 +36,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <div className="space-y-2">
         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
           <Box className="w-5 h-5 text-indigo-600" />
-          Design Studio
+          Parametric Studio
         </h2>
-        <p className="text-sm text-slate-500">Customize your parametric lampshade</p>
+        <p className="text-sm text-slate-500">Procedural 3D Design Engine</p>
       </div>
 
       <div className="space-y-6">
         <div className="space-y-2">
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Base Template</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Design Template</Label>
           <Select value={params.type} onValueChange={(v) => updateParam('type', v as LampshadeType)}>
             <SelectTrigger className="bg-slate-50 border-slate-200">
               <SelectValue placeholder="Select shape" />
@@ -71,12 +63,29 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </Select>
         </div>
 
-        <div className="p-3 bg-slate-50 rounded-lg space-y-3 border border-slate-100">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Preview Settings</Label>
-          <div className="flex items-center justify-between">
+        <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Global Generative Controls</Label>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] font-medium">
+              <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> Random Seed</span>
+              <span>{params.seed.toFixed(0)}</span>
+            </div>
+            <Slider value={[params.seed]} min={0} max={9999} step={1} onValueChange={([v]) => updateParam('seed', v)} />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] font-medium">
+              <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Smoothness</span>
+              <span>{params.segments}</span>
+            </div>
+            <Slider value={[params.segments]} min={12} max={128} step={1} onValueChange={([v]) => updateParam('segments', v)} />
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200">
             <div className="flex items-center gap-2">
               <Eye className="w-4 h-4 text-slate-500" />
-              <span className="text-sm font-medium text-slate-700">Wireframe Mode</span>
+              <span className="text-xs font-medium text-slate-700">Wireframe</span>
             </div>
             <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
           </div>
@@ -85,28 +94,28 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-slate-900 mb-2">
             <Settings2 className="w-4 h-4 text-indigo-600" />
-            <Label className="text-xs font-bold uppercase tracking-wider">Parameters</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider">Geometry Parameters</Label>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">Height (cm)</Label>
-              <Input type="number" step={0.01} value={formatValue(params.height)} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} />
+              <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">Segments</Label>
-              <Input type="number" step={1} value={params.segments} onChange={(e) => updateParam('segments', parseInt(e.target.value) || 3)} />
+              <Label className="text-xs">Top Radius</Label>
+              <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs">Top Radius</Label>
-              <Input type="number" step={0.01} value={formatValue(params.topRadius)} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} />
+              <Label className="text-xs">Bottom Radius</Label>
+              <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">Bottom Radius</Label>
-              <Input type="number" step={0.01} value={formatValue(params.bottomRadius)} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} />
+              <Label className="text-xs">Thickness (mm)</Label>
+              <Input type="number" step={0.1} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value) || 0)} />
             </div>
           </div>
 
@@ -177,19 +186,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           )}
 
-          {params.type === 'slotted' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs">Slot Count</Label>
-                <Input type="number" value={params.slotCount} onChange={(e) => updateParam('slotCount', parseInt(e.target.value))} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Slot Width</Label>
-                <Input type="number" step={0.01} value={params.slotWidth} onChange={(e) => updateParam('slotWidth', parseFloat(e.target.value))} />
-              </div>
-            </div>
-          )}
-
           {params.type === 'voronoi' && (
             <div className="space-y-2">
               <Label className="text-xs">Cell Count</Label>
@@ -201,13 +197,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="space-y-2">
               <Label className="text-xs">Grid Density</Label>
               <Input type="number" value={params.gridDensity} onChange={(e) => updateParam('gridDensity', parseInt(e.target.value))} />
-            </div>
-          )}
-
-          {params.type === 'double_wall' && (
-            <div className="space-y-2">
-              <Label className="text-xs">Gap Distance</Label>
-              <Input type="number" step={0.1} value={params.gapDistance} onChange={(e) => updateParam('gapDistance', parseFloat(e.target.value))} />
             </div>
           )}
         </div>

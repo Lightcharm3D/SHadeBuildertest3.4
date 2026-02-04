@@ -69,24 +69,29 @@ export function generateLithophaneGeometry(
     }
   };
 
-  // Border boundary check
+  // Border boundary check - creates a frame around the shape
   const isInBorder = (u: number, v: number) => {
     if (!hasBorder) return false;
     
     const x = u - 0.5;
     const y = v - 0.5;
     
-    // For all shapes, create a border by checking if we're in the outer edge
-    const outerX = 0.5;
-    const outerY = 0.5;
-    const innerX = 0.5 - (borderThickness / Math.max(width, height));
-    const innerY = 0.5 - (borderThickness / Math.max(width, height));
+    // Determine if point is in the border area (frame around the main shape)
+    const outerLimit = 0.5;
+    const innerLimit = 0.5 - (borderThickness / Math.max(width, height) * 2);
     
-    // Check if point is in the border area (outside the main shape but within border thickness)
-    const isInOuterBounds = Math.abs(x) <= outerX && Math.abs(y) <= outerY;
-    const isInInnerBounds = Math.abs(x) <= innerX && Math.abs(y) <= innerY;
-    
-    return isInOuterBounds && !isInInnerBounds && isInside(u, v);
+    switch (type) {
+      case 'circle':
+        const dist = Math.sqrt(x * x + y * y);
+        const outerRadius = 0.5;
+        const innerRadius = 0.5 - (borderThickness / Math.max(width, height) * 2);
+        return dist <= outerRadius && dist >= innerRadius;
+      default:
+        // For rectangular/other shapes
+        const inOuterBounds = Math.abs(x) <= outerLimit && Math.abs(y) <= outerLimit;
+        const inInnerBounds = Math.abs(x) <= innerLimit && Math.abs(y) <= innerLimit;
+        return inOuterBounds && !inInnerBounds;
+    }
   };
 
   const getInterpolatedVal = (u: number, v: number) => {

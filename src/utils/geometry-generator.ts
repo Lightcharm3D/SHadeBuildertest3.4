@@ -345,12 +345,17 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     }
 
     const disp = getDisplacementAt(angle, yPos, params);
-    // Target radius is exactly in the middle of the wall thickness
-    // This ensures a solid connection without poking through the outer skin
-    const targetRadius = (baseRadius + disp) - (thickness * 0.5);
+    
+    // Target 75% deep into the wall thickness to ensure a strong anchor without poking through
+    const safetyMargin = thickness * 0.75; 
+    const targetRadius = (baseRadius + disp) - safetyMargin;
     const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
     
-    const spoke = new THREE.BoxGeometry(spokeLength, 0.2, 0.3);
+    // Spoke width is now dynamic: 70% of wall thickness (max 0.25)
+    // This prevents the spoke from being wider than the wall it connects to
+    const spokeWidth = Math.min(0.25, thickness * 0.7);
+    
+    const spoke = new THREE.BoxGeometry(spokeLength, 0.2, spokeWidth);
     spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
     geoms.push(spoke);

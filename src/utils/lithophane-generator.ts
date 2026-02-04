@@ -147,10 +147,7 @@ export function generateLithophaneGeometry(
         thickness = borderHeight;
       }
       const pos = getPosition(u, v, thickness);
-      // Strict boundary clamping for 200x200mm build plate
-      const clampedX = Math.max(-100, Math.min(100, pos.x));
-      const clampedY = Math.max(-100, Math.min(100, pos.y));
-      vertices.push(clampedX, clampedY, pos.z);
+      vertices.push(pos.x, pos.y, pos.z);
     }
   }
 
@@ -160,10 +157,7 @@ export function generateLithophaneGeometry(
       const u = i / (gridX - 1);
       const v = j / (gridY - 1);
       const pos = getPosition(u, v, 0);
-      // Strict boundary clamping for 200x200mm build plate
-      const clampedX = Math.max(-100, Math.min(100, pos.x));
-      const clampedY = Math.max(-100, Math.min(100, pos.y));
-      vertices.push(clampedX, clampedY, pos.z);
+      vertices.push(pos.x, pos.y, pos.z);
     }
   }
 

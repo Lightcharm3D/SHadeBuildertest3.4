@@ -11,7 +11,8 @@ export type LampshadeType =
   | 'origami' 
   | 'perlin_noise' 
   | 'slotted' 
-  | 'double_wall';
+  | 'double_wall'
+  | 'lithophane';
 
 export interface LampshadeParams {
   type: LampshadeType;
@@ -38,6 +39,22 @@ export interface LampshadeParams {
   slotCount?: number;
   slotWidth?: number;
   gapDistance?: number;
+  
+  // Lithophane specific params
+  imageData?: ImageData | null;
+  lithoResolution?: number;
+  maxThickness?: number;
+  minThickness?: number;
+  baseWidth?: number;
+  overhangAngle?: number;
+  ledgeDiameter?: number;
+  ledgeHeight?: number;
+  cylinderDiameter?: number;
+  cylinderThickness?: number;
+  spokeThickness?: number;
+  spokeDepth?: number;
+  halfWaves?: number;
+  waveSize?: number;
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
@@ -72,7 +89,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
+    
     case 'spiral_twist': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
       geometry = new THREE.LatheGeometry(getProfile(), segments);
@@ -89,7 +106,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
+    
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 1;
@@ -108,14 +125,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
+    
     case 'geometric_poly': {
       const sides = params.sides || 6;
       // Set openEnded to true for single-walled shell
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, true);
       break;
     }
-
+    
     case 'wave_shell': {
       const amp = params.amplitude || 1;
       const freq = params.frequency || 5;
@@ -130,7 +147,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(points, segments);
       break;
     }
-
+    
     case 'perlin_noise': {
       // Set openEnded to true
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
@@ -143,7 +160,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const z = pos.getZ(i);
         const angle = Math.atan2(z, x);
         const noise = (
-          Math.sin(angle * 7 * scale + seed) * 0.5 + 
+          Math.sin(angle * 7 * scale + seed) * 0.5 +
           Math.cos(y * 3 * scale - seed) * 0.5 +
           Math.sin((angle + y) * 5 * scale) * 0.2
         ) * strength;
@@ -153,8 +170,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
+    
     case 'voronoi': {
+      const cells = params.cellCount || 12;
       // Set openEnded to true
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
@@ -171,8 +189,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
+    
     case 'lattice': {
+      const density = params.gridDensity || 10;
       // Set openEnded to true
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
@@ -188,7 +207,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
+    
+    case 'lithophane': {
+      geometry = generateLithophaneLampshade(params);
+      break;
+    }
+    
     case 'double_wall': {
       const gap = params.gapDistance || 1;
       // Both cylinders open ended
@@ -197,11 +221,159 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = BufferGeometryUtils.mergeGeometries([outer, inner]);
       break;
     }
-
+    
     default:
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
   }
-
+  
   geometry.computeVertexNormals();
+  return geometry;
+}
+
+function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeometry {
+  const {
+    height,
+    topRadius,
+    bottomRadius,
+    imageData,
+    lithoResolution = 0.25,
+    maxThickness = 3.0,
+    minThickness = 0.6,
+    baseWidth = 5,
+    overhangAngle = 45,
+    ledgeDiameter = 27.6,
+    ledgeHeight = 10,
+    cylinderDiameter = 36,
+    cylinderThickness = 2.5,
+    spokeThickness = 5,
+    spokeDepth = 10,
+    halfWaves = 0,
+    waveSize = -10,
+    segments = 128
+  } = params;
+
+  if (!imageData) {
+    // Return basic cylinder if no image data
+    return new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
+  }
+
+  // Create cylinder geometry
+  const geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
+  
+  if (!geometry.attributes.position) return geometry;
+  
+  const positions = geometry.attributes.position;
+  const uvs = [];
+  
+  // Generate UV coordinates for the cylinder
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    
+    // Convert to cylindrical coordinates for UV mapping
+    const angle = Math.atan2(z, x);
+    const u = (angle + Math.PI) / (2 * Math.PI);
+    const v = (y + height / 2) / height;
+    uvs.push(u, v);
+  }
+  
+  // Apply lithophane effect based on image data
+  const processedData = imageData.data;
+  for (let i = 0; i < positions.count; i++) {
+    const u = uvs[i * 2];
+    const v = uvs[i * 2 + 1];
+    
+    // Get pixel value from image
+    const x = Math.floor(u * (imageData.width - 1));
+    const y = Math.floor((1 - v) * (imageData.height - 1));
+    const idx = (y * imageData.width + x) * 4;
+    
+    // Calculate grayscale value
+    const gray = (processedData[idx] * 0.299 + 
+                  processedData[idx + 1] * 0.587 + 
+                  processedData[idx + 2] * 0.114) / 255;
+    
+    // Invert for lithophane (darker areas are thicker)
+    const thicknessFactor = 1 - gray;
+    const thickness = minThickness + thicknessFactor * (maxThickness - minThickness);
+    
+    // Apply thickness as displacement along normal
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    
+    // Calculate normal direction (simplified)
+    const length = Math.sqrt(x * x + z * z);
+    if (length > 0) {
+      const nx = x / length;
+      const nz = z / length;
+      
+      // Displace along normal
+      positions.setXYZ(
+        i,
+        x + nx * thickness,
+        y,
+        z + nz * thickness
+      );
+    }
+  }
+  
+  // Add base and frame elements
+  const additionalGeometries: THREE.BufferGeometry[] = [];
+  
+  // Add base
+  if (baseWidth > 0) {
+    const baseGeometry = new THREE.CylinderGeometry(
+      bottomRadius, 
+      bottomRadius + baseWidth * Math.tan(overhangAngle * Math.PI / 180), 
+      baseWidth, 
+      segments
+    );
+    baseGeometry.translate(0, -height / 2 - baseWidth / 2, 0);
+    additionalGeometries.push(baseGeometry);
+  }
+  
+  // Add clamp interface
+  if (cylinderDiameter > 0 && ledgeDiameter > 0) {
+    // Main cylinder
+    const mainCylinder = new THREE.CylinderGeometry(
+      cylinderDiameter / 2, 
+      cylinderDiameter / 2, 
+      ledgeHeight, 
+      32
+    );
+    mainCylinder.translate(0, height / 2 + ledgeHeight / 2, 0);
+    additionalGeometries.push(mainCylinder);
+    
+    // Ledge
+    const ledge = new THREE.CylinderGeometry(
+      ledgeDiameter / 2, 
+      ledgeDiameter / 2, 
+      cylinderThickness, 
+      32
+    );
+    ledge.translate(0, height / 2 + ledgeHeight - cylinderThickness / 2, 0);
+    additionalGeometries.push(ledge);
+    
+    // Spokes
+    const spokeCount = 4;
+    for (let i = 0; i < spokeCount; i++) {
+      const angle = (i / spokeCount) * Math.PI * 2;
+      const spoke = new THREE.BoxGeometry(spokeThickness, spokeDepth, cylinderDiameter / 2);
+      spoke.translate(
+        (cylinderDiameter / 4) * Math.cos(angle),
+        height / 2 + ledgeHeight / 2,
+        (cylinderDiameter / 4) * Math.sin(angle)
+      );
+      additionalGeometries.push(spoke);
+    }
+  }
+  
+  if (additionalGeometries.length > 0) {
+    additionalGeometries.unshift(geometry);
+    return BufferGeometryUtils.mergeGeometries(additionalGeometries);
+  }
+  
   return geometry;
 }

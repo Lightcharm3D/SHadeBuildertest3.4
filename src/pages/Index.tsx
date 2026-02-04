@@ -84,27 +84,49 @@ const Index = () => {
     
     const newType = types[Math.floor(Math.random() * types.length)];
     
+    // Set default parameters based on type
+    let newParams: Partial<LampshadeParams> = {};
+    switch (newType) {
+      case 'ribbed_drum':
+        newParams = { ribCount: Math.floor(10 + Math.random() * 40), ribDepth: Math.random() * 1 };
+        break;
+      case 'spiral_twist':
+        newParams = { twistAngle: Math.random() * 720 };
+        break;
+      case 'origami':
+        newParams = { foldCount: Math.floor(6 + Math.random() * 24), foldDepth: Math.random() * 1.5 };
+        break;
+      case 'geometric_poly':
+        newParams = { sides: Math.floor(3 + Math.random() * 10) };
+        break;
+      case 'wave_shell':
+        newParams = { amplitude: Math.random() * 2, frequency: 2 + Math.random() * 10 };
+        break;
+      case 'perlin_noise':
+        newParams = { noiseScale: Math.random() * 1, noiseStrength: Math.random() * 1 };
+        break;
+      case 'voronoi':
+        newParams = { cellCount: Math.floor(5 + Math.random() * 20) };
+        break;
+      case 'lattice':
+        newParams = { gridDensity: Math.floor(5 + Math.random() * 20) };
+        break;
+      case 'slotted':
+        newParams = { slotCount: Math.floor(8 + Math.random() * 32), slotWidth: 0.05 + Math.random() * 0.2 };
+        break;
+      case 'double_wall':
+        newParams = { gapDistance: 0.2 + Math.random() * 0.8 };
+        break;
+    }
+    
     setParams({
       ...params,
       type: newType,
       height: 10 + Math.random() * 15,
       topRadius: 3 + Math.random() * 7,
       bottomRadius: 5 + Math.random() * 10,
-      ribCount: Math.floor(10 + Math.random() * 40),
-      ribDepth: Math.random() * 1,
-      twistAngle: Math.random() * 720,
-      cellCount: Math.floor(5 + Math.random() * 20),
-      amplitude: Math.random() * 2,
-      frequency: 2 + Math.random() * 10,
-      sides: Math.floor(3 + Math.random() * 10),
-      gridDensity: Math.floor(5 + Math.random() * 20),
-      foldCount: Math.floor(6 + Math.random() * 24),
-      foldDepth: Math.random() * 1.5,
-      noiseScale: Math.random() * 1,
-      noiseStrength: Math.random() * 1,
-      slotCount: Math.floor(8 + Math.random() * 32),
-      slotWidth: 0.05 + Math.random() * 0.2,
       seed: Math.random() * 1000,
+      ...newParams
     });
     
     showSuccess("New design generated!");

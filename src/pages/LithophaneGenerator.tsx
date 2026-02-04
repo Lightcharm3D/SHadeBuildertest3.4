@@ -9,7 +9,7 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -42,7 +42,13 @@ const LithophaneGenerator = () => {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
+  const [history, setHistory] = useState<{id: string, preview: string, params: LithophaneParams}[]>([]);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const saved = localStorage.getItem('litho_history');
+    if (saved) setHistory(JSON.parse(saved));
+  }, []);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +82,16 @@ const LithophaneGenerator = () => {
         const aspect = img.width / img.height;
         setParams(prev => ({ ...prev, height: parseFloat((prev.width / aspect).toFixed(2)) }));
         
+        // Save to history
+        const newEntry = {
+          id: Date.now().toString(),
+          preview: croppedImageUrl,
+          params: { ...params }
+        };
+        const updated = [newEntry, ...history].slice(0, 5);
+        setHistory(updated);
+        localStorage.setItem('litho_history', JSON.stringify(updated));
+        
         setIsProcessing(false);
         showSuccess("Image processed!");
       };
@@ -85,7 +101,7 @@ const LithophaneGenerator = () => {
       showError("Failed to process image");
       setIsProcessing(false);
     }
-  }, []);
+  }, [params, history]);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -183,6 +199,25 @@ const LithophaneGenerator = () => {
                 <p className="text-slate-400 text-xs leading-relaxed">
                   Upload a photo to begin your 3D lithophane project.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {history.length > 0 && !imageData && (
+            <div className="absolute bottom-8 left-8 right-8 z-20">
+              <div className="bg-black/40 backdrop-blur-xl p-4 rounded-3xl border border-white/10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-3 px-2">Recent Projects</p>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {history.map(item => (
+                    <button 
+                      key={item.id}
+                      onClick={() => processCroppedImage(item.preview)}
+                      className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white/10 hover:border-indigo-500 transition-all shrink-0"
+                    >
+                      <img src={item.preview} className="w-full h-full object-cover" alt="History" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

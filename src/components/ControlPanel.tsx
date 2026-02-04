@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -36,6 +36,13 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Petal Bloom': { type: 'petal_bloom', silhouette: 'bell', ribCount: 12, height: 15, topRadius: 3, bottomRadius: 10 },
 };
 
+const FILAMENT_PRESETS: Record<string, Partial<MaterialParams>> = {
+  'Matte PLA': { roughness: 0.9, metalness: 0, transmission: 0, opacity: 1 },
+  'Silk PLA': { roughness: 0.2, metalness: 0.4, transmission: 0, opacity: 1 },
+  'Translucent': { roughness: 0.4, metalness: 0, transmission: 0.8, opacity: 0.7 },
+  'PETG Gloss': { roughness: 0.1, metalness: 0.1, transmission: 0, opacity: 1 },
+};
+
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
   params, 
   setParams, 
@@ -50,7 +57,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onReset
 }) => {
   const [history, setHistory] = useState<{id: string, name: string, params: LampshadeParams}[]>([]);
-  const [importCode, setImportCode] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('shade_history');
@@ -83,25 +89,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setMaterial({ ...material, [key]: value });
   };
 
-  const generateShareCode = () => {
-    try {
-      const code = btoa(JSON.stringify(params));
-      navigator.clipboard.writeText(code);
-      showSuccess("Design code copied to clipboard!");
-    } catch (e) {
-      showError("Failed to generate share code");
-    }
-  };
-
-  const handleImportCode = () => {
-    try {
-      const decoded = JSON.parse(atob(importCode));
-      setParams(decoded);
-      setImportCode('');
-      showSuccess("Design imported successfully!");
-    } catch (e) {
-      showError("Invalid design code");
-    }
+  const applyFilament = (preset: string) => {
+    setMaterial({ ...material, ...FILAMENT_PRESETS[preset] });
+    showSuccess(`Applied ${preset} filament`);
   };
 
   return (
@@ -248,6 +238,25 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <TabsContent value="material" className="space-y-8 pt-8">
           <div className="space-y-6">
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 flex items-center gap-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Filament Presets
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.keys(FILAMENT_PRESETS).map(name => (
+                  <Button 
+                    key={name} 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => applyFilament(name)} 
+                    className="h-10 text-[9px] font-black uppercase tracking-widest border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 rounded-xl"
+                  >
+                    {name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                 <Palette className="w-3.5 h-3.5" /> Filament Color
@@ -315,16 +324,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <TabsContent value="history" className="space-y-8 pt-8">
           <div className="space-y-6">
-            <div className="space-y-4 p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100 shadow-sm">
-              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 flex items-center gap-2">
-                <Share2 className="w-4 h-4" /> Share Design
-              </Label>
-              <Button onClick={generateShareCode} className="w-full gap-2 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 h-12 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm">
-                <ClipboardCheck className="w-4 h-4" />
-                Copy Design Code
-              </Button>
-            </div>
-
             <div className="space-y-4">
               <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Recent Snapshots</Label>
               {history.length === 0 ? (

@@ -434,7 +434,6 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const spokeThickCm = (params.spokeThickness || 5) / 10;
   const spokeWidthCm = (params.spokeWidth || 10) / 10;
   
-  // Calculate yPos so that fitterHeight measures from the bottom of the shade to the bottom of the fitter
   const ringYPos = -height / 2 + fitterHeight + ringHeightCm / 2;
   const spokeYPos = -height / 2 + fitterHeight + spokeThickCm / 2;
   
@@ -452,11 +451,13 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const baseRadiusAtZ = getRadiusAtHeight(spokeYPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
   const wallThicknessCm = thickness;
-  const safetyMarginCm = 0.1; 
+  
+  // Adaptive safety margin based on wall thickness
+  const safetyMarginCm = Math.min(0.05, wallThicknessCm * 0.2); 
   const connectionOverlapCm = 0.2; 
   
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
-  const fuseDepthCm = wallThicknessCm * 0.25;
+  const fuseDepthCm = wallThicknessCm * 0.5; // Fuse halfway into the wall
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
@@ -466,7 +467,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     }
 
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
-    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, 40, 1, 1);
+    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, 60, 1, 1);
     
     spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, spokeYPos, 0);
     spoke.rotateY(angle);
@@ -480,10 +481,23 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const currentR = Math.sqrt(vx * vx + vz * vz);
       const currentAngle = Math.atan2(vz, vx);
       
-      const localDisp = getDisplacementAt(currentAngle, vy, params);
-      const localOuterR = getRadiusAtHeight(vy, params) + localDisp;
+      // Calculate the actual boundary for this specific design type
+      let baseR = getRadiusAtHeight(vy, params);
+      let disp = getDisplacementAt(currentAngle, vy, params);
+      
+      // Special handling for designs with internal cores or gaps
+      if (type === 'slotted') {
+        baseR *= 0.8; // Connect to the inner core
+        disp = 0;
+      } else if (type === 'double_wall') {
+        const gap = params.gapDistance || 0.5;
+        baseR *= (1 - (gap / params.topRadius)); // Connect to the inner wall
+      }
+
+      const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
       
+      // Strict limit to prevent poking through the outer surface
       const absoluteLimitR = localOuterR - safetyMarginCm;
       const targetFusionR = localInnerR + fuseDepthCm;
       

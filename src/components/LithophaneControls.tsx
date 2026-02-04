@@ -119,65 +119,13 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
             <Slider 
               value={[params.resolution]} 
               min={50} 
-              max={400} 
+              max={600} 
               step={10} 
               onValueChange={([v]) => updateParam('resolution', v)} 
               className="py-1"
             />
             <p className="text-[8px] text-slate-400 italic">Higher values = more detail but slower processing</p>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg border border-indigo-100">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-indigo-900">Keyring Hole</span>
-            <span className="text-[9px] text-indigo-600">Adds attachment point</span>
-          </div>
-          <Switch checked={params.hasHole} onCheckedChange={(v) => updateParam('hasHole', v)} />
-        </div>
-
-        <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-          <div className="flex items-center justify-between">
-            <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-              <Frame className="w-2 h-2" />
-              Border Frame
-            </Label>
-            <Switch checked={params.hasBorder} onCheckedChange={(v) => updateParam('hasBorder', v)} />
-          </div>
-          
-          {params.hasBorder && (
-            <div className="space-y-3 pt-1">
-              <div className="space-y-1">
-                <div className="flex justify-between text-[9px] font-medium">
-                  <span>Thickness (mm)</span>
-                  <span>{params.borderThickness}</span>
-                </div>
-                <Slider 
-                  value={[params.borderThickness]} 
-                  min={0.5} 
-                  max={5} 
-                  step={0.1} 
-                  onValueChange={([v]) => updateParam('borderThickness', v)} 
-                  className="py-1"
-                />
-              </div>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between text-[9px] font-medium">
-                  <span>Height (mm)</span>
-                  <span>{params.borderHeight}</span>
-                </div>
-                <Slider 
-                  value={[params.borderHeight]} 
-                  min={0.5} 
-                  max={5} 
-                  step={0.1} 
-                  onValueChange={([v]) => updateParam('borderHeight', v)} 
-                  className="py-1"
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -258,17 +206,17 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label className="text-[9px]">Base Thick (mm)</Label>
+              <Label className="text-[9px]">Min Thick (Brightest)</Label>
               <Input 
                 type="number" 
                 step={0.1} 
-                value={params.baseThickness} 
-                onChange={(e) => updateParam('baseThickness', parseFloat(e.target.value))} 
+                value={params.minThickness} 
+                onChange={(e) => updateParam('minThickness', parseFloat(e.target.value))} 
                 className="h-8 text-xs"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[9px]">Max Relief (mm)</Label>
+              <Label className="text-[9px]">Max Thick (Darkest)</Label>
               <Input 
                 type="number" 
                 step={0.1} 

@@ -6,9 +6,9 @@ export interface LithophaneParams {
   type: LithophaneType;
   width: number;
   height: number;
-  minThickness: number;
-  maxThickness: number;
-  baseThickness: number;
+  minThickness: number; // Brightest pixels
+  maxThickness: number; // Darkest pixels
+  baseThickness: number; // Additional floor thickness
   curveRadius: number;
   resolution: number;
   inverted: boolean;
@@ -27,14 +27,14 @@ export function generateLithophaneGeometry(
   params: LithophaneParams
 ): THREE.BufferGeometry {
   const { 
-    width, height, minThickness, maxThickness, baseThickness, 
+    width, height, minThickness, maxThickness, 
     resolution, type, inverted,
     brightness, contrast, smoothing, hasHole, holeSize,
     hasBorder, borderThickness, borderHeight
   } = params;
   
   const aspect = imageData.width / imageData.height;
-  // Increase grid density based on resolution parameter
+  // High-density grid for maximum detail
   const gridX = Math.floor(resolution * aspect);
   const gridY = resolution;
   
@@ -44,7 +44,6 @@ export function generateLithophaneGeometry(
 
   const processedData = smoothing > 0 ? applySmoothing(imageData, smoothing) : imageData.data;
 
-  // Shape boundary check
   const isInside = (u: number, v: number) => {
     const x = u - 0.5;
     const y = v - 0.5;
@@ -120,12 +119,13 @@ export function generateLithophaneGeometry(
       const inBorder = isInBorder(u, v);
       validPoints.push(inside || inBorder);
 
-      let thickness = baseThickness;
+      // Proper thickness logic: minThickness is the floor (brightest), maxThickness is the peak (darkest)
+      let thickness = 0;
       if (inside) {
         const bVal = getInterpolatedVal(u, v);
-        thickness += minThickness + bVal * (maxThickness - minThickness);
+        thickness = minThickness + bVal * (maxThickness - minThickness);
       } else if (inBorder) {
-        thickness += borderHeight;
+        thickness = borderHeight;
       }
       
       const xPos = (u - 0.5) * width;
@@ -168,7 +168,6 @@ export function generateLithophaneGeometry(
       const idx = j * gridX + i;
       if (!validPoints[idx]) continue;
       
-      // Left
       if (i === 0 || !validPoints[idx - 1]) {
         const nextJ = (j === gridY - 1) ? j : j + 1;
         if (validPoints[nextJ * gridX + i]) {
@@ -176,7 +175,6 @@ export function generateLithophaneGeometry(
           indices.push(a, b, c); indices.push(b, d, c);
         }
       }
-      // Right
       if (i === gridX - 1 || !validPoints[idx + 1]) {
         const nextJ = (j === gridY - 1) ? j : j + 1;
         if (validPoints[nextJ * gridX + i]) {
@@ -184,7 +182,6 @@ export function generateLithophaneGeometry(
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
-      // Top
       if (j === 0 || !validPoints[idx - gridX]) {
         const nextI = (i === gridX - 1) ? i : i + 1;
         if (validPoints[j * gridX + nextI]) {
@@ -192,7 +189,6 @@ export function generateLithophaneGeometry(
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
-      // Bottom
       if (j === gridY - 1 || !validPoints[idx + gridX]) {
         const nextI = (i === gridX - 1) ? i : i + 1;
         if (validPoints[j * gridX + nextI]) {

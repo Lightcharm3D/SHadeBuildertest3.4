@@ -9,8 +9,10 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History } from 'lucide-react';
+import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
 
 const LithophaneGenerator = () => {
@@ -40,6 +42,7 @@ const LithophaneGenerator = () => {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,21 +183,50 @@ const LithophaneGenerator = () => {
               </div>
             </div>
           )}
+
+          {isMobile && (
+            <div className="absolute bottom-4 left-4 z-30">
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white">
+                    <Settings2 className="w-6 h-6" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem]">
+                  <div className="p-4 h-full overflow-hidden">
+                    <LithophaneControls 
+                      params={params} 
+                      setParams={setParams} 
+                      onImageUpload={handleImageUpload} 
+                      onExport={handleExport} 
+                      onApplyPreset={handleApplyPreset} 
+                      onTriggerCrop={() => setIsCropping(true)}
+                      isProcessing={isProcessing} 
+                      imagePreview={imagePreview}
+                      imageData={imageData}
+                    />
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            </div>
+          )}
         </div>
         
-        <div className="w-full lg:w-[440px] shrink-0">
-          <LithophaneControls 
-            params={params} 
-            setParams={setParams} 
-            onImageUpload={handleImageUpload} 
-            onExport={handleExport} 
-            onApplyPreset={handleApplyPreset} 
-            onTriggerCrop={() => setIsCropping(true)}
-            isProcessing={isProcessing} 
-            imagePreview={imagePreview}
-            imageData={imageData}
-          />
-        </div>
+        {!isMobile && (
+          <div className="w-full lg:w-[440px] shrink-0">
+            <LithophaneControls 
+              params={params} 
+              setParams={setParams} 
+              onImageUpload={handleImageUpload} 
+              onExport={handleExport} 
+              onApplyPreset={handleApplyPreset} 
+              onTriggerCrop={() => setIsCropping(true)}
+              isProcessing={isProcessing} 
+              imagePreview={imagePreview}
+              imageData={imageData}
+            />
+          </div>
+        )}
       </main>
 
       {rawImage && (

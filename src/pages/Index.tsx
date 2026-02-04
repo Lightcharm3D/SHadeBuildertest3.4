@@ -11,7 +11,6 @@ import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const DEFAULT_PARAMS: LampshadeParams = {
   type: 'ribbed_drum',
@@ -231,28 +230,6 @@ const Index = () => {
           <div className="h-5 w-px bg-slate-200" />
           <div className="flex items-center gap-3">
             <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Geometry Engine v2.6.0-PREMIUM</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-3">
-              <Avatar className="w-8 h-8 border-2 border-white shadow-sm hover:z-20 transition-all">
-                <AvatarImage src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=64&h=64&fit=crop" />
-                <AvatarFallback>U1</AvatarFallback>
-              </Avatar>
-              <Avatar className="w-8 h-8 border-2 border-white shadow-sm hover:z-20 transition-all">
-                <AvatarImage src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=64&h=64&fit=crop" />
-                <AvatarFallback>U2</AvatarFallback>
-              </Avatar>
-              <Avatar className="w-8 h-8 border-2 border-white shadow-sm hover:z-20 transition-all">
-                <AvatarImage src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop" />
-                <AvatarFallback>U3</AvatarFallback>
-              </Avatar>
-              <div className="relative z-10 w-8 h-8 rounded-full border-2 border-white bg-indigo-50 flex items-center justify-center shadow-sm">
-                <span className="text-[8px] font-black text-indigo-600">782</span>
-              </div>
-            </div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-2">1.5k Designs Exported Today</span>
           </div>
         </div>
       </footer>

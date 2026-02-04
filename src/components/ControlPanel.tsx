@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -83,7 +83,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setParams({ ...params, [key]: value });
   };
 
-  // Simple weight estimation: Volume approx * density
   const estimateWeight = () => {
     const avgRadius = (params.topRadius + params.bottomRadius) / 2;
     const surfaceArea = 2 * Math.PI * avgRadius * params.height;
@@ -202,6 +201,54 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
               <Slider value={[params.seed]} min={0} max={9999} step={1} onValueChange={([v]) => updateParam('seed', v)} className="py-1" />
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="build" className="space-y-4 pt-4">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fitter Type</Label>
+              <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" className="text-xs">None</SelectItem>
+                  <SelectItem value="spider" className="text-xs">Spider (3 Spokes)</SelectItem>
+                  <SelectItem value="uno" className="text-xs">Uno (4 Spokes)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {params.fitterType !== 'none' && (
+              <div className="space-y-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="flex items-center gap-1"><MoveVertical className="w-3 h-3" /> Fitter Height Offset</span>
+                    <span className="text-indigo-600">{params.fitterHeight.toFixed(1)} cm</span>
+                  </div>
+                  <Slider 
+                    value={[params.fitterHeight]} 
+                    min={0} 
+                    max={params.height} 
+                    step={0.1} 
+                    onValueChange={([v]) => updateParam('fitterHeight', v)} 
+                    className="py-1" 
+                  />
+                  <p className="text-[9px] text-slate-400 italic">Distance from the top of the shade</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Fitter Ring Diameter (mm)</Label>
+                  <Input 
+                    type="number" 
+                    value={params.fitterDiameter} 
+                    onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} 
+                    className="h-8 text-xs font-mono" 
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
 

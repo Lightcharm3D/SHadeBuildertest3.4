@@ -34,7 +34,7 @@ export interface LampshadeParams {
   // Fitter params
   fitterType: FitterType;
   fitterDiameter: number;
-  fitterHeight: number;
+  fitterHeight: number; // This is now the vertical offset from the top
   
   // Type-specific params
   ribCount?: number;
@@ -59,6 +59,29 @@ function pseudoNoise(x: number, y: number, z: number, seed: number) {
   return n - Math.floor(n);
 }
 
+function getRadiusAtHeight(y: number, params: LampshadeParams): number {
+  const { height, topRadius, bottomRadius, silhouette } = params;
+  // Normalize y from -height/2...height/2 to 0...1
+  const t = (y + height / 2) / height;
+  let r = topRadius + (bottomRadius - topRadius) * t;
+  
+  switch (silhouette) {
+    case 'hourglass':
+      r *= 1 + Math.pow(Math.sin(t * Math.PI), 2) * -0.3;
+      break;
+    case 'bell':
+      r *= 1 + Math.pow(1 - t, 2) * 0.4;
+      break;
+    case 'convex':
+      r *= 1 + Math.sin(t * Math.PI) * 0.2;
+      break;
+    case 'concave':
+      r *= 1 + Math.sin(t * Math.PI) * -0.2;
+      break;
+  }
+  return r;
+}
+
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { type, silhouette, height, topRadius, bottomRadius, segments, seed, thickness } = params;
   
@@ -66,23 +89,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     const points = [];
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      let r = (topRadius + offset) + ((bottomRadius + offset) - (topRadius + offset)) * t;
       const y = -height / 2 + height * t;
-      
-      switch (silhouette) {
-        case 'hourglass':
-          r *= 1 + Math.pow(Math.sin(t * Math.PI), 2) * -0.3;
-          break;
-        case 'bell':
-          r *= 1 + Math.pow(1 - t, 2) * 0.4;
-          break;
-        case 'convex':
-          r *= 1 + Math.sin(t * Math.PI) * 0.2;
-          break;
-        case 'concave':
-          r *= 1 + Math.sin(t * Math.PI) * -0.2;
-          break;
-      }
+      const r = getRadiusAtHeight(y, params) + offset;
       points.push(new THREE.Vector2(r, y));
     }
     return points;
@@ -93,7 +101,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
   switch (type) {
     case 'organic_cell': {
-      const density = params.cellCount || 15;
       const scale = params.noiseScale || 1.5;
       geometry = new THREE.LatheGeometry(profile, segments);
       const pos = geometry.attributes.position;
@@ -102,7 +109,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const py = pos.getY(i);
         const pz = pos.getZ(i);
         const angle = Math.atan2(pz, px);
-        const normY = (py + height / 2) / height;
         
         const noise = (
           pseudoNoise(Math.cos(angle) * scale, py * scale, Math.sin(angle) * scale, seed) * 0.6 +
@@ -156,8 +162,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
-          const normY = (py + height / 2) / height;
-          const r = topRadius + (bottomRadius - topRadius) * normY;
+          const r = getRadiusAtHeight(py, params);
           const px = pos.getX(j);
           if (px > 0) pos.setX(j, r);
           else pos.setX(j, r - 2); 
@@ -185,7 +190,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       for (let i = 0; i < cells; i++) {
         const angle = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
         const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
-        const r = topRadius + (bottomRadius - topRadius) * ((h + height / 2) / height);
+        const r = getRadiusAtHeight(h, params);
         points.push(new THREE.Vector3(Math.cos(angle) * r, h, Math.sin(angle) * r));
       }
       for (let i = 0; i < pos.count; i++) {
@@ -341,10 +346,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, topRadius, height } = params;
+  const { fitterType, fitterDiameter, fitterHeight, height } = params;
   const geoms: THREE.BufferGeometry[] = [];
   const fitterRadius = fitterDiameter / 20; 
+  
+  // Calculate yPos based on fitterHeight offset from top
   const yPos = height / 2 - fitterHeight;
+  
+  // Get the actual radius of the lampshade at this specific height
+  const actualRadius = getRadiusAtHeight(yPos, params);
   
   const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
   ring.rotateX(Math.PI / 2);
@@ -354,8 +364,10 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const spokeCount = fitterType === 'spider' ? 3 : 4;
   for (let i = 0; i < spokeCount; i++) {
     const angle = (i / spokeCount) * Math.PI * 2;
-    const spokeLength = topRadius - fitterRadius;
+    // Spoke length is the distance from the fitter ring to the lampshade wall
+    const spokeLength = actualRadius - fitterRadius;
     const spoke = new THREE.BoxGeometry(spokeLength, 0.15, 0.3);
+    // Position the spoke so it starts at the fitter ring and ends at the wall
     spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
     geoms.push(spoke);

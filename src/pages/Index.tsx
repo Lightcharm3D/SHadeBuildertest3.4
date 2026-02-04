@@ -8,7 +8,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Zap, Ruler, Image as ImageIcon } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -38,12 +38,12 @@ const DEFAULT_PARAMS: LampshadeParams = {
   gapDistance: 0.5,
   seed: 1234,
   fitterType: 'spider',
-  fitterDiameter: 27.6,      // Ledge Diameter
-  fitterOuterDiameter: 36,   // Cylinder Diameter
-  fitterRingHeight: 10,      // Ledge Height
-  fitterHeight: 3,           // Offset from top
-  spokeThickness: 5,         // 5mm vertical
-  spokeWidth: 10,            // 10mm horizontal
+  fitterDiameter: 27.6,
+  fitterOuterDiameter: 36,
+  fitterRingHeight: 10,
+  fitterHeight: 3,
+  spokeThickness: 5,
+  spokeWidth: 10,
 };
 
 const DEFAULT_MATERIAL: MaterialParams = {
@@ -117,29 +117,36 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="h-14 border-b border-slate-200 bg-white px-4 flex items-center justify-between shrink-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <Zap className="w-4 h-4" fill="currentColor" />
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+      <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md px-6 flex items-center justify-between shrink-0 z-20 sticky top-0">
+        <div className="flex items-center gap-4">
+          <div className="relative group">
+            <div className="absolute -inset-1 brand-gradient rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative w-10 h-10 brand-gradient rounded-xl flex items-center justify-center text-white shadow-lg">
+              <Lightbulb className="w-5 h-5" />
+            </div>
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900 leading-none">ShadeBuilder</h1>
-            <p className="text-[10px] text-slate-500 font-medium">by LightCharm 3D</p>
+            <h1 className="text-lg font-black tracking-tight text-slate-900 leading-none flex items-center gap-1">
+              SHADE<span className="brand-text-gradient">BUILDER</span>
+            </h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">by LightCharm 3D</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-3">
           <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-1 border-indigo-100 text-indigo-600 hover:bg-indigo-50 h-8 px-2 text-xs">
-              <ImageIcon className="w-3 h-3" />
-              Lithophane
+            <Button variant="ghost" size="sm" className="gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 font-bold text-xs uppercase tracking-wider">
+              <ImageIcon className="w-4 h-4" />
+              Lithophane Studio
+              <ChevronRight className="w-3 h-3 opacity-50" />
             </Button>
           </Link>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col p-2 gap-4 overflow-hidden">
-        <div className="flex-1 relative min-h-[300px] bg-slate-950 rounded-xl shadow-lg border border-slate-800">
+      <main className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden max-w-[1600px] mx-auto w-full">
+        <div className="flex-1 relative min-h-[400px] bg-slate-950 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden studio-shadow">
           <LampshadeViewport 
             params={params} 
             material={material}
@@ -147,21 +154,29 @@ const Index = () => {
             showPrintability={showPrintability}
             onSceneReady={handleSceneReady} 
           />
-          <div className="absolute top-3 left-3 flex flex-col gap-1 pointer-events-none">
-            <div className="bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700 shadow-lg">
-              <div className="flex items-center gap-1 text-indigo-400 mb-1">
-                <Ruler className="w-3 h-3" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Dimensions</span>
+          
+          {/* Floating HUD */}
+          <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+            <div className="bg-slate-900/60 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-2xl">
+              <div className="flex items-center gap-2 text-indigo-400 mb-2">
+                <Ruler className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-[0.15em]">Live Specs</span>
               </div>
-              <div className="grid grid-cols-1 gap-0.5">
-                <div className="text-[9px] text-slate-300">Height: <span className="font-mono text-white">{params.height * 10}mm</span></div>
-                <div className="text-[9px] text-slate-300">Max Width: <span className="font-mono text-white">{Math.max(params.topRadius, params.bottomRadius) * 20}mm</span></div>
+              <div className="space-y-1">
+                <div className="flex justify-between gap-8">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Height</span>
+                  <span className="text-[10px] font-mono text-white">{(params.height * 10).toFixed(1)}mm</span>
+                </div>
+                <div className="flex justify-between gap-8">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Diameter</span>
+                  <span className="text-[10px] font-mono text-white">{(Math.max(params.topRadius, params.bottomRadius) * 20).toFixed(1)}mm</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="w-full">
+        <div className="w-full lg:w-[400px] shrink-0">
           <ControlPanel 
             params={params} 
             setParams={setParams} 
@@ -178,10 +193,13 @@ const Index = () => {
         </div>
       </main>
       
-      <footer className="py-2 border-t border-slate-200 bg-white text-center">
-        <p className="text-[10px] text-slate-400">
-          © {new Date().getFullYear()} LightCharm 3D. All rights reserved.
+      <footer className="py-4 px-6 border-t border-slate-200 bg-white flex items-center justify-between">
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+          © {new Date().getFullYear()} LightCharm 3D Studio
         </p>
+        <div className="flex gap-4">
+          <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Precision Geometry Engine v2.4</span>
+        </div>
       </footer>
     </div>
   );

@@ -9,8 +9,10 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 const DEFAULT_PARAMS: LampshadeParams = {
   type: 'ribbed_drum',
@@ -61,6 +63,7 @@ const Index = () => {
   const [showWireframe, setShowWireframe] = useState(false);
   const [showPrintability, setShowPrintability] = useState(false);
   const meshRef = useRef<THREE.Mesh | null>(null);
+  const isMobile = useIsMobile();
 
   const handleSceneReady = (scene: THREE.Scene, mesh: THREE.Mesh) => {
     meshRef.current = mesh;
@@ -124,54 +127,40 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans">
-      <header className="h-20 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-10 flex items-center justify-between shrink-0 z-40 sticky top-0">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-6"
-        >
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans safe-area-pt">
+      <header className="h-16 lg:h-20 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-4 lg:px-10 flex items-center justify-between shrink-0 z-40 sticky top-0">
+        <div className="flex items-center gap-3 lg:gap-6">
           <div className="relative group">
-            <div className="absolute -inset-2 brand-gradient rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative w-12 h-12 brand-gradient rounded-2xl flex items-center justify-center text-white shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
-              <Cpu className="w-6 h-6" />
+            <div className="absolute -inset-1 lg:-inset-2 brand-gradient rounded-xl lg:rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            <div className="relative w-10 h-10 lg:w-12 lg:h-12 brand-gradient rounded-xl lg:rounded-2xl flex items-center justify-center text-white shadow-xl transform group-hover:scale-105 transition-transform duration-300">
+              <Cpu className="w-5 h-5 lg:w-6 lg:h-6" />
             </div>
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none flex items-center gap-2">
+            <h1 className="text-base lg:text-xl font-black tracking-tighter text-slate-900 leading-none flex items-center gap-2">
               SHADE<span className="brand-text-gradient">BUILDER</span>
-              <span className="px-2 py-0.5 rounded-lg bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest ml-2 shadow-lg shadow-indigo-200">Pro</span>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-lg bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest ml-2 shadow-lg shadow-indigo-200">Pro</span>
             </h1>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.4em] mt-1.5">Precision Geometry Engine</p>
+            <p className="text-[8px] lg:text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em] lg:tracking-[0.4em] mt-1 lg:mt-1.5">Precision Geometry Engine</p>
           </div>
-        </motion.div>
+        </div>
         
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-4"
-        >
+        <div className="flex items-center gap-2 lg:gap-4">
           <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-2.5 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-black text-[10px] uppercase tracking-widest h-11 px-6 rounded-2xl transition-all shadow-sm group">
-              <ImageIcon className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-              Lithophane Studio
-              <ChevronRight className="w-3.5 h-3.5 opacity-30" />
+            <Button variant="outline" size="sm" className="gap-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-black text-[9px] lg:text-[10px] uppercase tracking-widest h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl transition-all shadow-sm group">
+              <ImageIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4 group-hover:rotate-12 transition-transform" />
+              <span className="hidden xs:inline">Lithophane</span>
             </Button>
           </Link>
-          <div className="h-8 w-px bg-slate-200 mx-2" />
-          <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-slate-100 h-11 w-11 text-slate-400 hover:text-indigo-600 transition-colors">
-            <Sparkles className="w-5 h-5" />
+          <div className="hidden sm:block h-8 w-px bg-slate-200 mx-2" />
+          <Button variant="ghost" size="icon" className="rounded-xl lg:rounded-2xl hover:bg-slate-100 h-9 w-9 lg:h-11 lg:w-11 text-slate-400 hover:text-indigo-600 transition-colors">
+            <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
           </Button>
-        </motion.div>
+        </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-8 gap-8 overflow-hidden max-w-[1920px] mx-auto w-full">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex-1 relative min-h-[500px] bg-slate-950 rounded-[3.5rem] shadow-2xl border border-slate-800/50 overflow-hidden studio-shadow group"
-        >
+      <main className="flex-1 flex flex-col lg:flex-row p-4 lg:p-8 gap-4 lg:gap-8 overflow-hidden max-w-[1920px] mx-auto w-full">
+        <div className="flex-1 relative min-h-[300px] lg:min-h-[500px] bg-slate-950 rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-800/50 overflow-hidden studio-shadow group">
           <div className="absolute inset-0 scanline opacity-20 pointer-events-none z-10"></div>
           <LampshadeViewport 
             params={params} 
@@ -181,48 +170,66 @@ const Index = () => {
             onSceneReady={handleSceneReady} 
           />
           
-          <div className="absolute top-10 left-10 z-20 flex flex-col gap-3">
-            <div className="flex items-center gap-3 bg-black/40 backdrop-blur-xl px-5 py-2.5 rounded-2xl border border-white/10 shadow-2xl">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/80">Live Mesh Preview</span>
-            </div>
-            <div className="flex items-center gap-3 bg-black/40 backdrop-blur-xl px-5 py-2.5 rounded-2xl border border-white/10 shadow-2xl">
-              <Zap className="w-3 h-3 text-amber-400" />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/80">{params.type.replace('_', ' ')}</span>
+          <div className="absolute top-4 lg:top-10 left-4 lg:left-10 z-20 flex flex-col gap-2 lg:gap-3">
+            <div className="flex items-center gap-2 lg:gap-3 bg-black/40 backdrop-blur-xl px-3 lg:px-5 py-1.5 lg:py-2.5 rounded-xl lg:rounded-2xl border border-white/10 shadow-2xl">
+              <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] lg:text-[9px] font-black uppercase tracking-[0.2em] lg:tracking-[0.3em] text-white/80">Live Preview</span>
             </div>
           </div>
 
-          <div className="absolute bottom-10 left-10 pointer-events-none z-20">
-            <div className="flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 shadow-2xl">
-              <Activity className="w-4 h-4 text-indigo-400" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">Engine Active: 60FPS</span>
+          {isMobile && (
+            <div className="absolute bottom-4 right-4 z-30">
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white">
+                    <Settings2 className="w-6 h-6" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem]">
+                  <DrawerHeader className="sr-only">
+                    <DrawerTitle>Studio Controls</DrawerTitle>
+                  </DrawerHeader>
+                  <div className="p-4 h-full overflow-hidden">
+                    <ControlPanel 
+                      params={params} 
+                      setParams={setParams} 
+                      material={material}
+                      setMaterial={setMaterial}
+                      showWireframe={showWireframe} 
+                      setShowWireframe={setShowWireframe} 
+                      showPrintability={showPrintability}
+                      setShowPrintability={setShowPrintability}
+                      onExport={handleExport} 
+                      onRandomize={handleRandomize}
+                      onReset={handleReset}
+                    />
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
-          </div>
-        </motion.div>
+          )}
+        </div>
         
-        <motion.div 
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="w-full lg:w-[500px] shrink-0"
-        >
-          <ControlPanel 
-            params={params} 
-            setParams={setParams} 
-            material={material}
-            setMaterial={setMaterial}
-            showWireframe={showWireframe} 
-            setShowWireframe={setShowWireframe} 
-            showPrintability={showPrintability}
-            setShowPrintability={setShowPrintability}
-            onExport={handleExport} 
-            onRandomize={handleRandomize}
-            onReset={handleReset}
-          />
-        </motion.div>
+        {!isMobile && (
+          <div className="w-full lg:w-[500px] shrink-0">
+            <ControlPanel 
+              params={params} 
+              setParams={setParams} 
+              material={material}
+              setMaterial={setMaterial}
+              showWireframe={showWireframe} 
+              setShowWireframe={setShowWireframe} 
+              showPrintability={showPrintability}
+              setShowPrintability={setShowPrintability}
+              onExport={handleExport} 
+              onRandomize={handleRandomize}
+              onReset={handleReset}
+            />
+          </div>
+        )}
       </main>
       
-      <footer className="py-8 px-12 border-t border-slate-200/60 bg-white flex items-center justify-between">
+      <footer className="hidden lg:flex py-8 px-12 border-t border-slate-200/60 bg-white items-center justify-between safe-area-pb">
         <div className="flex items-center gap-8">
           <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
             © {new Date().getFullYear()} LightCharm 3D Studio

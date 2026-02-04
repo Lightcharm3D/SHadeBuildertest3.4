@@ -82,15 +82,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
-    setParams({ ...params, [key]: value });
+    const roundedValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
+    setParams({ ...params, [key]: roundedValue });
   };
 
   const updateMaterial = (key: keyof MaterialParams, value: any) => {
-    setMaterial({ ...material, [key]: value });
+    const roundedValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
+    setMaterial({ ...material, [key]: roundedValue });
   };
 
   const applyFilament = (preset: string) => {
-    setMaterial({ ...material, ...FILAMENT_PRESETS[preset] });
+    const presetData = FILAMENT_PRESETS[preset];
+    const roundedPreset = Object.fromEntries(
+      Object.entries(presetData).map(([k, v]) => [k, typeof v === 'number' ? parseFloat(v.toFixed(2)) : v])
+    );
+    setMaterial({ ...material, ...roundedPreset });
     showSuccess(`Applied ${preset} filament`);
   };
 
@@ -139,7 +145,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   key={name} 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setParams({...params, ...PRESETS[name]})} 
+                  onClick={() => {
+                    const preset = PRESETS[name];
+                    const roundedPreset = Object.fromEntries(
+                      Object.entries(preset).map(([k, v]) => [k, typeof v === 'number' ? parseFloat(v.toFixed(2)) : v])
+                    );
+                    setParams({...params, ...roundedPreset});
+                  }} 
                   className="h-11 text-[10px] font-black uppercase tracking-widest px-4 border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl transition-all shadow-sm hover:shadow-md"
                 >
                   {name}
@@ -187,11 +199,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Height (cm)</Label>
-              <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
+              <Input type="number" step={0.01} value={params.height.toFixed(2)} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
             </div>
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Top Radius</Label>
-              <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
+              <Input type="number" step={0.01} value={params.topRadius.toFixed(2)} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
             </div>
           </div>
         </TabsContent>
@@ -219,9 +231,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <div className="space-y-3 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                     <span className="flex items-center gap-2.5"><MoveVertical className="w-4 h-4" /> Vertical Height (cm)</span>
-                    <span className="text-indigo-600 font-mono font-bold">{params.fitterHeight.toFixed(1)}</span>
+                    <span className="text-indigo-600 font-mono font-bold">{params.fitterHeight.toFixed(2)}</span>
                   </div>
-                  <Slider value={[params.fitterHeight]} min={0} max={params.height} step={0.1} onValueChange={([v]) => updateParam('fitterHeight', v)} className="py-2" />
+                  <Slider value={[params.fitterHeight]} min={0} max={params.height} step={0.01} onValueChange={([v]) => updateParam('fitterHeight', v)} className="py-2" />
                   <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Distance from bottom edge</p>
                 </div>
 
@@ -230,24 +242,24 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                       <CircleDot className="w-3.5 h-3.5" /> Inner ID (mm)
                     </Label>
-                    <Input type="number" step={0.1} value={params.fitterDiameter} onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                    <Input type="number" step={0.01} value={params.fitterDiameter.toFixed(2)} onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                       <CircleDot className="w-3.5 h-3.5" /> Outer OD (mm)
                     </Label>
-                    <Input type="number" step={0.1} value={params.fitterOuterDiameter} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                    <Input type="number" step={0.01} value={params.fitterOuterDiameter.toFixed(2)} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Spoke Thick (mm)</Label>
-                    <Input type="number" step={0.1} value={params.spokeThickness} onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                    <Input type="number" step={0.01} value={params.spokeThickness.toFixed(2)} onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Spoke Width (mm)</Label>
-                    <Input type="number" step={0.1} value={params.spokeWidth} onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                    <Input type="number" step={0.01} value={params.spokeWidth.toFixed(2)} onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                   </div>
                 </div>
               </div>
@@ -285,11 +297,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Noise Scale</Label>
-                  <Input type="number" step={0.1} value={params.noiseScale} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  <Input type="number" step={0.01} value={params.noiseScale?.toFixed(2)} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Strength</Label>
-                  <Input type="number" step={0.1} value={params.noiseStrength} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  <Input type="number" step={0.01} value={params.noiseStrength?.toFixed(2)} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                 </div>
               </div>
             )}

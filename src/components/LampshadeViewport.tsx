@@ -99,7 +99,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
-    // Brand Label
+    // Brand Label - Updated to LightCharm 3D
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -107,22 +107,22 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     if (ctx) {
       ctx.fillStyle = 'rgba(0,0,0,0)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 96px sans-serif';
-      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 110px sans-serif';
+      ctx.fillStyle = '#818cf8'; 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('LightCharm 3D', 512, 128);
+      ctx.fillText('LIGHTCHARM 3D', 512, 128);
     }
     const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(20, 5);
+    const brandGeom = new THREE.PlaneGeometry(22, 5.5);
     const brandMat = new THREE.MeshBasicMaterial({ 
       map: brandTexture, 
       transparent: true,
-      opacity: 0.5
+      opacity: 0.7
     });
     const brandMesh = new THREE.Mesh(brandGeom, brandMat);
     brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(0, 0.02, bedSize / 2 - 4); 
+    brandMesh.position.set(0, 0.05, bedSize / 2 - 5); 
     bedGroup.add(brandMesh);
 
     scene.add(bedGroup);
@@ -186,7 +186,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       
       const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
       
-      // Force a recompile when toggling printability
       mat.customProgramCacheKey = () => showPrintability ? 'printability-on' : 'printability-off';
       
       if (showPrintability) {

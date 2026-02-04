@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+import * as THREE from 'this';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, LightbulbOff } from 'lucide-react';
@@ -75,7 +75,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     grid.position.y = 0.1;
     bedGroup.add(grid);
 
-    // Brand Label
+    // Brand Label - Updated to LightCharm 3D
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -87,7 +87,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
       ctx.fillStyle = '#6366f1';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('LightCharm 3D', 512, 128);
+      ctx.fillText('LIGHTCHARM 3D', 512, 128);
     }
     const brandTexture = new THREE.CanvasTexture(canvas);
     const brandGeom = new THREE.PlaneGeometry(120, 30);

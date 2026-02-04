@@ -51,11 +51,10 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     mainLight.position.set(100, 200, 100);
     mainLight.castShadow = true;
     
-    // Expand shadow camera frustum to prevent square clipping
-    mainLight.shadow.camera.left = -200;
-    mainLight.shadow.camera.right = 200;
-    mainLight.shadow.camera.top = 200;
-    mainLight.shadow.camera.bottom = -200;
+    mainLight.shadow.camera.left = -100;
+    mainLight.shadow.camera.right = 100;
+    mainLight.shadow.camera.top = 100;
+    mainLight.shadow.camera.bottom = -100;
     mainLight.shadow.camera.far = 1000;
     mainLight.shadow.mapSize.width = 2048;
     mainLight.shadow.mapSize.height = 2048;
@@ -68,12 +67,32 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     scene.add(backlight);
     backlightRef.current = backlight;
 
-    const bedSize = 300; 
+    // Build Plate 200x200mm
+    const bedSize = 200; 
     const bedGroup = new THREE.Group();
     
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
+    
+    // Create Branding Texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.font = 'bold 40px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 950);
+      ctx.fillText('200 x 200 mm', 512, 990);
+    }
+    const bedTexture = new THREE.CanvasTexture(canvas);
+
     const bedMat = new THREE.MeshStandardMaterial({ 
-      color: 0x1e293b, 
+      map: bedTexture,
+      color: 0xffffff, 
       roughness: 0.8,
       metalness: 0.2
     });

@@ -82,7 +82,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-    camera.position.set(35, 35, 35);
+    camera.position.set(25, 25, 25);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -100,11 +100,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.position.set(30, 50, 30);
     mainLight.castShadow = true;
     
-    // Expand shadow camera frustum to prevent square clipping
-    mainLight.shadow.camera.left = -40;
-    mainLight.shadow.camera.right = 40;
-    mainLight.shadow.camera.top = 40;
-    mainLight.shadow.camera.bottom = -40;
+    mainLight.shadow.camera.left = -20;
+    mainLight.shadow.camera.right = 20;
+    mainLight.shadow.camera.top = 20;
+    mainLight.shadow.camera.bottom = -20;
     mainLight.shadow.camera.far = 200;
     mainLight.shadow.mapSize.width = 1024;
     mainLight.shadow.mapSize.height = 1024;
@@ -116,10 +115,33 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
+    // Build Plate 200x200mm (20x20cm)
     const bedGroup = new THREE.Group();
-    const bedSize = 40;
+    const bedSize = 20; 
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    const bedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    
+    // Create Branding Texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.font = 'bold 40px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 950);
+      ctx.fillText('200 x 200 mm', 512, 990);
+    }
+    const bedTexture = new THREE.CanvasTexture(canvas);
+    
+    const bedMat = new THREE.MeshStandardMaterial({ 
+      map: bedTexture,
+      color: 0xffffff, 
+      roughness: 0.8 
+    });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
     bed.receiveShadow = true;

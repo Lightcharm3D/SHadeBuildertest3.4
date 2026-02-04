@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { Download, RefreshCw, Eye, Box } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2 } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -28,17 +28,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   const updateParam = (key: keyof LampshadeParams, value: any) => {
     let finalValue = value;
-    
     if (typeof value === 'number') {
-      // Force rounding to 2 decimal places
       finalValue = Math.round(value * 100) / 100;
     }
-    
     setParams({ ...params, [key]: finalValue });
   };
 
-  // Helper to prevent display of long decimals in the input field
-  const formatValue = (val: number) => {
+  const formatValue = (val: number | undefined) => {
+    if (val === undefined) return 0;
     return parseFloat(val.toFixed(2));
   };
 
@@ -53,7 +50,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <div className="space-y-6">
-        {/* Template Selection */}
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Base Template</Label>
           <Select value={params.type} onValueChange={(v) => updateParam('type', v as LampshadeType)}>
@@ -61,17 +57,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="drum">Classic Drum</SelectItem>
-              <SelectItem value="dome">Modern Dome</SelectItem>
-              <SelectItem value="spiral">Spiral Twist</SelectItem>
-              <SelectItem value="twisted">Twisted Polygon</SelectItem>
-              <SelectItem value="wave">Organic Wave</SelectItem>
-              <SelectItem value="ribbed">Ribbed Shell</SelectItem>
+              <SelectItem value="ribbed_drum">Ribbed Drum</SelectItem>
+              <SelectItem value="spiral_twist">Spiral Twist</SelectItem>
+              <SelectItem value="voronoi">Voronoi Organic</SelectItem>
+              <SelectItem value="wave_shell">Wave Shell</SelectItem>
+              <SelectItem value="geometric_poly">Geometric Polygon</SelectItem>
+              <SelectItem value="lattice">Parametric Lattice</SelectItem>
+              <SelectItem value="origami">Origami Fold</SelectItem>
+              <SelectItem value="perlin_noise">Perlin Noise</SelectItem>
+              <SelectItem value="slotted">Parametric Slotted</SelectItem>
+              <SelectItem value="double_wall">Double-Wall Diffuser</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Preview Settings */}
         <div className="p-3 bg-slate-50 rounded-lg space-y-3 border border-slate-100">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Preview Settings</Label>
           <div className="flex items-center justify-between">
@@ -83,90 +82,132 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
 
-        {/* Geometry Inputs */}
         <div className="space-y-4">
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Dimensions (cm)</Label>
+          <div className="flex items-center gap-2 text-slate-900 mb-2">
+            <Settings2 className="w-4 h-4 text-indigo-600" />
+            <Label className="text-xs font-bold uppercase tracking-wider">Parameters</Label>
+          </div>
           
-          <div className="space-y-2">
-            <Label className="text-sm">Height</Label>
-            <Input 
-              type="number" 
-              min={5} 
-              max={50} 
-              step={0.01}
-              value={formatValue(params.height)} 
-              onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)}
-              className="bg-slate-50 border-slate-200"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Height (cm)</Label>
+              <Input type="number" step={0.01} value={formatValue(params.height)} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Segments</Label>
+              <Input type="number" step={1} value={params.segments} onChange={(e) => updateParam('segments', parseInt(e.target.value) || 3)} />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">Top Radius</Label>
-              <Input 
-                type="number" 
-                min={1} 
-                max={30} 
-                step={0.01}
-                value={formatValue(params.topRadius)} 
-                onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)}
-                className="bg-slate-50 border-slate-200"
-              />
+              <Input type="number" step={0.01} value={formatValue(params.topRadius)} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} />
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Bottom Radius</Label>
-              <Input 
-                type="number" 
-                min={1} 
-                max={30} 
-                step={0.01}
-                value={formatValue(params.bottomRadius)} 
-                onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)}
-                className="bg-slate-50 border-slate-200"
-              />
+              <Input type="number" step={0.01} value={formatValue(params.bottomRadius)} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)} />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm">Resolution (Faces)</Label>
-            <Input 
-              type="number" 
-              min={3} 
-              max={256} 
-              step={1}
-              value={params.segments} 
-              onChange={(e) => updateParam('segments', parseInt(e.target.value) || 3)}
-              className="bg-slate-50 border-slate-200"
-            />
-          </div>
-
-          {(params.type === 'spiral' || params.type === 'twisted') && (
-            <div className="space-y-2">
-              <Label className="text-sm">Twist Angle (Degrees)</Label>
-              <Input 
-                type="number" 
-                min={-720} 
-                max={720} 
-                step={0.01}
-                value={formatValue(params.twist)} 
-                onChange={(e) => updateParam('twist', parseFloat(e.target.value) || 0)}
-                className="bg-slate-50 border-slate-200"
-              />
+          {/* Dynamic Type-Specific Inputs */}
+          {params.type === 'ribbed_drum' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Rib Count</Label>
+                <Input type="number" value={params.ribCount} onChange={(e) => updateParam('ribCount', parseInt(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Rib Depth</Label>
+                <Input type="number" step={0.1} value={params.ribDepth} onChange={(e) => updateParam('ribDepth', parseFloat(e.target.value))} />
+              </div>
             </div>
           )}
 
-          {(params.type === 'wave' || params.type === 'ribbed') && (
+          {params.type === 'spiral_twist' && (
             <div className="space-y-2">
-              <Label className="text-sm">Pattern Density</Label>
-              <Input 
-                type="number" 
-                min={1} 
-                max={100} 
-                step={0.01}
-                value={formatValue(params.density)} 
-                onChange={(e) => updateParam('density', parseFloat(e.target.value) || 1)}
-                className="bg-slate-50 border-slate-200"
-              />
+              <Label className="text-xs">Twist Angle</Label>
+              <Input type="number" value={params.twistAngle} onChange={(e) => updateParam('twistAngle', parseFloat(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'origami' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Fold Count</Label>
+                <Input type="number" value={params.foldCount} onChange={(e) => updateParam('foldCount', parseInt(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Fold Depth</Label>
+                <Input type="number" step={0.1} value={params.foldDepth} onChange={(e) => updateParam('foldDepth', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'geometric_poly' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Sides</Label>
+              <Input type="number" min={3} max={20} value={params.sides} onChange={(e) => updateParam('sides', parseInt(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'wave_shell' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Amplitude</Label>
+                <Input type="number" step={0.1} value={params.amplitude} onChange={(e) => updateParam('amplitude', parseFloat(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Frequency</Label>
+                <Input type="number" step={0.1} value={params.frequency} onChange={(e) => updateParam('frequency', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'perlin_noise' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Noise Scale</Label>
+                <Input type="number" step={0.1} value={params.noiseScale} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Strength</Label>
+                <Input type="number" step={0.1} value={params.noiseStrength} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'slotted' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Slot Count</Label>
+                <Input type="number" value={params.slotCount} onChange={(e) => updateParam('slotCount', parseInt(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Slot Width</Label>
+                <Input type="number" step={0.01} value={params.slotWidth} onChange={(e) => updateParam('slotWidth', parseFloat(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {params.type === 'voronoi' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Cell Count</Label>
+              <Input type="number" value={params.cellCount} onChange={(e) => updateParam('cellCount', parseInt(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'lattice' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Grid Density</Label>
+              <Input type="number" value={params.gridDensity} onChange={(e) => updateParam('gridDensity', parseInt(e.target.value))} />
+            </div>
+          )}
+
+          {params.type === 'double_wall' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Gap Distance</Label>
+              <Input type="number" step={0.1} value={params.gapDistance} onChange={(e) => updateParam('gapDistance', parseFloat(e.target.value))} />
             </div>
           )}
         </div>

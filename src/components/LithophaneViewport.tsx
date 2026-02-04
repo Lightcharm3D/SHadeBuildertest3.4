@@ -64,29 +64,30 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     grid.position.y = 0.1;
     bedGroup.add(grid);
 
-    // Brand Label
+    // Brand Label - Centered and Larger
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 128;
+    canvas.width = 1024;
+    canvas.height = 256;
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.fillStyle = 'rgba(0,0,0,0)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 48px sans-serif';
+      ctx.font = 'bold 96px sans-serif';
       ctx.fillStyle = '#6366f1';
-      ctx.textAlign = 'right';
-      ctx.fillText('LightCharm 3D', 480, 80);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('LightCharm 3D', 512, 128);
     }
     const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(60, 15);
+    const brandGeom = new THREE.PlaneGeometry(150, 37.5);
     const brandMat = new THREE.MeshBasicMaterial({ 
       map: brandTexture, 
       transparent: true,
-      opacity: 0.6
+      opacity: 0.4
     });
     const brandMesh = new THREE.Mesh(brandGeom, brandMat);
     brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(bedSize/2 - 35, 0.2, bedSize/2 - 10);
+    brandMesh.position.set(0, 0.2, 0); // Centered
     bedGroup.add(brandMesh);
 
     scene.add(bedGroup);

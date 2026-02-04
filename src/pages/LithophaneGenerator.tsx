@@ -188,7 +188,7 @@ const LithophaneGenerator = () => {
           )}
 
           {isMobile && (
-            <div className="absolute bottom-4 left-4 z-30">
+            <div className="absolute bottom-4 right-4 z-30">
               <Drawer>
                 <DrawerTrigger asChild>
                   <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white">

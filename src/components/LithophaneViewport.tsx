@@ -25,17 +25,14 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // 1. Scene Setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    // 2. Camera Setup
     const camera = new THREE.PerspectiveCamera(45, 1, 1, 5000);
     camera.position.set(0, 150, 250);
     cameraRef.current = camera;
 
-    // 3. Renderer Setup
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
       alpha: true,
@@ -48,7 +45,6 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
@@ -64,7 +60,6 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     scene.add(backlight);
     backlightRef.current = backlight;
 
-    // 5. Buildplate
     const bedSize = 300; 
     const bedGroup = new THREE.Group();
     
@@ -85,14 +80,12 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
 
     scene.add(bedGroup);
 
-    // 6. Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2.1;
     controlsRef.current = controls;
 
-    // 7. Resize Logic
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
       const width = containerRef.current.clientWidth;
@@ -115,13 +108,11 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     
     requestRef.current = requestAnimationFrame(animate);
 
-    // Use ResizeObserver for robust sizing
     const resizeObserver = new ResizeObserver(() => {
       handleResize();
     });
     resizeObserver.observe(containerRef.current);
 
-    // Initial call
     setTimeout(handleResize, 100);
 
     return () => {
@@ -136,7 +127,6 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     };
   }, []);
 
-  // Update Geometry
   useEffect(() => {
     if (sceneRef.current && geometry) {
       if (meshRef.current) {
@@ -165,7 +155,6 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     }
   }, [geometry]);
 
-  // Backlight Effect
   useEffect(() => {
     if (backlightRef.current) {
       backlightRef.current.intensity = isBacklightOn ? 4.0 : 0;
@@ -180,7 +169,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   return (
     <div className="w-full h-full relative bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-6 right-6 z-30">
+      <div className="absolute bottom-6 left-6 z-30">
         <Button 
           variant="secondary" 
           size="sm" 

@@ -56,7 +56,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.toneMappingExposure = 1.2;
     containerRef.current.appendChild(renderer.domElement);
@@ -69,7 +69,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.position.set(30, 50, 30);
     mainLight.castShadow = true;
     
-    // Configure shadow camera to prevent "square" clipping
     mainLight.shadow.mapSize.width = 2048;
     mainLight.shadow.mapSize.height = 2048;
     mainLight.shadow.camera.left = -40;
@@ -78,7 +77,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.shadow.camera.bottom = -40;
     mainLight.shadow.camera.near = 0.5;
     mainLight.shadow.camera.far = 200;
-    mainLight.shadow.bias = -0.0005; // Prevent shadow acne
+    mainLight.shadow.bias = -0.0005;
     
     scene.add(mainLight);
 
@@ -92,7 +91,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(bulbMesh);
     bulbMeshRef.current = bulbMesh;
 
-    // Buildplate (Print Bed)
     const bedGroup = new THREE.Group();
     const bedSize = 40;
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
@@ -110,7 +108,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
-    // Brand Label
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -170,7 +167,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     };
     requestRef.current = requestAnimationFrame(animate);
 
-    // Robust Resize Handling
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries[0] || !rendererRef.current || !cameraRef.current) return;
       const { width, height } = entries[0].contentRect;
@@ -229,7 +225,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-3 right-3 flex gap-2">
+      <div className="absolute bottom-3 left-3 flex gap-2">
         <Button 
           variant="secondary" 
           size="sm" 

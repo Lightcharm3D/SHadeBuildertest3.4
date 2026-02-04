@@ -80,12 +80,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(getProfile(), segments);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const z = pos.getZ(i);
-        const angle = Math.atan2(z, x);
+        const posX = pos.getX(i);
+        const posZ = pos.getZ(i);
+        const angle = Math.atan2(posZ, posX);
         const rib = 1 + Math.sin(angle * count) * (depth / (topRadius + bottomRadius));
-        pos.setX(i, x * rib);
-        pos.setZ(i, z * rib);
+        pos.setX(i, posX * rib);
+        pos.setZ(i, posZ * rib);
       }
       break;
     }
@@ -95,14 +95,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(getProfile(), segments);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
-        const y = pos.getY(i);
-        const x = pos.getX(i);
-        const z = pos.getZ(i);
-        const normY = (y + height / 2) / height;
+        const posY = pos.getY(i);
+        const posX = pos.getX(i);
+        const posZ = pos.getZ(i);
+        const normY = (posY + height / 2) / height;
         const angle = normY * twist;
-        const newX = x * Math.cos(angle) - z * Math.sin(angle);
-        const newZ = x * Math.sin(angle) + z * Math.cos(angle);
-        pos.setXYZ(i, newX, y, newZ);
+        const newX = posX * Math.cos(angle) - posZ * Math.sin(angle);
+        const newZ = posX * Math.sin(angle) + posZ * Math.cos(angle);
+        pos.setXYZ(i, newX, posY, newZ);
       }
       break;
     }
@@ -113,13 +113,13 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(getProfile(20), folds * 2);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const z = pos.getZ(i);
-        const angle = Math.atan2(z, x);
+        const posX = pos.getX(i);
+        const posZ = pos.getZ(i);
+        const angle = Math.atan2(posZ, posX);
         const foldStep = (angle / (Math.PI * 2)) * folds * 2;
         const isPeak = Math.round(foldStep) % 2 === 0;
         const offset = isPeak ? depth : -depth;
-        const r = Math.sqrt(x * x + z * z) + offset;
+        const r = Math.sqrt(posX * posX + posZ * posZ) + offset;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
       }
@@ -155,16 +155,16 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const strength = params.noiseStrength || 1;
       const scale = params.noiseScale || 0.5;
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const y = pos.getY(i);
-        const z = pos.getZ(i);
-        const angle = Math.atan2(z, x);
+        const posX = pos.getX(i);
+        const posY = pos.getY(i);
+        const posZ = pos.getZ(i);
+        const angle = Math.atan2(posZ, posX);
         const noise = (
           Math.sin(angle * 7 * scale + seed) * 0.5 +
-          Math.cos(y * 3 * scale - seed) * 0.5 +
-          Math.sin((angle + y) * 5 * scale) * 0.2
+          Math.cos(posY * 3 * scale - seed) * 0.5 +
+          Math.sin((angle + posY) * 5 * scale) * 0.2
         ) * strength;
-        const r = Math.sqrt(x * x + z * z) + noise;
+        const r = Math.sqrt(posX * posX + posZ * posZ) + noise;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
       }
@@ -177,13 +177,13 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const y = pos.getY(i);
-        const z = pos.getZ(i);
-        const angle = Math.atan2(z, x);
-        const v = Math.abs(Math.sin(angle * cells + seed) * Math.cos(y * (cells/2) - seed));
+        const posX = pos.getX(i);
+        const posY = pos.getY(i);
+        const posZ = pos.getZ(i);
+        const angle = Math.atan2(posZ, posX);
+        const v = Math.abs(Math.sin(angle * cells + seed) * Math.cos(posY * (cells/2) - seed));
         const cellNoise = Math.pow(v, 0.5) * 0.8;
-        const r = Math.sqrt(x * x + z * z) + cellNoise;
+        const r = Math.sqrt(posX * posX + posZ * posZ) + cellNoise;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
       }
@@ -196,12 +196,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const y = pos.getY(i);
-        const z = pos.getZ(i);
-        const angle = Math.atan2(z, x);
-        const lattice = (Math.sin(angle * density) * Math.sin(y * density + seed)) * 0.3;
-        const r = Math.sqrt(x * x + z * z) + lattice;
+        const posX = pos.getX(i);
+        const posY = pos.getY(i);
+        const posZ = pos.getZ(i);
+        const angle = Math.atan2(posZ, posX);
+        const lattice = (Math.sin(angle * density) * Math.sin(posY * density + seed)) * 0.3;
+        const r = Math.sqrt(posX * posX + posZ * posZ) + lattice;
         pos.setX(i, r * Math.cos(angle));
         pos.setZ(i, r * Math.sin(angle));
       }
@@ -267,14 +267,14 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
   
   // Generate UV coordinates for the cylinder
   for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i);
-    const y = positions.getY(i);
-    const z = positions.getZ(i);
+    const posX = positions.getX(i);
+    const posY = positions.getY(i);
+    const posZ = positions.getZ(i);
     
     // Convert to cylindrical coordinates for UV mapping
-    const angle = Math.atan2(z, x);
+    const angle = Math.atan2(posZ, posX);
     const u = (angle + Math.PI) / (2 * Math.PI);
-    const v = (y + height / 2) / height;
+    const v = (posY + height / 2) / height;
     uvs.push(u, v);
   }
   
@@ -285,9 +285,9 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
     const v = uvs[i * 2 + 1];
     
     // Get pixel value from image
-    const x = Math.floor(u * (imageData.width - 1));
-    const y = Math.floor((1 - v) * (imageData.height - 1));
-    const idx = (y * imageData.width + x) * 4;
+    const imgX = Math.floor(u * (imageData.width - 1));
+    const imgY = Math.floor((1 - v) * (imageData.height - 1));
+    const idx = (imgY * imageData.width + imgX) * 4;
     
     // Calculate grayscale value
     const gray = (processedData[idx] * 0.299 + 
@@ -299,22 +299,22 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
     const thickness = minThickness + thicknessFactor * (maxThickness - minThickness);
     
     // Apply thickness as displacement along normal
-    const x = positions.getX(i);
-    const y = positions.getY(i);
-    const z = positions.getZ(i);
+    const posX = positions.getX(i);
+    const posY = positions.getY(i);
+    const posZ = positions.getZ(i);
     
     // Calculate normal direction (simplified)
-    const length = Math.sqrt(x * x + z * z);
+    const length = Math.sqrt(posX * posX + posZ * posZ);
     if (length > 0) {
-      const nx = x / length;
-      const nz = z / length;
+      const nx = posX / length;
+      const nz = posZ / length;
       
       // Displace along normal
       positions.setXYZ(
         i,
-        x + nx * thickness,
-        y,
-        z + nz * thickness
+        posX + nx * thickness,
+        posY,
+        posZ + nz * thickness
       );
     }
   }

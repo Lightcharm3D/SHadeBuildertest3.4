@@ -206,6 +206,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <TabsContent value="build" className="space-y-4 pt-4">
           <div className="space-y-4">
+            <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="flex items-center gap-1"><Layers className="w-3 h-3" /> Wall Thickness</span>
+                <span className="text-indigo-600">{params.thickness.toFixed(2)} cm</span>
+              </div>
+              <Slider 
+                value={[params.thickness]} 
+                min={0.04} 
+                max={0.5} 
+                step={0.01} 
+                onValueChange={([v]) => updateParam('thickness', v)} 
+                className="py-1" 
+              />
+              <p className="text-[9px] text-slate-400 italic">Adjust for structural strength (0.2cm = 2mm)</p>
+            </div>
+
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fitter Type</Label>
               <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>

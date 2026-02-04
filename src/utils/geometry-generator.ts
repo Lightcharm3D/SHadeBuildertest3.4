@@ -90,7 +90,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
       const y = -height / 2 + height * t;
-      const r = getRadiusAtHeight(y, params) + offset;
+      const r = Math.max(0.1, getRadiusAtHeight(y, params) + offset);
       points.push(new THREE.Vector2(r, y));
     }
     return points;
@@ -102,7 +102,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   switch (type) {
     case 'organic_cell': {
       const scale = params.noiseScale || 1.5;
-      geometry = new THREE.LatheGeometry(profile, segments);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
@@ -136,7 +139,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 0.8;
-      geometry = new THREE.LatheGeometry(profile, folds * 2);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), folds * 2);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), folds * 2);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
@@ -184,7 +190,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'voronoi': {
       const cells = params.cellCount || 12;
-      geometry = new THREE.LatheGeometry(profile, segments);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       const points: THREE.Vector3[] = [];
       for (let i = 0; i < cells; i++) {
@@ -210,7 +219,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'wave_shell': {
       const amp = params.amplitude || 0.5;
       const freq = params.frequency || 8;
-      geometry = new THREE.LatheGeometry(profile, segments);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
@@ -230,7 +242,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'perlin_noise': {
       const strength = params.noiseStrength || 0.4;
       const scale = params.noiseScale || 2.0;
-      geometry = new THREE.LatheGeometry(profile, segments);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
@@ -253,7 +268,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'ribbed_drum': {
       const count = params.ribCount || 20;
       const depth = params.ribDepth || 0.5;
-      geometry = new THREE.LatheGeometry(profile, segments);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
@@ -269,7 +287,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     
     case 'spiral_twist': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
-      geometry = new THREE.LatheGeometry(profile, segments);
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const py = pos.getY(i);
@@ -286,7 +307,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'geometric_poly': {
       const sides = params.sides || 6;
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, true);
+      const outerGeom = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, true);
+      const innerGeom = new THREE.CylinderGeometry(topRadius - thickness, bottomRadius - thickness, height, sides, 1, true);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
       break;
     }
 
@@ -316,8 +339,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
     
-    default:
-      geometry = new THREE.LatheGeometry(profile, segments);
+    default: {
+      const outerGeom = new THREE.LatheGeometry(getProfilePoints(60, 0), segments);
+      const innerGeom = new THREE.LatheGeometry(getProfilePoints(60, -thickness), segments);
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      break;
+    }
   }
 
   if (params.internalRibs > 0) {

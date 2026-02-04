@@ -148,16 +148,24 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const getClosedProfilePoints = (steps = 60, customThickness?: number) => {
     const points = [];
     const tVal = customThickness || thickness;
+    
+    // Outer wall (bottom to top)
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
       const y = -height / 2 + height * t;
       points.push(new THREE.Vector2(Math.max(0.1, getRadiusAtHeight(y, params)), y));
     }
+    
+    // Inner wall (top to bottom)
     for (let i = steps; i >= 0; i--) {
       const t = i / steps;
       const y = -height / 2 + height * t;
       points.push(new THREE.Vector2(Math.max(0.05, getRadiusAtHeight(y, params) - tVal), y));
     }
+    
+    // Close the loop back to the start point to ensure a solid manifold mesh
+    points.push(points[0].clone());
+    
     return points;
   };
 
@@ -424,7 +432,6 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
   
-  // 7. Adaptive Height
   const yPos = -height / 2 + (fitterHeight || height * 0.05);
   
   const ringProfile = [
@@ -438,27 +445,21 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
-  // 1. Compute Inner and Safety Radii
   const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
   const wallThicknessCm = thickness;
-  const safetyMarginCm = 0.05; // 0.5mm safety margin
+  const safetyMarginCm = 0.06; // 0.6mm safety margin
   
-  // 5. Spoke Thickness
   let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
-  // 6. Spoke Count
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
   
-  // 9. Tiny Lamp Reinforcement
-  if (baseRadiusAtZ < 2) { // 20mm
+  if (baseRadiusAtZ < 2) {
     spokeThickMm *= 1.5;
     spokeCount = Math.max(spokeCount, 4);
   }
 
   const spokeThickCm = spokeThickMm / 10;
   const spokeWidthCm = (params.spokeWidth || 10) / 10;
-  
-  // 4. Controlled Wall Fusion Depth
   const fuseDepthCm = wallThicknessCm * 0.25;
 
   for (let i = 0; i < spokeCount; i++) {
@@ -468,20 +469,27 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
 
-    // 2. Surface-Based Spoke Trimming (Angle Adaptive)
-    // 8. Per-Angle Radius Correction
     const disp = getDisplacementAt(angle, yPos, params);
     const outerHitR = baseRadiusAtZ + disp;
     const innerHitR = outerHitR - wallThicknessCm;
     
-    // Zero-Protrusion: Spoke must stop before the outer shell
-    const safeHitPointR = innerHitR + fuseDepthCm;
-    const absoluteMaxR = outerHitR - safetyMarginCm;
-    const finalSpokeEndR = Math.min(safeHitPointR, absoluteMaxR);
+    // Corner-Safe Trimming:
+    // A box's corner is further from the center than its face.
+    // We must ensure the corner radius doesn't exceed the outerHitR - safetyMargin.
+    const maxAllowedCornerR = outerHitR - safetyMarginCm;
+    const halfWidth = spokeWidthCm / 2;
+    
+    // (outerRadius + length)^2 + halfWidth^2 = maxAllowedCornerR^2
+    const maxOuterR = Math.sqrt(Math.pow(maxAllowedCornerR, 2) - Math.pow(halfWidth, 2));
+    
+    // Structural fusion target
+    const fusionTargetR = innerHitR + fuseDepthCm;
+    
+    // Final spoke end radius must be the minimum of fusion target and the corner-safe limit
+    const finalSpokeEndR = Math.min(fusionTargetR, maxOuterR);
     
     const spokeLength = Math.max(0.1, finalSpokeEndR - outerRadius);
     
-    // Create segmented box to allow curvature matching
     const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm, 10, 1, 1);
     const pos = spoke.attributes.position;
     
@@ -490,18 +498,18 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const py = pos.getY(j);
       const pz = pos.getZ(j);
       
-      // If vertex is at the outer end of the spoke
       if (px > spokeLength / 2 - 0.01) {
-        // Calculate local angle for this vertex to match curvature
         const localAngle = angle + Math.atan2(pz, finalSpokeEndR);
         const localDisp = getDisplacementAt(localAngle, yPos + py, params);
         const localOuterR = baseRadiusAtZ + localDisp;
         const localInnerR = localOuterR - wallThicknessCm;
         
-        const localSafeEndR = Math.min(localInnerR + fuseDepthCm, localOuterR - safetyMarginCm);
+        const localMaxCornerR = localOuterR - safetyMarginCm;
+        const localMaxOuterR = Math.sqrt(Math.pow(localMaxCornerR, 2) - Math.pow(pz, 2));
+        const localFusionTargetR = localInnerR + fuseDepthCm;
         
-        // Adjust X to match the organic surface hit point
-        pos.setX(j, localSafeEndR - outerRadius - spokeLength / 2);
+        const localEndR = Math.min(localFusionTargetR, localMaxOuterR);
+        pos.setX(j, localEndR - outerRadius - spokeLength / 2);
       }
     }
     

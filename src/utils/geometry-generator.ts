@@ -15,7 +15,6 @@ export type LampshadeType =
   | 'organic_cell'
   | 'bricks'
   | 'petal_bloom'
-  | 'dna_spiral'
   | 'faceted_gem';
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave';
@@ -228,41 +227,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       bottomRing.translate(0, -height / 2, 0);
       geoms.push(bottomRing);
 
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
-      break;
-    }
-
-    case 'dna_spiral': {
-      const geoms: THREE.BufferGeometry[] = [];
-      const twist = (params.twistAngle || 360) * (Math.PI / 180);
-      const strutRadius = thickness;
-      
-      for (let i = 0; i < 2; i++) {
-        const offset = i * Math.PI;
-        const spiral = new THREE.CylinderGeometry(strutRadius, strutRadius, height, 8, 64);
-        const pos = spiral.attributes.position;
-        for (let j = 0; j < pos.count; j++) {
-          const py = pos.getY(j);
-          const t = (py + height / 2) / height;
-          const r = getRadiusAtHeight(py, params);
-          const angle = t * twist + offset;
-          pos.setXYZ(j, Math.cos(angle) * r, py, Math.sin(angle) * r);
-        }
-        geoms.push(spiral);
-      }
-      
-      const rungCount = 12;
-      for (let i = 0; i < rungCount; i++) {
-        const t = i / (rungCount - 1);
-        const py = -height / 2 + t * height;
-        const r = getRadiusAtHeight(py, params);
-        const angle = t * twist;
-        const rung = new THREE.BoxGeometry(r * 2, strutRadius, strutRadius);
-        rung.rotateY(angle);
-        rung.translate(0, py, 0);
-        geoms.push(rung);
-      }
-      
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }

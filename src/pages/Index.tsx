@@ -106,7 +106,7 @@ const Index = () => {
     const types: LampshadeType[] = [
       'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
       'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 
-      'organic_cell', 'bricks', 'petal_bloom', 'dna_spiral', 'faceted_gem'
+      'organic_cell', 'bricks', 'petal_bloom', 'faceted_gem'
     ];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     

@@ -31,7 +31,6 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Modern Minimal': { type: 'slotted', silhouette: 'straight', slotCount: 24, slotWidth: 0.1, height: 18, topRadius: 6, bottomRadius: 6 },
   'Organic Cell': { type: 'organic_cell', silhouette: 'convex', noiseStrength: 1.2, noiseScale: 2.0, height: 15, topRadius: 5, bottomRadius: 8 },
   'Brick Wall': { type: 'bricks', silhouette: 'straight', gridDensity: 12, thickness: 0.15, height: 16, topRadius: 7, bottomRadius: 7 },
-  'DNA Helix': { type: 'dna_spiral', silhouette: 'hourglass', twistAngle: 720, thickness: 0.2, height: 20, topRadius: 4, bottomRadius: 4 },
   'Crystal Gem': { type: 'faceted_gem', silhouette: 'concave', noiseStrength: 1.5, height: 14, topRadius: 5, bottomRadius: 9 },
   'Petal Bloom': { type: 'petal_bloom', silhouette: 'bell', ribCount: 12, height: 15, topRadius: 3, bottomRadius: 10 },
 };
@@ -136,7 +135,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <SelectContent className="rounded-2xl">
                   <SelectItem value="bricks">Bricks Pattern</SelectItem>
                   <SelectItem value="petal_bloom">Petal Bloom</SelectItem>
-                  <SelectItem value="dna_spiral">DNA Spiral</SelectItem>
                   <SelectItem value="faceted_gem">Faceted Gem</SelectItem>
                   <SelectItem value="organic_cell">Organic Cellular</SelectItem>
                   <SelectItem value="ribbed_drum">Ribbed Drum</SelectItem>
@@ -198,7 +196,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Slider value={[params.gridDensity || 10]} min={4} max={30} step={1} onValueChange={([v]) => updateParam('gridDensity', v)} className="py-2" />
               </div>
             )}
-            {(params.type === 'dna_spiral' || params.type === 'spiral_twist') && (
+            {(params.type === 'spiral_twist') && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Twist Angle</Label>

@@ -6,7 +6,7 @@ import LithophaneViewport from '@/components/LithophaneViewport';
 import LithophaneControls from '@/components/LithophaneControls';
 import ImageCropper from '@/components/ImageCropper';
 import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane-generator';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
+import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2, Trash2 } from 'lucide-react';
@@ -82,7 +82,6 @@ const LithophaneGenerator = () => {
         const aspect = img.width / img.height;
         setParams(prev => ({ ...prev, height: parseFloat((prev.width / aspect).toFixed(2)) }));
         
-        // Save to history
         const newEntry = {
           id: Date.now().toString(),
           preview: croppedImageUrl,

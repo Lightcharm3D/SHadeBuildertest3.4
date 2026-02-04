@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries } from 'three-stdlib';
 
 export type LampshadeType = 
   | 'ribbed_drum' 
@@ -168,7 +168,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'bricks': {
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
-      const strutRadius = thickness / 1.2; // Slightly thicker for better printing
+      const strutRadius = thickness / 1.2; 
       const hStep = height / density;
       const aStep = (Math.PI * 2) / segments;
       
@@ -194,7 +194,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const r = getRadiusAtHeight(y, params);
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
 
-          // Connect Upwards
           if (j < density) {
             const nr = getRadiusAtHeight(nextY, params);
             const pUp1 = new THREE.Vector3(Math.cos(nextAngle) * nr, nextY, Math.sin(nextAngle) * nr);
@@ -203,7 +202,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
             geoms.push(createStrut(p1, pUp2));
           }
 
-          // Connect Downwards (Crucial for top row connectivity)
           if (j > 0) {
             const pr = getRadiusAtHeight(prevY, params);
             const pDown = new THREE.Vector3(Math.cos(nextAngle) * pr, prevY, Math.sin(nextAngle) * pr);
@@ -212,9 +210,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
       }
       
-      // Structural Rings
       const ringThickness = strutRadius * 1.5;
-      
       const topRingRadius = getRadiusAtHeight(height / 2, params);
       const topRing = new THREE.TorusGeometry(topRingRadius, ringThickness, 8, segments);
       topRing.rotateX(Math.PI / 2);
@@ -227,7 +223,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       bottomRing.translate(0, -height / 2, 0);
       geoms.push(bottomRing);
 
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -299,7 +295,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -308,7 +304,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const outerGeom = new THREE.LatheGeometry(getClosedProfilePoints(60, thickness), segments);
       const innerGeom = new THREE.LatheGeometry(getClosedProfilePoints(60, thickness), segments);
       innerGeom.scale(1 - (gap / topRadius), 1, 1 - (gap / topRadius));
-      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      geometry = mergeGeometries([outerGeom, innerGeom]);
       break;
     }
 
@@ -362,7 +358,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       ringBottom.translate(0, -height / 2, 0);
       geoms.push(ringBottom);
 
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
     
@@ -405,12 +401,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       rib.rotateY(angle);
       ribGeoms.push(rib);
     }
-    geometry = BufferGeometryUtils.mergeGeometries([geometry, ...ribGeoms]);
+    geometry = mergeGeometries([geometry, ...ribGeoms]);
   }
 
   if (params.fitterType !== 'none') {
     const fitterGeom = generateFitterGeometry(params);
-    geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);
+    geometry = mergeGeometries([geometry, fitterGeom]);
   }
   
   geometry.computeVertexNormals();
@@ -424,15 +420,11 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   } = params;
   
   const geoms: THREE.BufferGeometry[] = [];
-  
   const innerRadius = fitterDiameter / 20; 
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
-  
-  // Adaptive Spoke Placement
   const yPos = -height / 2 + fitterHeight;
   
-  // 1. Central Ring
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
     new THREE.Vector2(outerRadius, -ringHeightCm / 2),
@@ -444,17 +436,14 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
-  // 2. Adaptive Radial Spokes
   const outerRadiusCm = getRadiusAtHeight(yPos, params);
   const diameterMm = outerRadiusCm * 2 * 10;
   const wallThicknessMm = thickness * 10;
   const lampInnerRadiusMm = (diameterMm / 2) - wallThicknessMm;
   
-  // Adaptive Strength Scaling
   let adaptiveSpokeThickness = Math.max(2, Math.min(6, diameterMm * 0.015));
   let adaptiveSpokeCount = Math.max(4, Math.round(diameterMm / 20));
   
-  // Tiny Diameter Safety Mode
   if (lampInnerRadiusMm < 20) {
     adaptiveSpokeThickness *= 1.5;
     adaptiveSpokeCount = Math.max(adaptiveSpokeCount, 4);
@@ -462,23 +451,18 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
 
   const spokeThickCm = adaptiveSpokeThickness / 10;
   const spokeWidthCm = (params.spokeWidth || 10) / 10;
-  
-  // Spoke Structural Fuse Into Wall
   const spokeFuseDepthMm = wallThicknessMm * 0.3;
   const finalSpokeLengthMm = lampInnerRadiusMm + spokeFuseDepthMm;
   const finalSpokeLengthCm = finalSpokeLengthMm / 10;
 
   for (let i = 0; i < adaptiveSpokeCount; i++) {
     let angle = (i / adaptiveSpokeCount) * Math.PI * 2;
-    
-    // Align with geometric sides if applicable
     if (type === 'geometric_poly') {
       const step = (Math.PI * 2) / sides;
       angle = Math.round(angle / step) * step;
     }
 
     const disp = getDisplacementAt(angle, yPos, params);
-    // Adjust length for displacement (e.g. ribbed or organic shapes)
     const adjustedLength = finalSpokeLengthCm + disp;
     const spokeSegmentLength = Math.max(0.1, adjustedLength - outerRadius);
     
@@ -488,5 +472,5 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     geoms.push(spoke);
   }
   
-  return BufferGeometryUtils.mergeGeometries(geoms);
+  return mergeGeometries(geoms);
 }

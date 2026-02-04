@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Scissors } from 'lucide-react';
@@ -42,12 +42,11 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const [isLightOn, setIsLightOn] = useState(false);
   const [isCutaway, setIsCutaway] = useState(false);
 
-  // Custom shader for overhang analysis
   const overhangMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
         uColor: { value: new THREE.Color(material.color) },
-        uThreshold: { value: Math.cos(Math.PI / 4) }, // 45 degrees
+        uThreshold: { value: Math.cos(Math.PI / 4) }, 
       },
       vertexShader: `
         varying vec3 vNormal;

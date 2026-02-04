@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry-generator';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
+import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2 } from 'lucide-react';

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { Download, RefreshCw, Sparkles, Eye, Box } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -148,16 +148,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <div className="mt-auto pt-6 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={onRandomize} className="w-full gap-2 border-slate-200 hover:bg-slate-50">
-            <RefreshCw className="w-4 h-4" />
-            Randomize
-          </Button>
-          <Button variant="outline" className="w-full gap-2 bg-indigo-50 border-indigo-100 text-indigo-700 hover:bg-indigo-100">
-            <Sparkles className="w-4 h-4" />
-            AI Suggest
-          </Button>
-        </div>
+        <Button variant="outline" onClick={onRandomize} className="w-full gap-2 border-slate-200 hover:bg-slate-50">
+          <RefreshCw className="w-4 h-4" />
+          Randomize Design
+        </Button>
         <Button onClick={onExport} className="w-full gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200">
           <Download className="w-4 h-4" />
           Export STL for 3D Print

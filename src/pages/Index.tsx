@@ -16,23 +16,10 @@ const Index = () => {
     topRadius: 5,
     bottomRadius: 8,
     thickness: 0.2,
-    segments: 64,
-    ribCount: 24,
-    ribDepth: 0.4,
-    twistAngle: 0,
-    cellCount: 12,
-    amplitude: 1,
-    frequency: 5,
-    sides: 6,
-    gridDensity: 10,
-    foldCount: 12,
-    foldDepth: 0.8,
-    noiseScale: 0.5,
-    noiseStrength: 0.5,
-    slotCount: 16,
-    slotWidth: 0.1,
-    gapDistance: 0.5,
-    seed: Math.random() * 1000,
+    seed: Math.random() * 10000,
+    density: 40,
+    smoothness: 60,
+    diffusion: 30,
   });
 
   const [showWireframe, setShowWireframe] = useState(false);
@@ -55,7 +42,7 @@ const Index = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `lampshade-${params.type}-${Date.now()}.stl`;
+      link.download = `shade-${params.type}-${Date.now()}.stl`;
       link.click();
       URL.revokeObjectURL(url);
       showSuccess("STL file exported successfully!");
@@ -76,26 +63,14 @@ const Index = () => {
     setParams({
       ...params,
       type: newType,
+      seed: Math.random() * 10000,
+      density: 10 + Math.random() * 80,
+      diffusion: 10 + Math.random() * 80,
       height: 10 + Math.random() * 15,
       topRadius: 3 + Math.random() * 7,
       bottomRadius: 5 + Math.random() * 10,
-      ribCount: Math.floor(10 + Math.random() * 40),
-      ribDepth: Math.random() * 1,
-      twistAngle: Math.random() * 720,
-      cellCount: Math.floor(5 + Math.random() * 20),
-      amplitude: Math.random() * 2,
-      frequency: 2 + Math.random() * 10,
-      sides: Math.floor(3 + Math.random() * 10),
-      gridDensity: Math.floor(5 + Math.random() * 20),
-      foldCount: Math.floor(6 + Math.random() * 24),
-      foldDepth: Math.random() * 1.5,
-      noiseScale: Math.random() * 1,
-      noiseStrength: Math.random() * 1,
-      slotCount: Math.floor(8 + Math.random() * 32),
-      slotWidth: 0.05 + Math.random() * 0.2,
-      seed: Math.random() * 1000,
     });
-    showSuccess("New design generated!");
+    showSuccess("New generative design created!");
   };
 
   return (

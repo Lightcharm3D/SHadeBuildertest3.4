@@ -69,10 +69,7 @@ function pseudoNoise(x: number, y: number, z: number, seed: number) {
 
 function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   const { height, topRadius, bottomRadius, silhouette } = params;
-  // t = 0 at bottom (-height/2), t = 1 at top (height/2)
   const t = (y + height / 2) / height;
-  
-  // Corrected: bottomRadius at t=0, topRadius at t=1
   let r = bottomRadius + (topRadius - bottomRadius) * t;
   
   switch (silhouette) {
@@ -80,7 +77,6 @@ function getRadiusAtHeight(y: number, params: LampshadeParams): number {
       r *= 1 + Math.pow(Math.sin(t * Math.PI), 2) * -0.3;
       break;
     case 'bell':
-      // Bell flares at bottom (t=0)
       r *= 1 + Math.pow(1 - t, 2) * 0.4;
       break;
     case 'convex':
@@ -173,7 +169,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'bricks': {
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
-      const strutRadius = thickness / 1.5;
+      const strutRadius = thickness / 1.2; // Slightly thicker for better printing
       const hStep = height / density;
       const aStep = (Math.PI * 2) / segments;
       
@@ -190,44 +186,44 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
         const nextY = y + hStep / 2;
+        const prevY = y - hStep / 2;
         
         for (let i = 0; i < segments; i++) {
           const angle = i * aStep;
           const nextAngle = (i + 0.5) * aStep;
           
           const r = getRadiusAtHeight(y, params);
-          const nr = getRadiusAtHeight(nextY, params);
-
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
-          const p2 = new THREE.Vector3(Math.cos(nextAngle) * nr, nextY, Math.sin(nextAngle) * nr);
-          
+
+          // Connect Upwards
           if (j < density) {
-            geoms.push(createStrut(p1, p2));
+            const nr = getRadiusAtHeight(nextY, params);
+            const pUp1 = new THREE.Vector3(Math.cos(nextAngle) * nr, nextY, Math.sin(nextAngle) * nr);
+            const pUp2 = new THREE.Vector3(Math.cos(angle - 0.5 * aStep) * nr, nextY, Math.sin(angle - 0.5 * aStep) * nr);
+            geoms.push(createStrut(p1, pUp1));
+            geoms.push(createStrut(p1, pUp2));
           }
 
-          const p3 = new THREE.Vector3(Math.cos(angle - 0.5 * aStep) * nr, nextY, Math.sin(angle - 0.5 * aStep) * nr);
-          if (j < density) {
-            geoms.push(createStrut(p1, p3));
-          }
-          
-          if (j > 0 && j < density) {
-            const prevY = y - hStep / 2;
+          // Connect Downwards (Crucial for top row connectivity)
+          if (j > 0) {
             const pr = getRadiusAtHeight(prevY, params);
-            const p0 = new THREE.Vector3(Math.cos(nextAngle) * pr, prevY, Math.sin(nextAngle) * pr);
-            geoms.push(createStrut(p1, p0));
+            const pDown = new THREE.Vector3(Math.cos(nextAngle) * pr, prevY, Math.sin(nextAngle) * pr);
+            geoms.push(createStrut(p1, pDown));
           }
         }
       }
       
-      // Corrected: Use getRadiusAtHeight to ensure rings match the lattice exactly
+      // Structural Rings
+      const ringThickness = strutRadius * 1.5;
+      
       const topRingRadius = getRadiusAtHeight(height / 2, params);
-      const topRing = new THREE.TorusGeometry(topRingRadius, strutRadius, 8, segments);
+      const topRing = new THREE.TorusGeometry(topRingRadius, ringThickness, 8, segments);
       topRing.rotateX(Math.PI / 2);
       topRing.translate(0, height / 2, 0);
       geoms.push(topRing);
 
       const bottomRingRadius = getRadiusAtHeight(-height / 2, params);
-      const bottomRing = new THREE.TorusGeometry(bottomRingRadius, strutRadius, 8, segments);
+      const bottomRing = new THREE.TorusGeometry(bottomRingRadius, ringThickness, 8, segments);
       bottomRing.rotateX(Math.PI / 2);
       bottomRing.translate(0, -height / 2, 0);
       geoms.push(bottomRing);

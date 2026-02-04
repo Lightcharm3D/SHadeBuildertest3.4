@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export type LithophaneType = 'flat' | 'circle' | 'heart' | 'star' | 'badge' | 'curved' | 'cylinder';
+export type LithophaneType = 'flat' | 'circle' | 'heart' | 'badge' | 'curved' | 'cylinder';
 
 export interface LithophaneParams {
   type: LithophaneType;
@@ -60,12 +60,6 @@ export function generateLithophaneGeometry(
         const hX = x * 2.2;
         const hY = y * 2.2 + 0.2;
         return Math.pow(hX * hX + hY * hY - 1, 3) - hX * hX * Math.pow(hY, 3) <= 0;
-      case 'star':
-        const angle = Math.atan2(y, x);
-        const r = Math.sqrt(x * x + y * y);
-        const armIndex = Math.floor(5 * (angle + Math.PI) / (2 * Math.PI));
-        const starR = 0.25 * (Math.cos(Math.PI / 5) / Math.cos((Math.PI / 5) - (angle % (2 * Math.PI / 5)) + (Math.PI / 5)));
-        return r <= starR * 2;
       case 'badge':
         return Math.abs(x) <= 0.4 && (y <= 0.4 && y >= -0.5 + Math.abs(x));
       default:

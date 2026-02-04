@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams, LithophaneType } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Star, Square } from 'lucide-react';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square } from 'lucide-react';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -54,7 +54,7 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
 
         <div className="space-y-3">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">2. Select Shape</Label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button 
               variant={params.type === 'flat' ? 'default' : 'outline'} 
               size="icon" 
@@ -78,14 +78,6 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               className="h-10 w-full"
             >
               <Heart className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant={params.type === 'star' ? 'default' : 'outline'} 
-              size="icon" 
-              onClick={() => updateParam('type', 'star')}
-              className="h-10 w-full"
-            >
-              <Star className="w-4 h-4" />
             </Button>
           </div>
         </div>

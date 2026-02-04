@@ -139,43 +139,66 @@ export function generateLithophaneGeometry(
     }
   }
 
-  // 3. Side Walls (Manifold closure)
-  const addSide = (idx1: number, idx2: number, idx3: number, idx4: number) => {
-    // idx1, idx2 are front; idx3, idx4 are back
-    indices.push(idx1, idx2, idx3);
-    indices.push(idx2, idx4, idx3);
-  };
-
-  for (let j = 0; j < gridY - 1; j++) {
-    for (let i = 0; i < gridX - 1; i++) {
-      const a = j * gridX + i;
-      const b = j * gridX + (i + 1);
-      const c = (j + 1) * gridX + i;
-      const d = (j + 1) * gridX + (i + 1);
-
-      // Vertical edges
-      if (validPoints[a] !== validPoints[b]) {
-        if (validPoints[a]) addSide(a, b, a + backOffset, b + backOffset);
-        else addSide(b, a, b + backOffset, a + backOffset);
+  // 3. Side Walls (Manifold closure) - Fixed to properly seal all edges
+  // Process all boundary edges including outer edges of the grid
+  for (let j = 0; j < gridY; j++) {
+    for (let i = 0; i < gridX; i++) {
+      const idx = j * gridX + i;
+      
+      // Skip invalid points
+      if (!validPoints[idx]) continue;
+      
+      // Check left edge (i-1)
+      if (i === 0 || !validPoints[idx - 1]) {
+        // Create left side wall
+        const frontLeft = idx;
+        const backLeft = idx + backOffset;
+        const frontBottomLeft = (j === gridY - 1) ? idx : (j + 1) * gridX + i;
+        const backBottomLeft = frontBottomLeft + backOffset;
+        
+        indices.push(frontLeft, backLeft, frontBottomLeft);
+        indices.push(backLeft, backBottomLeft, frontBottomLeft);
       }
-      if (validPoints[c] !== validPoints[d]) {
-        if (validPoints[c]) addSide(d, c, d + backOffset, c + backOffset);
-        else addSide(c, d, c + backOffset, d + backOffset);
+      
+      // Check right edge (i+1)
+      if (i === gridX - 1 || !validPoints[idx + 1]) {
+        // Create right side wall
+        const frontRight = idx;
+        const backRight = idx + backOffset;
+        const frontBottomRight = (j === gridY - 1) ? idx : (j + 1) * gridX + i;
+        const backBottomRight = frontBottomRight + backOffset;
+        
+        indices.push(frontRight, frontBottomRight, backRight);
+        indices.push(backRight, frontBottomRight, backBottomRight);
       }
-      // Horizontal edges
-      if (validPoints[a] !== validPoints[c]) {
-        if (validPoints[a]) addSide(c, a, c + backOffset, a + backOffset);
-        else addSide(a, c, a + backOffset, c + backOffset);
+      
+      // Check top edge (j-1)
+      if (j === 0 || !validPoints[idx - gridX]) {
+        // Create top side wall
+        const frontTop = idx;
+        const backTop = idx + backOffset;
+        const frontTopRight = (i === gridX - 1) ? idx : idx + 1;
+        const backTopRight = frontTopRight + backOffset;
+        
+        indices.push(frontTop, frontTopRight, backTop);
+        indices.push(backTop, frontTopRight, backTopRight);
       }
-      if (validPoints[b] !== validPoints[d]) {
-        if (validPoints[b]) addSide(b, d, b + backOffset, d + backOffset);
-        else addSide(d, b, d + backOffset, b + backOffset);
+      
+      // Check bottom edge (j+1)
+      if (j === gridY - 1 || !validPoints[idx + gridX]) {
+        // Create bottom side wall
+        const frontBottom = idx;
+        const backBottom = idx + backOffset;
+        const frontBottomRight = (i === gridX - 1) ? idx : idx + 1;
+        const backBottomRight = frontBottomRight + backOffset;
+        
+        indices.push(frontBottom, backBottom, frontBottomRight);
+        indices.push(backBottom, backBottomRight, frontBottomRight);
       }
     }
   }
 
   // 4. Add bottom face to make it completely solid
-  // Create a bottom face that covers the entire base
   const bottomVerticesStart = vertices.length / 3;
   
   // Add bottom vertices (same as back vertices but at z=0)

@@ -28,13 +28,13 @@ const SplashScreen = () => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-        className="mt-10 text-center"
+        className="mt-10 text-center px-6"
       >
-        <h1 className="text-4xl font-black tracking-tighter text-white leading-none">
-          SHADE<span className="brand-text-gradient">BUILDER</span>
+        <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white leading-none">
+          SHADEBUILDER <span className="text-slate-500">X</span> LITHOSTUDIO
         </h1>
-        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.5em] mt-4">
-          Precision Geometry Engine
+        <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.5em] mt-4">
+          by LightCharm 3D
         </p>
       </motion.div>
 

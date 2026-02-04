@@ -131,10 +131,10 @@ const Index = () => {
             </div>
           </div>
           <div>
-            <h1 className="text-base lg:text-xl font-black tracking-tighter text-slate-900 leading-none flex items-center gap-2">
-              SHADE<span className="brand-text-gradient">BUILDER</span>
+            <h1 className="text-sm lg:text-lg font-black tracking-tighter text-slate-900 leading-none flex items-center gap-1">
+              SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
             </h1>
-            <p className="text-[8px] lg:text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1">Precision Geometry Engine</p>
+            <p className="text-[8px] lg:text-[9px] text-indigo-600 font-bold uppercase tracking-[0.3em] mt-1">by LightCharm 3D</p>
           </div>
         </div>
         

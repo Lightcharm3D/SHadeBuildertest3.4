@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries, mergeVertices } from 'three-stdlib';
+import { mergeBufferGeometries as mergeGeometries, mergeVertices } from 'three-stdlib';
 
 export type LampshadeType = 
   | 'ribbed_drum' 

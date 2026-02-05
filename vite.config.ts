@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import dyadComponentTagger from "@dyad-sh/react-vite-component-tagger";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(() => ({
   // This matches your GitHub repository name exactly
@@ -13,8 +12,7 @@ export default defineConfig(() => ({
   },
   plugins: [
     dyadComponentTagger(), 
-    react(),
-    viteSingleFile()
+    react()
   ],
   resolve: {
     alias: {
@@ -23,11 +21,7 @@ export default defineConfig(() => ({
   },
   build: {
     target: "esnext",
-    assetsInlineLimit: 100000000, // Inline everything
-    chunkSizeWarningLimit: 100000000,
-    cssCodeSplit: false,
-    rollupOptions: {
-      inlineDynamicImports: true,
-    },
+    outDir: "dist",
+    emptyOutDir: true
   },
 }));

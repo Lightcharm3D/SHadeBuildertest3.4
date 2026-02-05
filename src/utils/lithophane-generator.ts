@@ -20,7 +20,6 @@ export interface LithophaneParams {
   hasBorder: boolean;
   borderThickness: number;
   borderHeight: number;
-  buildPlateSize: number; // in mm
   // Text Personalization
   text?: string;
   textSize?: number;

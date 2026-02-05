@@ -20,7 +20,7 @@ const SplashScreen = () => {
         <div className="absolute -inset-12 brand-gradient rounded-full blur-[60px] opacity-20 animate-pulse"></div>
         <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(99,102,241,0.3)] transform hover:scale-105 transition-transform duration-500">
           <img 
-            src="/logo.png" 
+            src="logo.png" 
             alt="ShadeBuilder X LithoStudio Logo" 
             className="w-full h-full object-cover"
           />

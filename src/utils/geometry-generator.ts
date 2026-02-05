@@ -356,7 +356,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
           const r = getRadiusAtHeight(py, params);
-          const px = pos.getX(j);
+          const px = finGeom.attributes.getX(j);
           const dist = px + (r * (1 + coreScale) / 2);
           pos.setXYZ(j, Math.cos(angle) * dist, py, Math.sin(angle) * dist);
         }
@@ -424,8 +424,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const r = getRadiusAtHeight(py, params);
           const angle = baseAngle + normY * twist;
           
-          const px = pos.getX(j);
-          const pz = pos.getZ(j);
+          const px = finGeom.attributes.getX(j);
           
           // Project fin onto curved path
           const distFromCore = px + (r * (1 + coreScale) / 2);
@@ -667,7 +666,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
           const r = getRadiusAtHeight(py, params);
-          const px = pos.getX(j);
+          const px = finGeom.attributes.getX(j);
           if (px > 0) pos.setX(j, r);
           else pos.setX(j, r * coreScale + 0.01); 
         }
@@ -755,19 +754,30 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     const rimGeoms: THREE.BufferGeometry[] = [];
     const rimThick = params.rimThickness;
     const rimHeight = params.rimHeight || rimThick;
+    const segs = type === 'geometric_poly' ? (params.sides || 6) : segments;
     
-    const topRimRadius = getRadiusAtHeight(height / 2, params);
-    const topRim = new THREE.TorusGeometry(topRimRadius, rimThick, 8, segments);
-    topRim.scale(1, rimHeight / rimThick, 1);
-    topRim.rotateX(Math.PI / 2);
-    topRim.translate(0, height / 2, 0);
+    // Top Rim
+    const topRadiusAtEdge = getRadiusAtHeight(height / 2, params);
+    const topRimProfile = [
+      new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2),
+      new THREE.Vector2(topRadiusAtEdge, height / 2),
+      new THREE.Vector2(topRadiusAtEdge, height / 2 + rimHeight),
+      new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2 + rimHeight),
+      new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2)
+    ];
+    const topRim = new THREE.LatheGeometry(topRimProfile, segs);
     rimGeoms.push(topRim);
 
-    const bottomRimRadius = getRadiusAtHeight(-height / 2, params);
-    const bottomRim = new THREE.TorusGeometry(bottomRimRadius, rimThick, 8, segments);
-    bottomRim.scale(1, rimHeight / rimThick, 1);
-    bottomRim.rotateX(Math.PI / 2);
-    bottomRim.translate(0, -height / 2, 0);
+    // Bottom Rim
+    const bottomRadiusAtEdge = getRadiusAtHeight(-height / 2, params);
+    const bottomRimProfile = [
+      new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2),
+      new THREE.Vector2(bottomRadiusAtEdge, -height / 2),
+      new THREE.Vector2(bottomRadiusAtEdge, -height / 2 - rimHeight),
+      new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2 - rimHeight),
+      new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2)
+    ];
+    const bottomRim = new THREE.LatheGeometry(bottomRimProfile, segs);
     rimGeoms.push(bottomRim);
     
     geometry = mergeGeometries([geometry, ...rimGeoms]);
@@ -784,7 +794,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       for (let j = 0; j < pos.count; j++) {
         const py = pos.getY(j);
         const r = getRadiusAtHeight(py, params) - thickness;
-        const pz = pos.getZ(j);
+        const pz = rib.attributes.getZ(j);
         if (pz > 0) pos.setZ(j, r + 0.01); 
         else pos.setZ(j, r - ribDepth);
       }

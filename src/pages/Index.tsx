@@ -9,7 +9,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Link as LinkIcon, Settings2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Link as LinkIcon, Settings2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -171,17 +171,15 @@ const Index = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {!isMobile && (
-            <Button 
-              variant={isSidebarOpen ? "secondary" : "outline"} 
-              size="sm" 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest"
-            >
-              <Settings2 className="w-3 h-3" />
-              {isSidebarOpen ? "Hide Settings" : "Show Settings"}
-            </Button>
-          )}
+          <Button 
+            variant={isSidebarOpen ? "secondary" : "outline"} 
+            size="sm" 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest"
+          >
+            <Settings2 className="w-3 h-3" />
+            {isSidebarOpen ? "Hide Settings" : "Show Settings"}
+          </Button>
           <Button 
             variant="ghost" 
             size="sm" 
@@ -281,7 +279,7 @@ const Index = () => {
           {isSidebarOpen && !isMobile && (
             <motion.div 
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: isMobile ? "100%" : 400, opacity: 1 }}
+              animate={{ width: 400, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="hidden md:block shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden"
@@ -299,6 +297,7 @@ const Index = () => {
                   onExport={handleExport} 
                   onRandomize={handleRandomize}
                   onReset={handleReset}
+                  onClose={() => setIsSidebarOpen(false)}
                 />
               </div>
             </motion.div>

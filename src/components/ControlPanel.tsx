@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2 } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -26,6 +26,7 @@ interface ControlPanelProps {
   onExport: () => void;
   onRandomize: () => void;
   onReset: () => void;
+  onClose?: () => void;
 }
 
 const PRESETS: Record<string, Partial<LampshadeParams>> = {
@@ -52,7 +53,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   setShowPrintability,
   onExport, 
   onRandomize,
-  onReset
+  onReset,
+  onClose
 }) => {
   const [history, setHistory] = useState<{id: string, name: string, params: LampshadeParams}[]>([]);
 
@@ -71,12 +73,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setHistory(updated);
     localStorage.setItem('shade_history', JSON.stringify(updated));
     showSuccess("Design saved!");
-  };
-
-  const deleteHistory = (id: string) => {
-    const updated = history.filter(h => h.id !== id);
-    setHistory(updated);
-    localStorage.setItem('shade_history', JSON.stringify(updated));
   };
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
@@ -98,7 +94,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Studio Controls</h2>
+        <div className="flex items-center gap-2">
+          {onClose && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 md:hidden">
+              <X className="w-4 h-4 text-slate-500" />
+            </Button>
+          )}
+          <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Studio Controls</h2>
+        </div>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={saveToHistory} className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <Share2 className="w-3.5 h-3.5" />
@@ -106,6 +109,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <Button variant="ghost" size="icon" onClick={onReset} className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <RotateCcw className="w-3.5 h-3.5" />
           </Button>
+          {onClose && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="hidden md:flex h-8 w-8 text-slate-400 hover:text-red-500">
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 

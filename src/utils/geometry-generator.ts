@@ -54,14 +54,18 @@ export type LampshadeType =
   | 'geometric_stars'
   | 'ribbed_spiral'
   | 'faceted_poly'
-  | 'wave_shell_v2';
+  | 'wave_shell_v2'
+  | 'voronoi_v3'
+  | 'spiral_stairs_v2'
+  | 'diamond_plate_v2';
 
 export type SilhouetteType = 
   | 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' 
   | 'tapered' | 'bulbous' | 'flared' | 'waisted' | 'asymmetric' 
   | 'trumpet' | 'teardrop' | 'diamond' | 'stepped' | 'wavy'
   | 'ovoid' | 'scalloped' | 'conic_stepped' | 'twisted_profile' | 'fluted'
-  | 'onion' | 'pagoda' | 'egg' | 'barrel' | 'spindle' | 'chalice' | 'urn';
+  | 'onion' | 'pagoda' | 'egg' | 'barrel' | 'spindle' | 'chalice' | 'urn'
+  | 'pagoda_v2' | 'lotus' | 'diamond_v2' | 'stepped_v2';
 
 export type FitterType = 'none' | 'spider' | 'uno';
 
@@ -112,6 +116,9 @@ export interface LampshadeParams {
   patternScale?: number;
   patternDepth?: number;
   patternRotation?: number;
+  
+  // Performance
+  lowDetail?: boolean;
 }
 
 function pseudoNoise(x: number, y: number, z: number, seed: number) {
@@ -125,6 +132,18 @@ function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   let r = bottomRadius + (topRadius - bottomRadius) * t;
   
   switch (silhouette) {
+    case 'pagoda_v2':
+      r *= 1 + (Math.sin(t * Math.PI * 4) * 0.1 + Math.pow(1 - t, 1.5) * 0.6);
+      break;
+    case 'lotus':
+      r *= 1 + Math.pow(Math.sin(t * Math.PI * 0.5), 0.5) * 0.8 * (1 - t);
+      break;
+    case 'diamond_v2':
+      r *= 1 - Math.abs(t - 0.5) * 1.2;
+      break;
+    case 'stepped_v2':
+      r *= 1 + Math.floor(t * 12) * 0.03;
+      break;
     case 'onion':
       r *= 1 + Math.sin(t * Math.PI * 0.8) * 0.7;
       break;
@@ -213,6 +232,37 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
   const rotatedAngle = angle + (patternRotation * Math.PI / 180) * normY;
 
   switch (type) {
+    case 'voronoi_v3': {
+      const cells = params.cellCount || 30;
+      const strength = params.noiseStrength || 1.2;
+      const points: THREE.Vector3[] = [];
+      for (let i = 0; i < cells; i++) {
+        const a = pseudoNoise(i, 1, 0, seed) * Math.PI * 2;
+        const h = (pseudoNoise(1, i, 0, seed) - 0.5) * height;
+        const r = getRadiusAtHeight(h, params);
+        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
+      }
+      const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
+      let minDist = Infinity;
+      points.forEach(p => {
+        const d = v.distanceTo(p);
+        if (d < minDist) minDist = d;
+      });
+      return Math.sin(minDist * 5) * strength * 0.5;
+    }
+    case 'spiral_stairs_v2': {
+      const steps = params.ribCount || 16;
+      const depth = params.ribDepth || 1.0;
+      const stepIndex = Math.floor((rotatedAngle / (Math.PI * 2)) * steps + normY * steps * 2);
+      return (stepIndex % 3 === 0) ? depth : 0;
+    }
+    case 'diamond_plate_v2': {
+      const scale = params.patternScale || 20;
+      const depth = params.patternDepth || 0.4;
+      const a = Math.sin(rotatedAngle * scale);
+      const b = Math.sin(normY * scale * 3);
+      return (Math.abs(a) > 0.7 && Math.abs(b) > 0.7) ? depth * Math.sin(rotatedAngle * 5) : 0;
+    }
     case 'organic_coral': {
       const scale = params.noiseScale || 1.5;
       const strength = params.noiseStrength || 1.0;
@@ -393,9 +443,13 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { type, height, topRadius, bottomRadius, segments, thickness } = params;
+  const { type, height, topRadius, bottomRadius, segments, thickness, lowDetail } = params;
   
-  const getClosedProfilePoints = (steps = 60, customThickness?: number) => {
+  const detailFactor = lowDetail ? 0.5 : 1.0;
+  const effectiveSegments = Math.max(12, Math.round(segments * detailFactor));
+  const effectiveSteps = Math.max(20, Math.round(60 * detailFactor));
+
+  const getClosedProfilePoints = (steps = effectiveSteps, customThickness?: number) => {
     const points = [];
     const tVal = customThickness || thickness;
     
@@ -420,7 +474,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
   const createStrut = (start: THREE.Vector3, end: THREE.Vector3, radius: number) => {
     const dist = start.distanceTo(end);
-    const strut = new THREE.CylinderGeometry(radius, radius, dist, 6);
+    const strut = new THREE.CylinderGeometry(radius, radius, dist, lowDetail ? 4 : 6);
     strut.translate(0, dist / 2, 0);
     strut.rotateX(Math.PI / 2);
     strut.lookAt(end.clone().sub(start));
@@ -432,14 +486,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'fractal_tree': {
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
-      const levels = 4;
+      const levels = lowDetail ? 3 : 4;
       
       const generateBranch = (start: THREE.Vector3, dir: THREE.Vector3, length: number, level: number) => {
         if (level === 0) return;
         const end = start.clone().add(dir.clone().multiplyScalar(length));
         geoms.push(createStrut(start, end, strutRadius * (level / levels)));
         
-        const count = 3;
+        const count = lowDetail ? 2 : 3;
         for (let i = 0; i < count; i++) {
           const angle = (i / count) * Math.PI * 2;
           const newDir = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle).applyAxisAngle(new THREE.Vector3(1, 0, 0), 0.5);
@@ -458,15 +512,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'geometric_weave': {
-      const density = params.gridDensity || 15;
+      const density = Math.round((params.gridDensity || 15) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
       const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
+      const aStep = (Math.PI * 2) / effectiveSegments;
 
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
-        for (let i = 0; i < segments; i++) {
+        for (let i = 0; i < effectiveSegments; i++) {
           const angle = i * aStep;
           const r = getRadiusAtHeight(y, params);
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
@@ -488,17 +542,17 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'diamond_lattice':
     case 'spiral_mesh':
     case 'crystal_lattice': {
-      const density = params.gridDensity || 12;
+      const density = Math.round((params.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
+      const aStep = (Math.PI * 2) / effectiveSegments;
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
 
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
         const normY = j / density;
-        for (let i = 0; i < segments; i++) {
+        for (let i = 0; i < effectiveSegments; i++) {
           const angle = i * aStep + normY * twist;
           const r = getRadiusAtHeight(y, params);
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
@@ -536,14 +590,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const geoms: THREE.BufferGeometry[] = [];
       const coreScale = 0.5;
       
-      const coreProfile = getClosedProfilePoints(40, thickness);
-      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      const coreProfile = getClosedProfilePoints(Math.round(40 * detailFactor), thickness);
+      const coreGeom = new THREE.LatheGeometry(coreProfile, effectiveSegments);
       coreGeom.scale(coreScale, 1, coreScale);
       geoms.push(coreGeom);
 
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
-        const finGeom = new THREE.BoxGeometry(thickness * 8, height, finThick, 1, 32, 1);
+        const finGeom = new THREE.BoxGeometry(thickness * 8, height, finThick, 1, Math.round(32 * detailFactor), 1);
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
@@ -559,15 +613,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'woven_basket': {
-      const density = params.gridDensity || 12;
+      const density = Math.round((params.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
+      const aStep = (Math.PI * 2) / effectiveSegments;
 
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
-        for (let i = 0; i < segments; i++) {
+        for (let i = 0; i < effectiveSegments; i++) {
           const angle = i * aStep;
           const r = getRadiusAtHeight(y, params);
           
@@ -596,14 +650,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const geoms: THREE.BufferGeometry[] = [];
       const coreScale = 0.7;
       
-      const coreProfile = getClosedProfilePoints(40, thickness);
-      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      const coreProfile = getClosedProfilePoints(Math.round(40 * detailFactor), thickness);
+      const coreGeom = new THREE.LatheGeometry(coreProfile, effectiveSegments);
       coreGeom.scale(coreScale, 1, coreScale);
       geoms.push(coreGeom);
 
       for (let i = 0; i < count; i++) {
         const baseAngle = (i / count) * Math.PI * 2;
-        const finGeom = new THREE.BoxGeometry(thickness * 5, height, finThick, 1, 64, 1);
+        const finGeom = new THREE.BoxGeometry(thickness * 5, height, finThick, 1, Math.round(64 * detailFactor), 1);
         const pos = finGeom.attributes.position;
         const twist = (params.twistAngle || 90) * (Math.PI / 180);
 
@@ -624,11 +678,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'voronoi_wire':
     case 'organic_mesh': {
-      const density = params.gridDensity || 10;
+      const density = Math.round((params.gridDensity || 10) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
+      const aStep = (Math.PI * 2) / effectiveSegments;
       const jitter = type === 'voronoi_wire' ? 0.6 : 0.3;
 
       const getPoint = (i: number, j: number, layer = 0) => {
@@ -640,21 +694,21 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       };
 
       for (let j = 0; j <= density; j++) {
-        for (let i = 0; i < segments; i++) {
+        for (let i = 0; i < effectiveSegments; i++) {
           const p = getPoint(i, j);
-          const pRight = getPoint((i + 1) % segments, j);
+          const pRight = getPoint((i + 1) % effectiveSegments, j);
           geoms.push(createStrut(p, pRight, strutRadius));
           
           if (j < density) {
             const pUp = getPoint(i, j + 1);
             geoms.push(createStrut(p, pUp, strutRadius));
-            const pDiag = getPoint((i + 1) % segments, j + 1);
+            const pDiag = getPoint((i + 1) % effectiveSegments, j + 1);
             geoms.push(createStrut(p, pDiag, strutRadius));
           }
 
           if (type === 'organic_mesh') {
             const p2 = getPoint(i, j, 1);
-            const pRight2 = getPoint((i + 1) % segments, j, 1);
+            const pRight2 = getPoint((i + 1) % effectiveSegments, j, 1);
             geoms.push(createStrut(p2, pRight2, strutRadius));
             if (j < density) {
               const pUp2 = getPoint(i, j + 1, 1);
@@ -668,15 +722,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'star_mesh': {
-      const density = params.gridDensity || 10;
+      const density = Math.round((params.gridDensity || 10) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
+      const aStep = (Math.PI * 2) / effectiveSegments;
 
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
-        for (let i = 0; i < segments; i++) {
+        for (let i = 0; i < effectiveSegments; i++) {
           const angle = i * aStep;
           const r = getRadiusAtHeight(y, params);
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
@@ -709,15 +763,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'honeycomb_v2':
     case 'diamond_mesh':
     case 'bricks': {
-      const density = params.gridDensity || 12;
+      const density = Math.round((params.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
+      const aStep = (Math.PI * 2) / effectiveSegments;
 
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
-        for (let i = 0; i < segments; i++) {
+        for (let i = 0; i < effectiveSegments; i++) {
           const angle = i * aStep;
           const r = getRadiusAtHeight(y, params);
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
@@ -795,6 +849,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'wave_shell':
     case 'voronoi':
     case 'voronoi_v2':
+    case 'voronoi_v3':
     case 'origami':
     case 'ribbed_drum':
     case 'ribbed_conic':
@@ -802,14 +857,16 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'spiral_vortex':
     case 'bubble_foam':
     case 'diamond_plate':
+    case 'diamond_plate_v2':
     case 'geometric_tiles':
     case 'spiral_stairs':
+    case 'spiral_stairs_v2':
     case 'cellular_automata':
     case 'organic_veins':
     case 'parametric_waves':
     case 'scalloped_edge':
     case 'twisted_column': {
-      const segs = type === 'origami' ? (params.foldCount || 12) * 2 : segments;
+      const segs = type === 'origami' ? (params.foldCount || 12) * 2 : effectiveSegments;
       geometry = new THREE.LatheGeometry(closedProfile, segs);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
@@ -831,8 +888,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const finThick = params.slotWidth || thickness;
       const geoms: THREE.BufferGeometry[] = [];
       const coreScale = 0.8; 
-      const coreProfile = getClosedProfilePoints(40, thickness);
-      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      const coreProfile = getClosedProfilePoints(Math.round(40 * detailFactor), thickness);
+      const coreGeom = new THREE.LatheGeometry(coreProfile, effectiveSegments);
       coreGeom.scale(coreScale, 1, coreScale); 
       geoms.push(coreGeom);
 
@@ -840,7 +897,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const angle = (i / count) * Math.PI * 2;
         const baseR = getRadiusAtHeight(0, params); 
         const finDepth = baseR * (1 - coreScale) + 0.5; 
-        const finGeom = new THREE.BoxGeometry(finDepth, height, finThick, 1, 32, 1);
+        const finGeom = new THREE.BoxGeometry(finDepth, height, finThick, 1, Math.round(32 * detailFactor), 1);
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
@@ -858,8 +915,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'double_wall': {
       const gap = params.gapDistance || 0.5;
-      const outerGeom = new THREE.LatheGeometry(getClosedProfilePoints(60, thickness), segments);
-      const innerGeom = new THREE.LatheGeometry(getClosedProfilePoints(60, thickness), segments);
+      const outerGeom = new THREE.LatheGeometry(getClosedProfilePoints(effectiveSteps, thickness), effectiveSegments);
+      const innerGeom = new THREE.LatheGeometry(getClosedProfilePoints(effectiveSteps, thickness), effectiveSegments);
       innerGeom.scale(1 - (gap / topRadius), 1, 1 - (gap / topRadius));
       geometry = mergeGeometries([outerGeom, innerGeom]);
       break;
@@ -872,13 +929,13 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'lattice': {
-      const density = params.gridDensity || 12;
+      const density = Math.round((params.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
       
       for (let i = 0; i < density; i++) {
         const angle = (i / density) * Math.PI * 2;
-        const strut1 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, 6, 32);
+        const strut1 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, lowDetail ? 4 : 6, Math.round(32 * detailFactor));
         const pos1 = strut1.attributes.position;
         for (let j = 0; j < pos1.count; j++) {
           const py = pos1.getY(j);
@@ -890,7 +947,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
         geoms.push(strut1);
 
-        const strut2 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, 6, 32);
+        const strut2 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, lowDetail ? 4 : 6, Math.round(32 * detailFactor));
         const pos2 = strut2.attributes.position;
         for (let j = 0; j < pos2.count; j++) {
           const py = pos2.getY(j);
@@ -908,7 +965,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     
     case 'spiral_twist': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
-      geometry = new THREE.LatheGeometry(closedProfile, segments);
+      geometry = new THREE.LatheGeometry(closedProfile, effectiveSegments);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const py = pos.getY(i);
@@ -924,14 +981,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
     
     default:
-      geometry = new THREE.LatheGeometry(closedProfile, segments);
+      geometry = new THREE.LatheGeometry(closedProfile, effectiveSegments);
   }
 
   if (params.rimThickness && params.rimThickness > 0) {
     const rimGeoms: THREE.BufferGeometry[] = [];
     const rimThick = params.rimThickness;
     const rimHeight = params.rimHeight || rimThick;
-    const segs = type === 'geometric_poly' ? (params.sides || 6) : segments;
+    const segs = type === 'geometric_poly' ? (params.sides || 6) : effectiveSegments;
     
     const topRadiusAtEdge = getRadiusAtHeight(height / 2, params);
     const topRimProfile = [
@@ -964,7 +1021,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const angle = (i / params.internalRibs) * Math.PI * 2;
       const ribWidth = params.ribThickness || 0.2;
       const ribDepth = params.internalRibDepth || 0.5;
-      const rib = new THREE.BoxGeometry(ribWidth, height, ribDepth, 1, 32, 1);
+      const rib = new THREE.BoxGeometry(ribWidth, height, ribDepth, 1, Math.round(32 * detailFactor), 1);
       const pos = rib.attributes.position;
       for (let j = 0; j < pos.count; j++) {
         const py = pos.getY(j);
@@ -991,9 +1048,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { 
     fitterType, fitterDiameter, fitterOuterDiameter, fitterRingHeight, 
-    fitterHeight, height, thickness, type, sides = 6
+    fitterHeight, height, thickness, type, sides = 6, lowDetail
   } = params;
   
+  const detailFactor = lowDetail ? 0.5 : 1.0;
   const geoms: THREE.BufferGeometry[] = [];
   const innerRadius = fitterDiameter / 20; 
   const outerRadius = fitterOuterDiameter / 20;
@@ -1011,7 +1069,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     new THREE.Vector2(innerRadius, ringHeightCm / 2),
     new THREE.Vector2(innerRadius, -ringHeightCm / 2)
   ];
-  const ring = new THREE.LatheGeometry(ringProfile, 64);
+  const ring = new THREE.LatheGeometry(ringProfile, Math.round(64 * detailFactor));
   ring.translate(0, ringYPos, 0);
   geoms.push(ring);
   
@@ -1032,7 +1090,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     }
 
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
-    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, 60, 1, 1);
+    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, Math.round(60 * detailFactor), 1, 1);
     spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, spokeYPos, 0);
     spoke.rotateY(angle);
     

@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info, Waves, Maximize } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info, Waves, Maximize, Cpu } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -195,6 +195,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="voronoi_v3">Voronoi V3</SelectItem>
+                  <SelectItem value="spiral_stairs_v2">Spiral Stairs V2</SelectItem>
+                  <SelectItem value="diamond_plate_v2">Diamond Plate V2</SelectItem>
                   <SelectItem value="organic_coral">Organic Coral</SelectItem>
                   <SelectItem value="geometric_stars">Geometric Stars</SelectItem>
                   <SelectItem value="ribbed_spiral">Ribbed Spiral</SelectItem>
@@ -253,6 +256,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="pagoda_v2">Pagoda V2</SelectItem>
+                  <SelectItem value="lotus">Lotus</SelectItem>
+                  <SelectItem value="diamond_v2">Diamond V2</SelectItem>
+                  <SelectItem value="stepped_v2">Stepped V2</SelectItem>
                   <SelectItem value="onion">Onion</SelectItem>
                   <SelectItem value="pagoda">Pagoda</SelectItem>
                   <SelectItem value="egg">Egg</SelectItem>
@@ -437,6 +444,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <TabsContent value="build" className="space-y-6 pt-6">
           <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
+                  <Cpu className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Low Detail Mode</span>
+                  <span className="text-[8px] text-slate-400 font-bold">Better mobile performance</span>
+                </div>
+              </div>
+              <Switch checked={params.lowDetail} onCheckedChange={(v) => updateParam('lowDetail', v)} />
+            </div>
+
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center">

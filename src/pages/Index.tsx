@@ -9,10 +9,10 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2, Link as LinkIcon } from 'lucide-react';
+import { Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
-import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -155,25 +155,17 @@ const Index = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-full bg-[#f8fafc] flex flex-col font-sans pt-safe pb-safe overflow-hidden"
+      className="h-screen bg-[#f8fafc] flex flex-col font-sans overflow-hidden"
     >
-      <header className="h-16 lg:h-20 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-4 lg:px-10 flex items-center justify-between shrink-0 z-40 sticky top-0">
-        <div className="flex items-center gap-3 lg:gap-6">
-          <div className="relative group">
-            <div className="absolute -inset-1 lg:-inset-2 brand-gradient rounded-xl lg:rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-transform duration-300">
-              <img 
-                src="logo.png" 
-                alt="Logo" 
-                className="w-full h-full object-cover"
-              />
-            </div>
+      <header className="h-14 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-4 lg:px-6 flex items-center justify-between shrink-0 z-40">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md">
+            <img src="logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <h1 className="text-xs lg:text-lg font-black tracking-tighter text-slate-900 leading-none flex items-center gap-1">
+            <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
               SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
             </h1>
-            <p className="text-[7px] lg:text-[9px] text-indigo-600 font-bold uppercase tracking-[0.3em] mt-1">by LightCharm 3D</p>
           </div>
         </div>
         
@@ -182,22 +174,23 @@ const Index = () => {
             variant="ghost" 
             size="sm" 
             onClick={copyPublicLink}
-            className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
+            className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
           >
-            <LinkIcon className="w-4 h-4" />
-            <span className="hidden xs:inline">Copy Public Link</span>
+            <LinkIcon className="w-3 h-3" />
+            <span className="hidden sm:inline">Copy Link</span>
           </Button>
           <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest">
-              <img src="litho-icon.png" alt="Lithophane" className="w-4 h-4 lg:w-5 lg:h-5 object-contain" />
-              <span className="hidden xs:inline">Lithophane</span>
+            <Button variant="outline" size="sm" className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest">
+              <img src="litho-icon.png" alt="Lithophane" className="w-3 h-3 object-contain" />
+              <span className="hidden sm:inline">Lithophane</span>
             </Button>
           </Link>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-3 lg:p-8 gap-3 lg:gap-8 overflow-hidden w-full">
-        <div className="flex-1 relative min-h-0 bg-slate-950 rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-800/50 overflow-hidden studio-shadow">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full">
+        {/* 3D Viewport - Takes priority */}
+        <div className="flex-1 relative bg-slate-950 overflow-hidden">
           <LampshadeViewport 
             params={params} 
             material={material}
@@ -209,7 +202,7 @@ const Index = () => {
           <div className="absolute top-4 left-4 z-20">
             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-xl border border-white/10">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/80">Live</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/80">Live 3D Preview</span>
             </div>
           </div>
 
@@ -219,26 +212,22 @@ const Index = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center z-30 bg-slate-950/40 backdrop-blur-sm"
+                className="absolute inset-0 flex items-center justify-center z-30 bg-slate-950/60 backdrop-blur-sm"
               >
                 <motion.div 
-                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                  className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-[280px] lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="bg-slate-900/90 p-8 rounded-[2.5rem] border border-white/10 text-center max-w-xs shadow-2xl mx-4"
                 >
-                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-indigo-500/20 rounded-[1.5rem] overflow-hidden flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <img src="logo.png" alt="Welcome Logo" className="w-full h-full object-cover" />
-                  </div>
-                  <h3 className="text-white font-black text-lg lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
-                  <p className="text-slate-400 text-[10px] lg:text-sm leading-relaxed mb-8">
-                    Welcome to the professional lampshade studio. Start adjusting parameters to create your masterpiece.
+                  <h3 className="text-white font-black text-xl mb-2">3D Shade Designer</h3>
+                  <p className="text-slate-400 text-xs mb-6">
+                    Adjust the parameters on the right to customize your 3D printable lampshade.
                   </p>
                   <Button 
                     onClick={() => setShowWelcome(false)}
-                    className="w-full brand-gradient text-white h-12 lg:h-14 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="w-full brand-gradient text-white h-12 rounded-xl font-black uppercase tracking-widest"
                   >
-                    Enter Studio
+                    Start Designing
                   </Button>
                 </motion.div>
               </motion.div>
@@ -249,11 +238,11 @@ const Index = () => {
             <div className="absolute bottom-4 right-4 z-30">
               <Drawer>
                 <DrawerTrigger asChild>
-                  <Button className="w-16 h-16 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 overflow-hidden border-4 border-white/10">
-                    <img src="settings-icon.png" alt="Settings" className="w-full h-full object-cover" />
+                  <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 border-2 border-white/20">
+                    <img src="settings-icon.png" alt="Settings" className="w-8 h-8 object-contain" />
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem] border-none">
+                <DrawerContent className="h-[80vh] bg-white rounded-t-[2rem]">
                   <div className="p-4 h-full overflow-hidden">
                     <ControlPanel 
                       params={params} 
@@ -275,23 +264,22 @@ const Index = () => {
           )}
         </div>
         
-        {!isMobile && (
-          <div className="w-full lg:w-[500px] shrink-0">
-            <ControlPanel 
-              params={params} 
-              setParams={setParams} 
-              material={material}
-              setMaterial={setMaterial}
-              showWireframe={showWireframe} 
-              setShowWireframe={setShowWireframe} 
-              showPrintability={showPrintability}
-              setShowPrintability={setShowPrintability}
-              onExport={handleExport} 
-              onRandomize={handleRandomize}
-              onReset={handleReset}
-            />
-          </div>
-        )}
+        {/* Permanent Sidebar for Desktop/Tablets */}
+        <div className="hidden md:block w-[380px] lg:w-[450px] shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden">
+          <ControlPanel 
+            params={params} 
+            setParams={setParams} 
+            material={material}
+            setMaterial={setMaterial}
+            showWireframe={showWireframe} 
+            setShowWireframe={setShowWireframe} 
+            showPrintability={showPrintability}
+            setShowPrintability={setShowPrintability}
+            onExport={handleExport} 
+            onRandomize={handleRandomize}
+            onReset={handleReset}
+          />
+        </div>
       </main>
     </motion.div>
   );

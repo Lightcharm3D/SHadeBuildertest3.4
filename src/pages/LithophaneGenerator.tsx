@@ -9,7 +9,7 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2, Trash2, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Share2, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -104,10 +104,6 @@ const LithophaneGenerator = () => {
 
   const copyPublicLink = () => {
     const url = window.location.origin;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) {
-      showError("You are on Localhost. Please use the public .dyad.sh URL from the preview window.");
-      return;
-    }
     navigator.clipboard.writeText(url);
     showSuccess("Public Link copied!");
   };
@@ -117,7 +113,7 @@ const LithophaneGenerator = () => {
       try {
         await navigator.share({
           title: 'My 3D Lithophane Design',
-          text: 'Check out this 3D printable lithophane I created with ShadeBuilder!',
+          text: 'Check out this 3D printable lithophane I created!',
           url: window.location.href,
         });
       } catch (err) {
@@ -173,18 +169,15 @@ const LithophaneGenerator = () => {
   }, [geometry]);
 
   return (
-    <div className="h-full bg-slate-50 flex flex-col pt-safe pb-safe">
-      <header className="h-16 lg:h-20 border-b border-slate-200 bg-white/80 backdrop-blur-2xl px-4 lg:px-8 flex items-center justify-between shrink-0 z-30 sticky top-0">
-        <div className="flex items-center gap-4 lg:gap-6">
-          <Link to="/" className="p-2 hover:bg-slate-100 rounded-xl transition-all group">
-            <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
+    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
+      <header className="h-14 border-b border-slate-200 bg-white/80 backdrop-blur-2xl px-4 flex items-center justify-between shrink-0 z-30">
+        <div className="flex items-center gap-4">
+          <Link to="/" className="p-1.5 hover:bg-slate-100 rounded-lg transition-all">
+            <ArrowLeft className="w-4 h-4 text-slate-400" />
           </Link>
-          <div>
-            <h1 className="text-sm lg:text-lg font-black tracking-tighter text-slate-900 leading-none flex items-center gap-1">
-              SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
-            </h1>
-            <p className="text-[8px] lg:text-[9px] text-indigo-600 font-bold uppercase tracking-[0.3em] mt-1">by LightCharm 3D</p>
-          </div>
+          <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
+            LITHOSTUDIO <span className="text-slate-400">X</span> SHADEBUILDER
+          </h1>
         </div>
         
         <div className="flex items-center gap-2">
@@ -192,19 +185,19 @@ const LithophaneGenerator = () => {
             variant="ghost" 
             size="sm" 
             onClick={copyPublicLink}
-            className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
+            className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
           >
-            <LinkIcon className="w-4 h-4" />
-            <span className="hidden xs:inline">Copy Public Link</span>
+            <LinkIcon className="w-3 h-3" />
+            <span className="hidden sm:inline">Copy Link</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-xl h-10 w-10 text-slate-400 hover:text-indigo-600">
-            <Share2 className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-lg h-8 w-8 text-slate-400 hover:text-indigo-600">
+            <Share2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-4 lg:p-6 gap-6 lg:gap-8 overflow-hidden w-full">
-        <div className="flex-1 relative min-h-0 bg-slate-950 rounded-[2rem] lg:rounded-[3rem] shadow-2xl border border-slate-800 overflow-hidden studio-shadow">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full">
+        <div className="flex-1 relative bg-slate-950 overflow-hidden">
           <LithophaneViewport geometry={geometry} />
           
           {!imageData && !imagePreview && (
@@ -213,29 +206,10 @@ const LithophaneGenerator = () => {
                 <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <ImageIcon className="w-6 h-6 text-indigo-400" />
                 </div>
-                <h3 className="text-white font-black text-lg mb-2">Ready to Create</h3>
+                <h3 className="text-white font-black text-lg mb-2">Lithophane Studio</h3>
                 <p className="text-slate-400 text-xs leading-relaxed">
-                  Upload a photo to begin your 3D lithophane project.
+                  Upload a photo to generate your 3D printable model.
                 </p>
-              </div>
-            </div>
-          )}
-
-          {history.length > 0 && !imageData && (
-            <div className="absolute bottom-8 left-8 right-8 z-20">
-              <div className="bg-black/40 backdrop-blur-xl p-4 rounded-3xl border border-white/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-3 px-2">Recent Projects</p>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {history.map(item => (
-                    <button 
-                      key={item.id}
-                      onClick={() => processCroppedImage(item.preview)}
-                      className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white/10 hover:border-indigo-500 transition-all shrink-0"
-                    >
-                      <img src={item.preview} className="w-full h-full object-cover" alt="History" />
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           )}
@@ -244,11 +218,11 @@ const LithophaneGenerator = () => {
             <div className="absolute bottom-4 right-4 z-30">
               <Drawer>
                 <DrawerTrigger asChild>
-                  <Button className="w-16 h-16 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 overflow-hidden">
-                    <img src="/settings-icon.png" alt="Settings" className="w-full h-full object-cover" />
+                  <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 border-2 border-white/20">
+                    <img src="settings-icon.png" alt="Settings" className="w-8 h-8 object-contain" />
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem]">
+                <DrawerContent className="h-[80vh] bg-white rounded-t-[2rem]">
                   <div className="p-4 h-full overflow-hidden">
                     <LithophaneControls 
                       params={params} 
@@ -268,21 +242,19 @@ const LithophaneGenerator = () => {
           )}
         </div>
         
-        {!isMobile && (
-          <div className="w-full lg:w-[440px] shrink-0">
-            <LithophaneControls 
-              params={params} 
-              setParams={setParams} 
-              onImageUpload={handleImageUpload} 
-              onExport={handleExport} 
-              onApplyPreset={handleApplyPreset} 
-              onTriggerCrop={() => setIsCropping(true)}
-              isProcessing={isProcessing} 
-              imagePreview={imagePreview}
-              imageData={imageData}
-            />
-          </div>
-        )}
+        <div className="hidden md:block w-[380px] lg:w-[450px] shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden">
+          <LithophaneControls 
+            params={params} 
+            setParams={setParams} 
+            onImageUpload={handleImageUpload} 
+            onExport={handleExport} 
+            onApplyPreset={handleApplyPreset} 
+            onTriggerCrop={() => setIsCropping(true)}
+            isProcessing={isProcessing} 
+            imagePreview={imagePreview}
+            imageData={imageData}
+          />
+        </div>
       </main>
 
       {rawImage && (

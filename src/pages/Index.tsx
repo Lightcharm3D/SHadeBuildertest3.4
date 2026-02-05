@@ -163,10 +163,13 @@ const Index = () => {
           <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md">
             <img src="logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <div>
-            <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
-              SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
-            </h1>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
+                SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
+              </h1>
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-600 uppercase tracking-wider">BETA</span>
+            </div>
           </div>
         </div>
         

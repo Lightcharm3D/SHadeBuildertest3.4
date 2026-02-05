@@ -9,7 +9,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Link as LinkIcon } from 'lucide-react';
+import { Link as LinkIcon, Settings2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -72,6 +72,7 @@ const Index = () => {
   const [showWireframe, setShowWireframe] = useState(false);
   const [showPrintability, setShowPrintability] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const isMobile = useIsMobile();
 
@@ -170,6 +171,17 @@ const Index = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {!isMobile && (
+            <Button 
+              variant={isSidebarOpen ? "secondary" : "outline"} 
+              size="sm" 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest"
+            >
+              <Settings2 className="w-3 h-3" />
+              {isSidebarOpen ? "Hide Settings" : "Show Settings"}
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -188,7 +200,7 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full relative">
         {/* 3D Viewport - Takes priority */}
         <div className="flex-1 relative bg-slate-950 overflow-hidden">
           <LampshadeViewport 
@@ -264,22 +276,44 @@ const Index = () => {
           )}
         </div>
         
-        {/* Permanent Sidebar for Desktop/Tablets */}
-        <div className="hidden md:block w-[380px] lg:w-[450px] shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden">
-          <ControlPanel 
-            params={params} 
-            setParams={setParams} 
-            material={material}
-            setMaterial={setMaterial}
-            showWireframe={showWireframe} 
-            setShowWireframe={setShowWireframe} 
-            showPrintability={showPrintability}
-            setShowPrintability={setShowPrintability}
-            onExport={handleExport} 
-            onRandomize={handleRandomize}
-            onReset={handleReset}
-          />
-        </div>
+        {/* Permanent Sidebar for Desktop/Tablets with Toggle */}
+        <AnimatePresence initial={false}>
+          {isSidebarOpen && !isMobile && (
+            <motion.div 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: isMobile ? "100%" : 400, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="hidden md:block shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden"
+            >
+              <div className="w-[400px]">
+                <ControlPanel 
+                  params={params} 
+                  setParams={setParams} 
+                  material={material}
+                  setMaterial={setMaterial}
+                  showWireframe={showWireframe} 
+                  setShowWireframe={setShowWireframe} 
+                  showPrintability={showPrintability}
+                  setShowPrintability={setShowPrintability}
+                  onExport={handleExport} 
+                  onRandomize={handleRandomize}
+                  onReset={handleReset}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating Toggle Button when sidebar is closed */}
+        {!isSidebarOpen && !isMobile && (
+          <Button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-20 rounded-l-2xl rounded-r-none brand-gradient shadow-2xl flex items-center justify-center text-white p-0 border-y-2 border-l-2 border-white/20 z-50"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+        )}
       </main>
     </motion.div>
   );

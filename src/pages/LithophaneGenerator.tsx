@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import LithophaneViewport from '@/components/LithophaneViewport';
 import LithophaneControls from '@/components/LithophaneControls';
 import ImageCropper from '@/components/ImageCropper';
@@ -9,7 +10,7 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Image as ImageIcon, Share2, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Share2, Link as LinkIcon, Settings2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -42,6 +43,7 @@ const LithophaneGenerator = () => {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [history, setHistory] = useState<{id: string, preview: string, params: LithophaneParams}[]>([]);
   const isMobile = useIsMobile();
 
@@ -181,6 +183,17 @@ const LithophaneGenerator = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {!isMobile && (
+            <Button 
+              variant={isSidebarOpen ? "secondary" : "outline"} 
+              size="sm" 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest"
+            >
+              <Settings2 className="w-3 h-3" />
+              {isSidebarOpen ? "Hide Settings" : "Show Settings"}
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -196,7 +209,7 @@ const LithophaneGenerator = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full relative">
         <div className="flex-1 relative bg-slate-950 overflow-hidden">
           <LithophaneViewport geometry={geometry} />
           
@@ -242,19 +255,40 @@ const LithophaneGenerator = () => {
           )}
         </div>
         
-        <div className="hidden md:block w-[380px] lg:w-[450px] shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden">
-          <LithophaneControls 
-            params={params} 
-            setParams={setParams} 
-            onImageUpload={handleImageUpload} 
-            onExport={handleExport} 
-            onApplyPreset={handleApplyPreset} 
-            onTriggerCrop={() => setIsCropping(true)}
-            isProcessing={isProcessing} 
-            imagePreview={imagePreview}
-            imageData={imageData}
-          />
-        </div>
+        <AnimatePresence initial={false}>
+          {isSidebarOpen && !isMobile && (
+            <motion.div 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 400, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="hidden md:block shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden"
+            >
+              <div className="w-[400px]">
+                <LithophaneControls 
+                  params={params} 
+                  setParams={setParams} 
+                  onImageUpload={handleImageUpload} 
+                  onExport={handleExport} 
+                  onApplyPreset={handleApplyPreset} 
+                  onTriggerCrop={() => setIsCropping(true)}
+                  isProcessing={isProcessing} 
+                  imagePreview={imagePreview}
+                  imageData={imageData}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!isSidebarOpen && !isMobile && (
+          <Button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-20 rounded-l-2xl rounded-r-none brand-gradient shadow-2xl flex items-center justify-center text-white p-0 border-y-2 border-l-2 border-white/20 z-50"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+        )}
       </main>
 
       {rawImage && (

@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info, Waves } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info, Waves, Maximize } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -274,6 +274,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <Slider value={[params.spokeCount || 4]} min={2} max={12} step={1} onValueChange={([v]) => updateParam('spokeCount', v)} className="py-2" />
                 </div>
 
+                <div className="space-y-3 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Maximize className="w-4 h-4" /> Spoke Thickness (mm)</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.spokeThickness || 5).toFixed(1)}</span>
+                  </div>
+                  <Slider value={[params.spokeThickness || 5]} min={1} max={15} step={0.1} onValueChange={([v]) => updateParam('spokeThickness', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Ruler className="w-4 h-4" /> Spoke Width (mm)</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.spokeWidth || 10).toFixed(1)}</span>
+                  </div>
+                  <Slider value={[params.spokeWidth || 10]} min={2} max={30} step={0.1} onValueChange={([v]) => updateParam('spokeWidth', v)} className="py-2" />
+                </div>
+
                 <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
@@ -419,6 +435,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <span className="text-indigo-600 font-mono font-bold">{params.thickness.toFixed(2)} cm</span>
                   </div>
                   <Slider value={[params.thickness]} min={0.04} max={0.5} step={0.01} onValueChange={([v]) => updateParam('thickness', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Hash className="w-4 h-4" /> Internal Ribs</span>
+                    <span className="text-indigo-600 font-mono font-bold">{params.internalRibs || 0}</span>
+                  </div>
+                  <Slider value={[params.internalRibs || 0]} min={0} max={24} step={1} onValueChange={([v]) => updateParam('internalRibs', v)} className="py-2" />
                 </div>
 
                 <div className="space-y-3">

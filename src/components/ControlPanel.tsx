@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -259,6 +259,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Radius</Label>
+                <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[9px] font-black uppercase text-slate-500">Segments</Label>
+                <Input type="number" value={params.segments} onChange={(e) => updateParam('segments', parseInt(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="fitter" className="space-y-5 pt-4">
@@ -297,6 +307,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <Input type="number" value={params.fitterOuterDiameter} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Count</Label>
+                    <Input type="number" value={params.spokeCount} onChange={(e) => updateParam('spokeCount', parseInt(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Width (mm)</Label>
+                    <Input type="number" value={params.spokeWidth} onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
+                  </div>
+                </div>
               </div>
             )}
           </TabsContent>
@@ -306,17 +326,80 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                    <span>Scale</span>
-                    <span className="text-indigo-600 font-bold">{(params.patternScale || 10).toFixed(1)}</span>
+                    <span>Scale / Density</span>
+                    <span className="text-indigo-600 font-bold">{(params.patternScale || params.gridDensity || 10).toFixed(1)}</span>
                   </div>
-                  <Slider value={[params.patternScale || 10]} min={1} max={50} step={0.1} onValueChange={([v]) => updateParam('patternScale', v)} />
+                  <Slider 
+                    value={[params.patternScale || params.gridDensity || 10]} 
+                    min={1} max={50} step={0.1} 
+                    onValueChange={([v]) => {
+                      updateParam('patternScale', v);
+                      updateParam('gridDensity', Math.round(v));
+                    }} 
+                  />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                    <span>Depth</span>
-                    <span className="text-indigo-600 font-bold">{(params.patternDepth || 0.3).toFixed(2)}</span>
+                    <span>Depth / Strength</span>
+                    <span className="text-indigo-600 font-bold">{(params.patternDepth || params.noiseStrength || params.ribDepth || 0.3).toFixed(2)}</span>
                   </div>
-                  <Slider value={[params.patternDepth || 0.3]} min={0} max={2} step={0.01} onValueChange={([v]) => updateParam('patternDepth', v)} />
+                  <Slider 
+                    value={[params.patternDepth || params.noiseStrength || params.ribDepth || 0.3]} 
+                    min={0} max={2} step={0.01} 
+                    onValueChange={([v]) => {
+                      updateParam('patternDepth', v);
+                      updateParam('noiseStrength', v);
+                      updateParam('ribDepth', v);
+                    }} 
+                  />
+                </div>
+                
+                {/* Advanced Pattern Controls */}
+                <div className="pt-2 border-t border-slate-200 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
+                      <span>Rotation / Twist</span>
+                      <span className="text-indigo-600 font-bold">{(params.patternRotation || params.twistAngle || 0).toFixed(0)}°</span>
+                    </div>
+                    <Slider 
+                      value={[params.patternRotation || params.twistAngle || 0]} 
+                      min={0} max={720} step={1} 
+                      onValueChange={([v]) => {
+                        updateParam('patternRotation', v);
+                        updateParam('twistAngle', v);
+                      }} 
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Count / Freq</Label>
+                      <Input 
+                        type="number" 
+                        value={params.ribCount || params.frequency || params.slotCount || 12} 
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          updateParam('ribCount', v);
+                          updateParam('frequency', v);
+                          updateParam('slotCount', v);
+                        }} 
+                        className="h-8 text-[10px] font-bold rounded-lg" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Sides / Folds</Label>
+                      <Input 
+                        type="number" 
+                        value={params.sides || params.foldCount || 6} 
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value);
+                          updateParam('sides', v);
+                          updateParam('foldCount', v);
+                        }} 
+                        className="h-8 text-[10px] font-bold rounded-lg" 
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -373,7 +456,51 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Switch checked={showPrintability} onCheckedChange={setShowPrintability} />
               </div>
             </div>
+
+            {/* Rim / Support Ring Settings */}
             <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5" /> Rim (Support Ring)
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Thickness (cm)</Label>
+                  <Input type="number" step={0.01} value={params.rimThickness} onChange={(e) => updateParam('rimThickness', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
+                  <Input type="number" step={0.01} value={params.rimHeight} onChange={(e) => updateParam('rimHeight', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+                </div>
+              </div>
+            </div>
+
+            {/* Internal Ribs Settings */}
+            <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <Box className="w-3.5 h-3.5" /> Internal Ribs
+              </Label>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Rib Count</Label>
+                  <Input type="number" value={params.internalRibs} onChange={(e) => updateParam('internalRibs', parseInt(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-500">Thickness (cm)</Label>
+                    <Input type="number" step={0.01} value={params.ribThickness} onChange={(e) => updateParam('ribThickness', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-500">Depth (cm)</Label>
+                    <Input type="number" step={0.01} value={params.internalRibDepth} onChange={(e) => updateParam('internalRibDepth', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <Sliders className="w-3.5 h-3.5" /> Wall Settings
+              </Label>
               <div className="space-y-2">
                 <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
                   <span>Wall Thickness</span>

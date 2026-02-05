@@ -33,9 +33,6 @@ const SplashScreen = () => {
         transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
         className="mt-10 text-center px-6"
       >
-        <div className="inline-block px-3 py-1 mb-4 rounded-full bg-amber-500/10 border border-amber-500/20">
-          <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Beta Testing Preview</span>
-        </div>
         <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white leading-none">
           SHADEBUILDER <span className="text-slate-500">X</span> LITHOSTUDIO
         </h1>

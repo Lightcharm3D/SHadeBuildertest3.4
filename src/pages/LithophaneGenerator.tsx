@@ -177,12 +177,9 @@ const LithophaneGenerator = () => {
           <Link to="/" className="p-1.5 hover:bg-slate-100 rounded-lg transition-all">
             <ArrowLeft className="w-4 h-4 text-slate-400" />
           </Link>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
-              LITHOSTUDIO <span className="text-slate-400">X</span> SHADEBUILDER
-            </h1>
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-600 uppercase tracking-wider">BETA</span>
-          </div>
+          <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
+            LITHOSTUDIO <span className="text-slate-400">X</span> SHADEBUILDER
+          </h1>
         </div>
         
         <div className="flex items-center gap-2">

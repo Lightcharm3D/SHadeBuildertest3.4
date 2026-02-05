@@ -242,8 +242,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
   }, [isLightOn]);
 
-  const maxRadius = Math.max(params.topRadius, params.bottomRadius);
-
   // Rough estimation of material weight (PLA density ~1.24 g/cm³)
   const estimateWeight = () => {
     const avgRadius = (params.topRadius + params.bottomRadius) / 2;
@@ -270,18 +268,29 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
             </div>
           </div>
           
-          {/* Width Label - Moved higher to avoid buttons */}
-          <div className="absolute left-1/2 bottom-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${maxRadius * 20}px` }}>
+          {/* Top Diameter Label */}
+          <div className="absolute left-1/2 top-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${params.topRadius * 20}px` }}>
             <div className="h-px w-full bg-white/20 relative">
               <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Ø {maxRadius * 2}cm</span>
+                <span className="text-[10px] font-black text-white whitespace-nowrap">Top Ø {params.topRadius * 2}cm</span>
               </div>
             </div>
           </div>
 
-          {/* Weight Label - Moved to top-left to avoid center/right overlap */}
+          {/* Bottom Diameter Label */}
+          <div className="absolute left-1/2 bottom-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${params.bottomRadius * 20}px` }}>
+            <div className="h-px w-full bg-white/20 relative">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
+                <span className="text-[10px] font-black text-white whitespace-nowrap">Bottom Ø {params.bottomRadius * 2}cm</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Weight Label */}
           <div className="absolute top-6 left-6 flex flex-col items-start">
             <div className="bg-indigo-600/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-2xl">
               <Scale className="w-3 h-3 text-indigo-200" />

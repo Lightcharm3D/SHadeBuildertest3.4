@@ -1,4 +1,4 @@
-// ShadeBuilder X LithoStudio - v1.1.1
+// ShadeBuilder X LithoStudio - v1.1.2
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./globals.css";

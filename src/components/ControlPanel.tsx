@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -138,7 +138,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <TabsList className="grid grid-cols-5 w-full h-10 bg-slate-100 p-1 rounded-xl">
             <TabsTrigger value="shape" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Shape</TabsTrigger>
             <TabsTrigger value="fitter" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Fit</TabsTrigger>
-            <TabsTrigger value="pattern" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Pat</TabsTrigger>
+            <TabsTrigger value="split" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Split</TabsTrigger>
             <TabsTrigger value="material" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Mat</TabsTrigger>
             <TabsTrigger value="gallery" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Gallery</TabsTrigger>
           </TabsList>
@@ -322,48 +322,57 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             )}
           </TabsContent>
 
-          <TabsContent value="pattern" className="space-y-5 pt-4">
+          <TabsContent value="split" className="space-y-5 pt-4">
             <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                    <span>Scale / Density</span>
-                    <span className="text-indigo-600 font-bold">{(params.patternScale || params.gridDensity || 10).toFixed(1)}</span>
+                    <span className="flex items-center gap-2"><Scissors className="w-3 h-3" /> Split Segments</span>
+                    <span className="text-indigo-600 font-bold">{params.splitSegments || 1}</span>
                   </div>
                   <Slider 
-                    value={[params.patternScale || params.gridDensity || 10]} 
-                    min={1} max={50} step={0.1} 
+                    value={[params.splitSegments || 1]} 
+                    min={1} max={8} step={1} 
                     onValueChange={([v]) => {
-                      updateParam('patternScale', v);
-                      updateParam('gridDensity', Math.round(v));
+                      updateParam('splitSegments', v);
+                      if (v === 1) updateParam('activePart', 0);
                     }} 
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                    <span>Depth / Strength</span>
-                    <span className="text-indigo-600 font-bold">{(params.patternDepth || params.noiseStrength || params.ribDepth || 0.3).toFixed(2)}</span>
-                  </div>
-                  <Slider 
-                    value={[params.patternDepth || params.noiseStrength || params.ribDepth || 0.3]} 
-                    min={0} max={2} step={0.01} 
-                    onValueChange={([v]) => {
-                      updateParam('patternDepth', v);
-                      updateParam('noiseStrength', v);
-                      updateParam('ribDepth', v);
-                    }} 
-                  />
-                </div>
+
+                {params.splitSegments && params.splitSegments > 1 && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
+                        <span>Active Part</span>
+                        <span className="text-indigo-600 font-bold">{(params.activePart || 0) + 1} of {params.splitSegments}</span>
+                      </div>
+                      <Slider 
+                        value={[params.activePart || 0]} 
+                        min={0} max={params.splitSegments - 1} step={1} 
+                        onValueChange={([v]) => updateParam('activePart', v)} 
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Joint Type</Label>
+                      <Select value={params.jointType || 'none'} onValueChange={(v: any) => updateParam('jointType', v)}>
+                        <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None (Flat)</SelectItem>
+                          <SelectItem value="tab">Alignment Tabs</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => updateParam('seed', Math.floor(Math.random() * 1000000))}
-              className="w-full gap-2 h-9 text-[9px] font-black uppercase tracking-widest rounded-lg"
-            >
-              <RefreshCw className="w-3 h-3" />
-              New Variation
-            </Button>
+            <p className="text-[8px] text-slate-400 font-bold uppercase leading-relaxed px-1">
+              Splitting allows you to print large shades in smaller pieces. Use "Alignment Tabs" to help glue parts together.
+            </p>
           </TabsContent>
 
           <TabsContent value="material" className="space-y-5 pt-4">
@@ -439,7 +448,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </Button>
         <Button onClick={onExport} className="w-full brand-gradient text-white h-12 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg">
           <Download className="w-4 h-4 mr-2" />
-          Export STL
+          {params.splitSegments && params.splitSegments > 1 ? `Export Part ${(params.activePart || 0) + 1}` : 'Export STL'}
         </Button>
       </div>
     </div>

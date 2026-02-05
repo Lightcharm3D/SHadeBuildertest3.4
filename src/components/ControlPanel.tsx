@@ -114,16 +114,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     return (volume * 1.24).toFixed(1);
   };
 
-  const estimatePrintTime = () => {
-    const weight = parseFloat(estimateWeight());
-    const baseTime = weight * 12; // ~12 mins per gram at standard speeds
-    const complexityFactor = params.gridDensity ? (params.gridDensity / 10) : 1;
-    const totalMins = baseTime * complexityFactor;
-    const hours = Math.floor(totalMins / 60);
-    const mins = Math.round(totalMins % 60);
-    return `${hours}h ${mins}m`;
-  };
-
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -417,12 +407,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-[9px] text-indigo-700 font-bold">Est. Weight</span>
                   <span className="text-xs font-black text-indigo-900">{estimateWeight()}g</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] text-indigo-700 font-bold flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Est. Time
-                  </span>
-                  <span className="text-xs font-black text-indigo-900">{estimatePrintTime()}</span>
                 </div>
               </div>
             </div>

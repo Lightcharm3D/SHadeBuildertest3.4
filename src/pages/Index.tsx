@@ -119,9 +119,10 @@ const Index = () => {
       'triangular_lattice', 'square_grid', 'radial_spokes', 'chevron_mesh',
       'spiral_ribs', 'voronoi_wire', 'star_mesh', 'organic_mesh',
       'woven_basket', 'bubble_foam', 'parametric_fins', 'spiral_stairs', 'diamond_plate',
-      'knurled_v2', 'radial_fins', 'cellular_automata', 'voronoi_v2', 'spiral_mesh', 'diamond_lattice'
+      'knurled_v2', 'radial_fins', 'cellular_automata', 'voronoi_v2', 'spiral_mesh', 'diamond_lattice',
+      'honeycomb_v2', 'crystal_lattice', 'organic_veins', 'geometric_tiles', 'spiral_vortex', 'ribbed_conic'
     ];
-    const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave', 'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric'];
+    const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave', 'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric', 'trumpet', 'teardrop', 'diamond', 'stepped', 'wavy'];
     
     const newType = types[Math.floor(Math.random() * types.length)];
     const newSilhouette = silhouettes[Math.floor(Math.random() * silhouettes.length)];

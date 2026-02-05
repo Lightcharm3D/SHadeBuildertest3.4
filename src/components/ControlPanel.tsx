@@ -170,6 +170,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="honeycomb_v2">Honeycomb V2</SelectItem>
+                  <SelectItem value="crystal_lattice">Crystal Lattice</SelectItem>
+                  <SelectItem value="organic_veins">Organic Veins</SelectItem>
+                  <SelectItem value="geometric_tiles">Geometric Tiles</SelectItem>
+                  <SelectItem value="spiral_vortex">Spiral Vortex</SelectItem>
+                  <SelectItem value="ribbed_conic">Ribbed Conic</SelectItem>
                   <SelectItem value="diamond_lattice">Diamond Lattice</SelectItem>
                   <SelectItem value="spiral_mesh">Spiral Mesh</SelectItem>
                   <SelectItem value="voronoi_v2">Voronoi V2 (Organic)</SelectItem>
@@ -212,6 +218,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="trumpet">Trumpet</SelectItem>
+                  <SelectItem value="teardrop">Teardrop</SelectItem>
+                  <SelectItem value="diamond">Diamond</SelectItem>
+                  <SelectItem value="stepped">Stepped</SelectItem>
+                  <SelectItem value="wavy">Wavy</SelectItem>
                   <SelectItem value="straight">Straight</SelectItem>
                   <SelectItem value="hourglass">Hourglass</SelectItem>
                   <SelectItem value="convex">Convex</SelectItem>

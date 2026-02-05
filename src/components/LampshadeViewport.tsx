@@ -270,8 +270,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
             </div>
           </div>
           
-          {/* Width Label */}
-          <div className="absolute left-1/2 bottom-10 -translate-x-1/2 flex flex-col items-center" style={{ width: `${maxRadius * 20}px` }}>
+          {/* Width Label - Moved higher to avoid buttons */}
+          <div className="absolute left-1/2 bottom-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${maxRadius * 20}px` }}>
             <div className="h-px w-full bg-white/20 relative">
               <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
@@ -281,8 +281,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
             </div>
           </div>
 
-          {/* Weight Label */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
+          {/* Weight Label - Moved to top-left to avoid center/right overlap */}
+          <div className="absolute top-6 left-6 flex flex-col items-start">
             <div className="bg-indigo-600/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-2xl">
               <Scale className="w-3 h-3 text-indigo-200" />
               <span className="text-[10px] font-black text-white uppercase tracking-widest">Est. {estimateWeight()}g</span>

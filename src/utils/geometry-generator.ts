@@ -32,9 +32,15 @@ export type LampshadeType =
   | 'bubble_foam'
   | 'parametric_fins'
   | 'spiral_stairs'
-  | 'diamond_plate';
+  | 'diamond_plate'
+  | 'knurled_v2'
+  | 'radial_fins'
+  | 'cellular_automata'
+  | 'voronoi_v2'
+  | 'spiral_mesh'
+  | 'diamond_lattice';
 
-export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' | 'tapered' | 'bulbous';
+export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' | 'tapered' | 'bulbous' | 'flared' | 'waisted' | 'asymmetric';
 export type FitterType = 'none' | 'spider' | 'uno';
 
 export interface LampshadeParams {
@@ -51,6 +57,8 @@ export interface LampshadeParams {
   internalRibs: number;
   ribThickness: number;
   rimThickness?: number;
+  rimHeight?: number;
+  internalRibDepth?: number;
   
   // Fitter params
   fitterType: FitterType;
@@ -75,11 +83,13 @@ export interface LampshadeParams {
   foldDepth?: number;
   noiseScale?: number;
   noiseStrength?: number;
+  noiseFrequency?: number;
   slotCount?: number;
   slotWidth?: number;
   gapDistance?: number;
   patternScale?: number;
   patternDepth?: number;
+  patternRotation?: number;
 }
 
 function pseudoNoise(x: number, y: number, z: number, seed: number) {
@@ -111,69 +121,118 @@ function getRadiusAtHeight(y: number, params: LampshadeParams): number {
     case 'bulbous':
       r *= 1 + Math.sin(t * Math.PI) * 0.5;
       break;
+    case 'flared':
+      r *= 1 + Math.pow(t, 3) * 0.8;
+      break;
+    case 'waisted':
+      r *= 1 + Math.pow(Math.sin(t * Math.PI), 4) * -0.4;
+      break;
+    case 'asymmetric':
+      r *= 1 + Math.sin(t * Math.PI * 0.5) * 0.3;
+      break;
   }
   return r;
 }
 
 function getDisplacementAt(angle: number, y: number, params: LampshadeParams): number {
-  const { type, seed, height } = params;
+  const { type, seed, height, patternRotation = 0 } = params;
   const normY = (y + height / 2) / height;
+  const rotatedAngle = angle + (patternRotation * Math.PI / 180) * normY;
 
   switch (type) {
     case 'ribbed_drum':
-      return Math.sin(angle * (params.ribCount || 24)) * (params.ribDepth || 0.4);
+      return Math.sin(rotatedAngle * (params.ribCount || 24)) * (params.ribDepth || 0.4);
     case 'spiral_ribs': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
-      return Math.sin(angle * (params.ribCount || 24) + normY * twist) * (params.ribDepth || 0.4);
+      return Math.sin(rotatedAngle * (params.ribCount || 24) + normY * twist) * (params.ribDepth || 0.4);
     }
     case 'wave_shell':
-      return Math.sin(angle * (params.frequency || 5) + normY * Math.PI * 2) * (params.amplitude || 1);
+      return Math.sin(rotatedAngle * (params.frequency || 5) + normY * Math.PI * 2) * (params.amplitude || 1);
     case 'wave_rings':
       return Math.sin(normY * (params.frequency || 10) * Math.PI) * (params.amplitude || 0.5);
     case 'knurled': {
       const scale = params.patternScale || 10;
       const depth = params.patternDepth || 0.3;
-      return (Math.sin(angle * scale + normY * scale) * Math.sin(angle * scale - normY * scale)) * depth;
+      return (Math.sin(rotatedAngle * scale + normY * scale) * Math.sin(rotatedAngle * scale - normY * scale)) * depth;
+    }
+    case 'knurled_v2': {
+      const scale = params.patternScale || 15;
+      const depth = params.patternDepth || 0.4;
+      const a = Math.sin(rotatedAngle * scale + normY * scale);
+      const b = Math.sin(rotatedAngle * scale - normY * scale);
+      return (Math.pow(a, 3) * Math.pow(b, 3)) * depth;
     }
     case 'bubble_foam': {
       const scale = params.patternScale || 10;
       const depth = params.patternDepth || 0.5;
-      return (Math.sin(angle * scale) * Math.cos(normY * scale * 2) + Math.sin(normY * scale) * Math.cos(angle * scale * 2)) * depth;
+      return (Math.sin(rotatedAngle * scale) * Math.cos(normY * scale * 2) + Math.sin(normY * scale) * Math.cos(rotatedAngle * scale * 2)) * depth;
     }
     case 'diamond_plate': {
       const scale = params.patternScale || 15;
       const depth = params.patternDepth || 0.3;
-      const a = Math.sin(angle * scale);
+      const a = Math.sin(rotatedAngle * scale);
       const b = Math.sin(normY * scale * 2);
       return (Math.abs(a) > 0.8 && Math.abs(b) > 0.8) ? depth : 0;
+    }
+    case 'cellular_automata': {
+      const scale = params.patternScale || 20;
+      const depth = params.patternDepth || 0.5;
+      const x = Math.floor(rotatedAngle * scale);
+      const yIdx = Math.floor(normY * scale);
+      return (pseudoNoise(x, yIdx, 0, seed) > 0.6) ? depth : 0;
     }
     case 'spiral_stairs': {
       const steps = params.ribCount || 12;
       const depth = params.ribDepth || 0.8;
-      const stepIndex = Math.floor((angle / (Math.PI * 2)) * steps + normY * steps);
+      const stepIndex = Math.floor((rotatedAngle / (Math.PI * 2)) * steps + normY * steps);
       return (stepIndex % 2 === 0) ? depth : 0;
     }
     case 'petal_bloom': {
       const petals = params.ribCount || 8;
       const bloom = normY * 2;
-      return Math.abs(Math.sin(angle * petals / 2)) * bloom;
+      return Math.abs(Math.sin(rotatedAngle * petals / 2)) * bloom;
     }
     case 'faceted_gem': {
-      return pseudoNoise(Math.cos(angle), y, Math.sin(angle), seed) * (params.noiseStrength || 0.5);
+      return pseudoNoise(Math.cos(rotatedAngle), y, Math.sin(rotatedAngle), seed) * (params.noiseStrength || 0.5);
     }
     case 'organic_cell':
     case 'perlin_noise': {
       const scale = params.noiseScale || 0.5;
       const strength = params.noiseStrength || 0.5;
+      const freq = params.noiseFrequency || 1.0;
       return (
-        pseudoNoise(Math.cos(angle) * scale, y * scale, Math.sin(angle) * scale, seed) * 0.6 +
-        pseudoNoise(Math.cos(angle) * scale * 2, y * scale * 2, Math.sin(angle) * scale * 2, seed) * 0.4
+        pseudoNoise(Math.cos(rotatedAngle) * scale * freq, y * scale * freq, Math.sin(rotatedAngle) * scale * freq, seed) * 0.6 +
+        pseudoNoise(Math.cos(rotatedAngle) * scale * 2 * freq, y * scale * 2 * freq, Math.sin(rotatedAngle) * scale * 2 * freq, seed) * 0.4
       ) * strength;
+    }
+    case 'voronoi_v2': {
+      const cells = params.cellCount || 20;
+      const strength = params.noiseStrength || 1.0;
+      const points: THREE.Vector3[] = [];
+      for (let i = 0; i < cells; i++) {
+        const a = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
+        const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
+        const r = getRadiusAtHeight(h, params);
+        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
+      }
+      const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
+      let minDist = Infinity;
+      let secondMinDist = Infinity;
+      points.forEach(p => {
+        const d = v.distanceTo(p);
+        if (d < minDist) {
+          secondMinDist = minDist;
+          minDist = d;
+        } else if (d < secondMinDist) {
+          secondMinDist = d;
+        }
+      });
+      return (secondMinDist - minDist) * strength * -0.5;
     }
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 0.8;
-      const segmentIndex = Math.round((angle / (Math.PI * 2)) * (folds * 2));
+      const segmentIndex = Math.round((rotatedAngle / (Math.PI * 2)) * (folds * 2));
       return segmentIndex % 2 !== 0 ? -depth : 0;
     }
     case 'voronoi': {
@@ -185,7 +244,7 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
         const r = getRadiusAtHeight(h, params);
         points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
       }
-      const v = new THREE.Vector3(Math.cos(angle) * getRadiusAtHeight(y, params), y, Math.sin(angle) * getRadiusAtHeight(y, params));
+      const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
       let minDist = Infinity;
       points.forEach(p => {
         const d = v.distanceTo(p);
@@ -239,6 +298,74 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   };
 
   switch (type) {
+    case 'diamond_lattice':
+    case 'spiral_mesh': {
+      const density = params.gridDensity || 12;
+      const geoms: THREE.BufferGeometry[] = [];
+      const strutRadius = thickness / 1.5;
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / segments;
+      const twist = (params.twistAngle || 360) * (Math.PI / 180);
+
+      for (let j = 0; j <= density; j++) {
+        const y = -height / 2 + j * hStep;
+        const normY = j / density;
+        for (let i = 0; i < segments; i++) {
+          const angle = i * aStep + normY * twist;
+          const r = getRadiusAtHeight(y, params);
+          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+
+          if (j < density) {
+            const ny = y + hStep;
+            const nNormY = (j + 1) / density;
+            const nr = getRadiusAtHeight(ny, params);
+            
+            // Forward spiral
+            const nAngle1 = i * aStep + nNormY * twist;
+            const pUp1 = new THREE.Vector3(Math.cos(nAngle1) * nr, ny, Math.sin(nAngle1) * nr);
+            geoms.push(createStrut(p1, pUp1, strutRadius));
+
+            if (type === 'diamond_lattice') {
+              // Backward spiral
+              const nAngle2 = (i + 1) * aStep + nNormY * twist;
+              const pUp2 = new THREE.Vector3(Math.cos(nAngle2) * nr, ny, Math.sin(nAngle2) * nr);
+              geoms.push(createStrut(p1, pUp2, strutRadius));
+            }
+          }
+        }
+      }
+      geometry = mergeGeometries(geoms);
+      break;
+    }
+
+    case 'radial_fins': {
+      const count = params.slotCount || 12;
+      const finThick = params.slotWidth || thickness;
+      const geoms: THREE.BufferGeometry[] = [];
+      const coreScale = 0.5;
+      
+      const coreProfile = getClosedProfilePoints(40, thickness);
+      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      coreGeom.scale(coreScale, 1, coreScale);
+      geoms.push(coreGeom);
+
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        const finGeom = new THREE.BoxGeometry(thickness * 8, height, finThick, 1, 32, 1);
+        const pos = finGeom.attributes.position;
+        for (let j = 0; j < pos.count; j++) {
+          const py = pos.getY(j);
+          const r = getRadiusAtHeight(py, params);
+          const px = pos.getX(j);
+          const dist = px + (r * (1 + coreScale) / 2);
+          pos.setXYZ(j, Math.cos(angle) * dist, py, Math.sin(angle) * dist);
+        }
+        geoms.push(finGeom);
+      }
+      geometry = mergeGeometries(geoms);
+      break;
+    }
+
     case 'woven_basket': {
       const density = params.gridDensity || 12;
       const geoms: THREE.BufferGeometry[] = [];
@@ -488,18 +615,21 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     }
 
     case 'knurled':
+    case 'knurled_v2':
     case 'wave_rings':
     case 'petal_bloom':
     case 'organic_cell':
     case 'perlin_noise':
     case 'wave_shell':
     case 'voronoi':
+    case 'voronoi_v2':
     case 'origami':
     case 'ribbed_drum':
     case 'spiral_ribs':
     case 'bubble_foam':
     case 'diamond_plate':
-    case 'spiral_stairs': {
+    case 'spiral_stairs':
+    case 'cellular_automata': {
       const segs = type === 'origami' ? (params.foldCount || 12) * 2 : segments;
       geometry = new THREE.LatheGeometry(closedProfile, segs);
       const pos = geometry.attributes.position;
@@ -624,15 +754,18 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   if (params.rimThickness && params.rimThickness > 0) {
     const rimGeoms: THREE.BufferGeometry[] = [];
     const rimThick = params.rimThickness;
+    const rimHeight = params.rimHeight || rimThick;
     
     const topRimRadius = getRadiusAtHeight(height / 2, params);
     const topRim = new THREE.TorusGeometry(topRimRadius, rimThick, 8, segments);
+    topRim.scale(1, rimHeight / rimThick, 1);
     topRim.rotateX(Math.PI / 2);
     topRim.translate(0, height / 2, 0);
     rimGeoms.push(topRim);
 
     const bottomRimRadius = getRadiusAtHeight(-height / 2, params);
     const bottomRim = new THREE.TorusGeometry(bottomRimRadius, rimThick, 8, segments);
+    bottomRim.scale(1, rimHeight / rimThick, 1);
     bottomRim.rotateX(Math.PI / 2);
     bottomRim.translate(0, -height / 2, 0);
     rimGeoms.push(bottomRim);
@@ -645,7 +778,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     for (let i = 0; i < params.internalRibs; i++) {
       const angle = (i / params.internalRibs) * Math.PI * 2;
       const ribWidth = params.ribThickness || 0.2;
-      const ribDepth = 0.5;
+      const ribDepth = params.internalRibDepth || 0.5;
       const rib = new THREE.BoxGeometry(ribWidth, height, ribDepth, 1, 32, 1);
       const pos = rib.attributes.position;
       for (let j = 0; j < pos.count; j++) {

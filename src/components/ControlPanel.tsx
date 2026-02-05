@@ -35,6 +35,7 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Knurled Tech': { type: 'knurled', silhouette: 'straight', patternScale: 15, patternDepth: 0.4, height: 14, topRadius: 6, bottomRadius: 6 },
   'Wave Rings': { type: 'wave_rings', silhouette: 'bell', frequency: 12, amplitude: 0.6, height: 15, topRadius: 4, bottomRadius: 9 },
   'Crystal Gem': { type: 'faceted_gem', silhouette: 'concave', noiseStrength: 1.5, height: 14, topRadius: 5, bottomRadius: 9 },
+  'Diamond Lattice': { type: 'diamond_lattice', silhouette: 'straight', gridDensity: 20, twistAngle: 180, height: 16, topRadius: 6, bottomRadius: 6 },
 };
 
 const FILAMENT_PRESETS: Record<string, Partial<MaterialParams>> = {
@@ -169,6 +170,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="diamond_lattice">Diamond Lattice</SelectItem>
+                  <SelectItem value="spiral_mesh">Spiral Mesh</SelectItem>
+                  <SelectItem value="voronoi_v2">Voronoi V2 (Organic)</SelectItem>
+                  <SelectItem value="cellular_automata">Cellular Automata</SelectItem>
+                  <SelectItem value="radial_fins">Radial Fins</SelectItem>
+                  <SelectItem value="knurled_v2">Knurled V2</SelectItem>
                   <SelectItem value="woven_basket">Woven Basket</SelectItem>
                   <SelectItem value="bubble_foam">Bubble Foam</SelectItem>
                   <SelectItem value="parametric_fins">Parametric Fins</SelectItem>
@@ -211,6 +218,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectItem value="concave">Concave</SelectItem>
                   <SelectItem value="tapered">Tapered</SelectItem>
                   <SelectItem value="bulbous">Bulbous</SelectItem>
+                  <SelectItem value="flared">Flared</SelectItem>
+                  <SelectItem value="waisted">Waisted</SelectItem>
+                  <SelectItem value="asymmetric">Asymmetric</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -324,6 +334,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </div>
                   <Slider value={[params.patternDepth || 0.3]} min={0} max={2} step={0.01} onValueChange={([v]) => updateParam('patternDepth', v)} className="py-2" />
                 </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><RotateCcw className="w-4 h-4" /> Pattern Rotation</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.patternRotation || 0).toFixed(2)}°</span>
+                  </div>
+                  <Slider value={[params.patternRotation || 0]} min={-360} max={360} step={1} onValueChange={([v]) => updateParam('patternRotation', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Waves className="w-4 h-4" /> Noise Frequency</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.noiseFrequency || 1.0).toFixed(2)}</span>
+                  </div>
+                  <Slider value={[params.noiseFrequency || 1.0]} min={0.1} max={5.0} step={0.01} onValueChange={([v]) => updateParam('noiseFrequency', v)} className="py-2" />
+                </div>
               </div>
             </div>
           </div>
@@ -397,10 +423,26 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
                 <div className="space-y-3">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
-                    <span className="flex items-center gap-2.5"><CircleDot className="w-4 h-4" /> Rim Reinforcement</span>
+                    <span className="flex items-center gap-2.5"><CircleDot className="w-4 h-4" /> Rim Thickness</span>
                     <span className="text-indigo-600 font-mono font-bold">{(params.rimThickness || 0).toFixed(2)} cm</span>
                   </div>
                   <Slider value={[params.rimThickness || 0]} min={0} max={0.5} step={0.01} onValueChange={([v]) => updateParam('rimThickness', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><MoveVertical className="w-4 h-4" /> Rim Height</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.rimHeight || 0).toFixed(2)} cm</span>
+                  </div>
+                  <Slider value={[params.rimHeight || 0]} min={0} max={1.0} step={0.01} onValueChange={([v]) => updateParam('rimHeight', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Layers className="w-4 h-4" /> Internal Rib Depth</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.internalRibDepth || 0.5).toFixed(2)} cm</span>
+                  </div>
+                  <Slider value={[params.internalRibDepth || 0.5]} min={0} max={2.0} step={0.01} onValueChange={([v]) => updateParam('internalRibDepth', v)} className="py-2" />
                 </div>
               </div>
             </div>

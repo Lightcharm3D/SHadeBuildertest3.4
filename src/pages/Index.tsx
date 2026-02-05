@@ -37,6 +37,7 @@ const DEFAULT_PARAMS: LampshadeParams = {
   foldDepth: 0.8,
   noiseScale: 0.5,
   noiseStrength: 0.5,
+  noiseFrequency: 1.0,
   slotCount: 16,
   slotWidth: 0.1,
   gapDistance: 0.5,
@@ -50,8 +51,11 @@ const DEFAULT_PARAMS: LampshadeParams = {
   spokeWidth: 10,
   spokeCount: 4,
   rimThickness: 0.1,
+  rimHeight: 0.1,
+  internalRibDepth: 0.5,
   patternScale: 10,
   patternDepth: 0.3,
+  patternRotation: 0,
 };
 
 const DEFAULT_MATERIAL: MaterialParams = {
@@ -114,9 +118,10 @@ const Index = () => {
       'honeycomb', 'diamond_mesh', 'knurled', 'wave_rings',
       'triangular_lattice', 'square_grid', 'radial_spokes', 'chevron_mesh',
       'spiral_ribs', 'voronoi_wire', 'star_mesh', 'organic_mesh',
-      'woven_basket', 'bubble_foam', 'parametric_fins', 'spiral_stairs', 'diamond_plate'
+      'woven_basket', 'bubble_foam', 'parametric_fins', 'spiral_stairs', 'diamond_plate',
+      'knurled_v2', 'radial_fins', 'cellular_automata', 'voronoi_v2', 'spiral_mesh', 'diamond_lattice'
     ];
-    const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave', 'tapered', 'bulbous'];
+    const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave', 'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric'];
     
     const newType = types[Math.floor(Math.random() * types.length)];
     const newSilhouette = silhouettes[Math.floor(Math.random() * silhouettes.length)];
@@ -134,7 +139,10 @@ const Index = () => {
       twistAngle: Math.random() * 720,
       patternScale: 5 + Math.random() * 20,
       patternDepth: 0.1 + Math.random() * 0.8,
+      patternRotation: Math.random() * 360,
+      noiseFrequency: 0.5 + Math.random() * 2.0,
       rimThickness: Math.random() > 0.5 ? 0.1 + Math.random() * 0.2 : 0,
+      rimHeight: Math.random() > 0.5 ? 0.1 + Math.random() * 0.5 : 0,
       spokeCount: 3 + Math.floor(Math.random() * 5),
     });
     

@@ -9,7 +9,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Link as LinkIcon, Settings2, ChevronLeft, ArrowRight } from 'lucide-react';
+import { Settings2, ChevronLeft, ArrowRight, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -106,10 +106,20 @@ const Index = () => {
     showSuccess("Parameters reset to default");
   };
 
-  const copyPublicLink = () => {
-    const url = window.location.origin + window.location.pathname;
-    navigator.clipboard.writeText(url);
-    showSuccess("Public Link copied!");
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My 3D Shade Design',
+          text: 'Check out this 3D printable lampshade I created!',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Share failed', err);
+      }
+    } else {
+      showError("Sharing not supported on this browser");
+    }
   };
 
   const handleRandomize = () => {
@@ -172,23 +182,8 @@ const Index = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button 
-            variant={isSidebarOpen ? "secondary" : "outline"} 
-            size="sm" 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest"
-          >
-            <Settings2 className="w-3 h-3" />
-            {isSidebarOpen ? "Hide Settings" : "Show Settings"}
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={copyPublicLink}
-            className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
-          >
-            <LinkIcon className="w-3 h-3" />
-            <span className="hidden sm:inline">Copy Link</span>
+          <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-lg h-8 w-8 text-slate-400 hover:text-indigo-600">
+            <Share2 className="w-3.5 h-3.5" />
           </Button>
           <Link to="/lithophane" className="p-1.5 hover:bg-slate-100 rounded-lg transition-all">
             <ArrowRight className="w-4 h-4 text-slate-400" />
@@ -275,7 +270,7 @@ const Index = () => {
           )}
         </div>
         
-        {/* Permanent Sidebar for Desktop/Tablets with Toggle */}
+        {/* Permanent Sidebar for Desktop/Tablets */}
         <AnimatePresence initial={false}>
           {isSidebarOpen && !isMobile && (
             <motion.div 

@@ -10,7 +10,7 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Image as ImageIcon, Share2, Link as LinkIcon, Settings2, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Share2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -104,12 +104,6 @@ const LithophaneGenerator = () => {
     }
   }, [params, history]);
 
-  const copyPublicLink = () => {
-    const url = window.location.origin;
-    navigator.clipboard.writeText(url);
-    showSuccess("Public Link copied!");
-  };
-
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -184,26 +178,6 @@ const LithophaneGenerator = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {!isMobile && (
-            <Button 
-              variant={isSidebarOpen ? "secondary" : "outline"} 
-              size="sm" 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest"
-            >
-              <Settings2 className="w-3 h-3" />
-              {isSidebarOpen ? "Hide Settings" : "Show Settings"}
-            </Button>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={copyPublicLink}
-            className="gap-2 h-8 px-3 rounded-lg font-black text-[8px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
-          >
-            <LinkIcon className="w-3 h-3" />
-            <span className="hidden sm:inline">Copy Link</span>
-          </Button>
           <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-lg h-8 w-8 text-slate-400 hover:text-indigo-600">
             <Share2 className="w-3.5 h-3.5" />
           </Button>

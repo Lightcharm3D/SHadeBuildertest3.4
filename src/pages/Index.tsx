@@ -9,7 +9,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Link as LinkIcon, Settings2, ChevronLeft } from 'lucide-react';
+import { Link as LinkIcon, Settings2, ChevronLeft, Beaker } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -163,9 +163,10 @@ const Index = () => {
           <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md">
             <img src="logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <div>
-            <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none">
+          <div className="flex flex-col">
+            <h1 className="text-[10px] lg:text-sm font-black tracking-tighter text-slate-900 leading-none flex items-center gap-2">
               SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
+              <span className="bg-indigo-100 text-indigo-600 text-[8px] px-1.5 py-0.5 rounded-full font-black tracking-widest">BETA</span>
             </h1>
           </div>
         </div>
@@ -229,9 +230,12 @@ const Index = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   className="bg-slate-900/90 p-8 rounded-[2.5rem] border border-white/10 text-center max-w-xs shadow-2xl mx-4"
                 >
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest">BETA TESTING</div>
+                  </div>
                   <h3 className="text-white font-black text-xl mb-2">3D Shade Designer</h3>
                   <p className="text-slate-400 text-xs mb-6">
-                    Adjust the parameters on the right to customize your 3D printable lampshade.
+                    Adjust the parameters on the right to customize your 3D printable lampshade. This is a preview version.
                   </p>
                   <Button 
                     onClick={() => setShowWelcome(false)}

@@ -25,6 +25,14 @@ const SplashScreen = () => {
             className="w-full h-full object-cover"
           />
         </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-xl border border-white/20 whitespace-nowrap tracking-widest"
+        >
+          BETA PREVIEW
+        </motion.div>
       </motion.div>
       
       <motion.div

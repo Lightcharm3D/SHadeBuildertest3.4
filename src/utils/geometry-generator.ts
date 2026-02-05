@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import * as BufferGeometryUtils from 'three-stdlib';
+import { mergeGeometries, mergeVertices } from 'three-stdlib';
 
 export type LampshadeType = 
   | 'ribbed_drum' 
@@ -507,7 +507,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const start = new THREE.Vector3(Math.cos(angle) * r, -height / 2, Math.sin(angle) * r);
         generateBranch(start, new THREE.Vector3(0, 1, 0), height / 3, levels);
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -535,7 +535,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -580,7 +580,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -608,7 +608,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
         geoms.push(finGeom);
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -640,7 +640,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -672,7 +672,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
         geoms.push(finGeom);
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -717,7 +717,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -751,7 +751,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           geoms.push(createStrut(p1, pNext, strutRadius));
         }
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -830,7 +830,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -909,7 +909,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
 
@@ -918,7 +918,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const outerGeom = new THREE.LatheGeometry(getClosedProfilePoints(effectiveSteps, thickness), effectiveSegments);
       const innerGeom = new THREE.LatheGeometry(getClosedProfilePoints(effectiveSteps, thickness), effectiveSegments);
       innerGeom.scale(1 - (gap / topRadius), 1, 1 - (gap / topRadius));
-      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      geometry = mergeGeometries([outerGeom, innerGeom]);
       break;
     }
 
@@ -959,7 +959,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
         geoms.push(strut2);
       }
-      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      geometry = mergeGeometries(geoms);
       break;
     }
     
@@ -1012,7 +1012,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     const bottomRim = new THREE.LatheGeometry(bottomRimProfile, segs);
     rimGeoms.push(bottomRim);
     
-    geometry = BufferGeometryUtils.mergeGeometries([geometry, ...rimGeoms]);
+    geometry = mergeGeometries([geometry, ...rimGeoms]);
   }
 
   if (params.internalRibs > 0) {
@@ -1033,16 +1033,16 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       rib.rotateY(angle);
       ribGeoms.push(rib);
     }
-    geometry = BufferGeometryUtils.mergeGeometries([geometry, ...ribGeoms]);
+    geometry = mergeGeometries([geometry, ...ribGeoms]);
   }
 
   if (params.fitterType !== 'none') {
     const fitterGeom = generateFitterGeometry(params);
-    geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);
+    geometry = mergeGeometries([geometry, fitterGeom]);
   }
   
   geometry.computeVertexNormals();
-  return BufferGeometryUtils.mergeVertices(geometry);
+  return mergeVertices(geometry);
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
@@ -1128,5 +1128,5 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     }
     geoms.push(spoke);
   }
-  return BufferGeometryUtils.mergeGeometries(geoms);
+  return mergeGeometries(geoms);
 }

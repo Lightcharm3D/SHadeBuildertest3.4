@@ -1,5 +1,9 @@
-<iframe 
-  src="https://[your-github-username].github.io/SHadeBuilder-test/" 
-  style="width:100%; height:800px; border:none; border-radius: 20px; overflow:hidden;" 
-  title="ShadeBuilder App">
-</iframe>
+<!-- Copy and paste this into your Webador 'Embed Code' element -->
+<div style="width: 100%; height: 85vh; overflow: hidden; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+  <iframe 
+    src="https://yourusername.github.io/your-repo-name/" 
+    style="width: 100%; height: 100%; border: none;" 
+    allow="clipboard-write"
+    title="ShadeBuilder 3D">
+  </iframe>
+</div>

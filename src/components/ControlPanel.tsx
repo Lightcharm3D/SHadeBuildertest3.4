@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -107,12 +107,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     showSuccess(`Applied ${preset}`);
   };
 
-  // Rough estimation of material weight (PLA density ~1.24 g/cm³)
   const estimateWeight = () => {
     const avgRadius = (params.topRadius + params.bottomRadius) / 2;
     const surfaceArea = 2 * Math.PI * avgRadius * params.height;
     const volume = surfaceArea * params.thickness;
     return (volume * 1.24).toFixed(1);
+  };
+
+  const estimatePrintTime = () => {
+    const weight = parseFloat(estimateWeight());
+    const baseTime = weight * 12; // ~12 mins per gram at standard speeds
+    const complexityFactor = params.gridDensity ? (params.gridDensity / 10) : 1;
+    const totalMins = baseTime * complexityFactor;
+    const hours = Math.floor(totalMins / 60);
+    const mins = Math.round(totalMins % 60);
+    return `${hours}h ${mins}m`;
   };
 
   return (
@@ -283,6 +292,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
               </div>
             </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Radius</Label>
+              <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
+            </div>
           </TabsContent>
 
           <TabsContent value="fitter" className="space-y-5 pt-4">
@@ -394,14 +408,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
             </div>
             
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
+            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-3">
               <div className="flex items-center gap-2 text-indigo-600">
                 <Scale className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Print Stats</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] text-indigo-700 font-bold">Est. Weight (PLA)</span>
-                <span className="text-xs font-black text-indigo-900">{estimateWeight()}g</span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] text-indigo-700 font-bold">Est. Weight</span>
+                  <span className="text-xs font-black text-indigo-900">{estimateWeight()}g</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] text-indigo-700 font-bold flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Est. Time
+                  </span>
+                  <span className="text-xs font-black text-indigo-900">{estimatePrintTime()}</span>
+                </div>
               </div>
             </div>
           </TabsContent>

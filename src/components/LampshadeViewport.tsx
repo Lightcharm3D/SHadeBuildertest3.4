@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler, Scale } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler, Scale, Sun, Moon, Coffee } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -14,6 +14,8 @@ export interface MaterialParams {
   transmission: number;
   opacity: number;
 }
+
+type LightingMode = 'studio' | 'warm' | 'night';
 
 interface ViewportProps {
   params: LampshadeParams;
@@ -38,10 +40,13 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
+  const ambientLightRef = useRef<THREE.AmbientLight | null>(null);
+  const mainLightRef = useRef<THREE.DirectionalLight | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
   const [isCutaway, setIsCutaway] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(true);
+  const [lightingMode, setLightingMode] = useState<LightingMode>('studio');
 
   const overhangMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -102,6 +107,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
+    ambientLightRef.current = ambientLight;
     
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(300, 500, 300);
@@ -117,6 +123,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.shadow.bias = -0.001;
     
     scene.add(mainLight);
+    mainLightRef.current = mainLight;
 
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 1000);
     scene.add(bulbLight);
@@ -242,7 +249,31 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
   }, [isLightOn]);
 
-  // Rough estimation of material weight (PLA density ~1.24 g/cm³)
+  useEffect(() => {
+    if (!sceneRef.current || !ambientLightRef.current || !mainLightRef.current) return;
+    
+    switch (lightingMode) {
+      case 'studio':
+        sceneRef.current.background = new THREE.Color(0x020617);
+        ambientLightRef.current.intensity = 0.5;
+        mainLightRef.current.intensity = 1.0;
+        mainLightRef.current.color.set(0xffffff);
+        break;
+      case 'warm':
+        sceneRef.current.background = new THREE.Color(0x1a1a1a);
+        ambientLightRef.current.intensity = 0.3;
+        mainLightRef.current.intensity = 0.8;
+        mainLightRef.current.color.set(0xffe0b0);
+        break;
+      case 'night':
+        sceneRef.current.background = new THREE.Color(0x050505);
+        ambientLightRef.current.intensity = 0.1;
+        mainLightRef.current.intensity = 0.2;
+        mainLightRef.current.color.set(0x4444ff);
+        break;
+    }
+  }, [lightingMode]);
+
   const estimateWeight = () => {
     const avgRadius = (params.topRadius + params.bottomRadius) / 2;
     const surfaceArea = 2 * Math.PI * avgRadius * params.height;
@@ -254,6 +285,34 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
       
+      {/* Lighting Presets */}
+      <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
+        <Button 
+          variant="secondary" 
+          size="icon" 
+          onClick={() => setLightingMode('studio')}
+          className={`w-10 h-10 rounded-xl shadow-xl transition-all ${lightingMode === 'studio' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 text-slate-400'}`}
+        >
+          <Sun className="w-4 h-4" />
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="icon" 
+          onClick={() => setLightingMode('warm')}
+          className={`w-10 h-10 rounded-xl shadow-xl transition-all ${lightingMode === 'warm' ? 'bg-amber-600 text-white' : 'bg-slate-800/80 text-slate-400'}`}
+        >
+          <Coffee className="w-4 h-4" />
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="icon" 
+          onClick={() => setLightingMode('night')}
+          className={`w-10 h-10 rounded-xl shadow-xl transition-all ${lightingMode === 'night' ? 'bg-blue-900 text-white' : 'bg-slate-800/80 text-slate-400'}`}
+        >
+          <Moon className="w-4 h-4" />
+        </Button>
+      </div>
+
       {/* Measurement Overlays */}
       {showMeasurements && (
         <div className="absolute inset-0 pointer-events-none z-10">
@@ -330,10 +389,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         </Button>
       </div>
       {showPrintability && (
-        <div className="absolute top-6 right-6 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
           <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
           <div className="flex flex-col">
-            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhangs</span>
+            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhangs Detected</span>
           </div>
         </div>
       )}

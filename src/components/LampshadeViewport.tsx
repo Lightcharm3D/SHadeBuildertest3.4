@@ -290,8 +290,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
             </div>
           </div>
 
-          {/* Weight Label */}
-          <div className="absolute top-6 left-6 flex flex-col items-start">
+          {/* Weight Label - Moved down to avoid overlap with Live 3D Preview badge */}
+          <div className="absolute top-16 left-6 flex flex-col items-start">
             <div className="bg-indigo-600/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-2xl">
               <Scale className="w-3 h-3 text-indigo-200" />
               <span className="text-[10px] font-black text-white uppercase tracking-widest">Est. {estimateWeight()}g</span>

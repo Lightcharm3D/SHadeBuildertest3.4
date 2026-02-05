@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler, Scale } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -244,6 +244,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
   const maxRadius = Math.max(params.topRadius, params.bottomRadius);
 
+  // Rough estimation of material weight (PLA density ~1.24 g/cm³)
+  const estimateWeight = () => {
+    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
+    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
+    const volume = surfaceArea * params.thickness;
+    return (volume * 1.24).toFixed(1);
+  };
+
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
@@ -270,6 +278,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
                 <span className="text-[10px] font-black text-white whitespace-nowrap">Ø {maxRadius * 2}cm</span>
               </div>
+            </div>
+          </div>
+
+          {/* Weight Label */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <div className="bg-indigo-600/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-2xl">
+              <Scale className="w-3 h-3 text-indigo-200" />
+              <span className="text-[10px] font-black text-white uppercase tracking-widest">Est. {estimateWeight()}g</span>
             </div>
           </div>
         </div>

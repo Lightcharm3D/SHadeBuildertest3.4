@@ -4,8 +4,8 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig(() => ({
-  // This matches your GitHub repository name exactly
-  base: '/SHadeBuilder-test/',
+  // Using relative base path so it works regardless of the GitHub repository name
+  base: './',
   server: {
     host: "::",
     port: 8080,

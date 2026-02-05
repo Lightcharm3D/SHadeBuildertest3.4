@@ -19,7 +19,11 @@ export type LampshadeType =
   | 'honeycomb'
   | 'diamond_mesh'
   | 'knurled'
-  | 'wave_rings';
+  | 'wave_rings'
+  | 'triangular_lattice'
+  | 'square_grid'
+  | 'radial_spokes'
+  | 'chevron_mesh';
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave';
 export type FitterType = 'none' | 'spider' | 'uno';
@@ -186,24 +190,29 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   let geometry: THREE.BufferGeometry;
   const closedProfile = getClosedProfilePoints();
 
+  const createStrut = (start: THREE.Vector3, end: THREE.Vector3, radius: number) => {
+    const dist = start.distanceTo(end);
+    const strut = new THREE.CylinderGeometry(radius, radius, dist, 6);
+    strut.translate(0, dist / 2, 0);
+    strut.rotateX(Math.PI / 2);
+    strut.lookAt(end.clone().sub(start));
+    strut.translate(start.x, start.y, start.z);
+    return strut;
+  };
+
   switch (type) {
+    case 'triangular_lattice':
+    case 'square_grid':
+    case 'radial_spokes':
+    case 'chevron_mesh':
     case 'honeycomb':
-    case 'diamond_mesh': {
+    case 'diamond_mesh':
+    case 'bricks': {
       const density = params.gridDensity || 12;
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const hStep = height / density;
       const aStep = (Math.PI * 2) / segments;
-      
-      const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
-        const dist = start.distanceTo(end);
-        const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
-        strut.translate(0, dist / 2, 0);
-        strut.rotateX(Math.PI / 2);
-        strut.lookAt(end.clone().sub(start));
-        strut.translate(start.x, start.y, start.z);
-        return strut;
-      };
 
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
@@ -215,70 +224,51 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           if (j < density) {
             const ny = y + hStep;
             const nr = getRadiusAtHeight(ny, params);
-            
+            const pUp = new THREE.Vector3(Math.cos(angle) * nr, ny, Math.sin(angle) * nr);
+
+            if (type === 'square_grid' || type === 'radial_spokes') {
+              geoms.push(createStrut(p1, pUp, strutRadius));
+            }
+
+            if (type === 'triangular_lattice') {
+              const pUpNext = new THREE.Vector3(Math.cos(angle + aStep) * nr, ny, Math.sin(angle + aStep) * nr);
+              geoms.push(createStrut(p1, pUp, strutRadius));
+              geoms.push(createStrut(p1, pUpNext, strutRadius));
+            }
+
+            if (type === 'chevron_mesh') {
+              const offset = (j % 2 === 0) ? aStep : -aStep;
+              const pUpDiag = new THREE.Vector3(Math.cos(angle + offset) * nr, ny, Math.sin(angle + offset) * nr);
+              geoms.push(createStrut(p1, pUpDiag, strutRadius));
+            }
+
             if (type === 'diamond_mesh') {
               const pUp1 = new THREE.Vector3(Math.cos(angle + aStep) * nr, ny, Math.sin(angle + aStep) * nr);
               const pUp2 = new THREE.Vector3(Math.cos(angle - aStep) * nr, ny, Math.sin(angle - aStep) * nr);
-              geoms.push(createStrut(p1, pUp1));
-              geoms.push(createStrut(p1, pUp2));
-            } else {
-              // Honeycomb logic
+              geoms.push(createStrut(p1, pUp1, strutRadius));
+              geoms.push(createStrut(p1, pUp2, strutRadius));
+            }
+
+            if (type === 'honeycomb') {
               const offset = (j % 2 === 0) ? aStep / 2 : -aStep / 2;
-              const pUp = new THREE.Vector3(Math.cos(angle + offset) * nr, ny, Math.sin(angle + offset) * nr);
-              geoms.push(createStrut(p1, pUp));
-              
-              const pNext = new THREE.Vector3(Math.cos(angle + aStep) * r, y, Math.sin(angle + aStep) * r);
-              geoms.push(createStrut(p1, pNext));
+              const pUpH = new THREE.Vector3(Math.cos(angle + offset) * nr, ny, Math.sin(angle + offset) * nr);
+              geoms.push(createStrut(p1, pUpH, strutRadius));
+            }
+
+            if (type === 'bricks') {
+              const nextY = y + hStep / 2;
+              const nrB = getRadiusAtHeight(nextY, params);
+              const pUp1 = new THREE.Vector3(Math.cos(angle + 0.5 * aStep) * nrB, nextY, Math.sin(angle + 0.5 * aStep) * nrB);
+              const pUp2 = new THREE.Vector3(Math.cos(angle - 0.5 * aStep) * nrB, nextY, Math.sin(angle - 0.5 * aStep) * nrB);
+              geoms.push(createStrut(p1, pUp1, strutRadius));
+              geoms.push(createStrut(p1, pUp2, strutRadius));
             }
           }
-        }
-      }
-      
-      geometry = mergeGeometries(geoms);
-      break;
-    }
 
-    case 'bricks': {
-      const density = params.gridDensity || 10;
-      const geoms: THREE.BufferGeometry[] = [];
-      const strutRadius = thickness / 1.2; 
-      const hStep = height / density;
-      const aStep = (Math.PI * 2) / segments;
-      
-      const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
-        const dist = start.distanceTo(end);
-        const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
-        strut.translate(0, dist / 2, 0);
-        strut.rotateX(Math.PI / 2);
-        strut.lookAt(end.clone().sub(start));
-        strut.translate(start.x, start.y, start.z);
-        return strut;
-      };
-
-      for (let j = 0; j <= density; j++) {
-        const y = -height / 2 + j * hStep;
-        const nextY = y + hStep / 2;
-        const prevY = y - hStep / 2;
-        
-        for (let i = 0; i < segments; i++) {
-          const angle = i * aStep;
-          const nextAngle = (i + 0.5) * aStep;
-          
-          const r = getRadiusAtHeight(y, params);
-          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
-
-          if (j < density) {
-            const nr = getRadiusAtHeight(nextY, params);
-            const pUp1 = new THREE.Vector3(Math.cos(nextAngle) * nr, nextY, Math.sin(nextAngle) * nr);
-            const pUp2 = new THREE.Vector3(Math.cos(angle - 0.5 * aStep) * nr, nextY, Math.sin(angle - 0.5 * aStep) * nr);
-            geoms.push(createStrut(p1, pUp1));
-            geoms.push(createStrut(p1, pUp2));
-          }
-
-          if (j > 0) {
-            const pr = getRadiusAtHeight(prevY, params);
-            const pDown = new THREE.Vector3(Math.cos(nextAngle) * pr, prevY, Math.sin(nextAngle) * pr);
-            geoms.push(createStrut(p1, pDown));
+          // Horizontal rings
+          if (type === 'square_grid' || type === 'radial_spokes' || type === 'triangular_lattice' || type === 'honeycomb') {
+            const pNext = new THREE.Vector3(Math.cos(angle + aStep) * r, y, Math.sin(angle + aStep) * r);
+            geoms.push(createStrut(p1, pNext, strutRadius));
           }
         }
       }

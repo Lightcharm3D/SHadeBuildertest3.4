@@ -110,7 +110,8 @@ const Index = () => {
       'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
       'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 
       'organic_cell', 'bricks', 'petal_bloom', 'faceted_gem',
-      'honeycomb', 'diamond_mesh', 'knurled', 'wave_rings'
+      'honeycomb', 'diamond_mesh', 'knurled', 'wave_rings',
+      'triangular_lattice', 'square_grid', 'radial_spokes', 'chevron_mesh'
     ];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     

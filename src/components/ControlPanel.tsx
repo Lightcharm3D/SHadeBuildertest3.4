@@ -169,6 +169,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="triangular_lattice">Triangular Lattice</SelectItem>
+                  <SelectItem value="square_grid">Square Grid</SelectItem>
+                  <SelectItem value="radial_spokes">Radial Spokes</SelectItem>
+                  <SelectItem value="chevron_mesh">Chevron Mesh</SelectItem>
                   <SelectItem value="honeycomb">Honeycomb Grid</SelectItem>
                   <SelectItem value="diamond_mesh">Diamond Mesh</SelectItem>
                   <SelectItem value="knurled">Knurled Texture</SelectItem>

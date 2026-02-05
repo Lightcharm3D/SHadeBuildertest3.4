@@ -169,6 +169,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="star_mesh">Star Mesh</SelectItem>
+                  <SelectItem value="voronoi_wire">Voronoi Wireframe</SelectItem>
+                  <SelectItem value="spiral_ribs">Spiral Ribs</SelectItem>
                   <SelectItem value="triangular_lattice">Triangular Lattice</SelectItem>
                   <SelectItem value="square_grid">Square Grid</SelectItem>
                   <SelectItem value="radial_spokes">Radial Spokes</SelectItem>
@@ -200,6 +203,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectItem value="hourglass">Hourglass</SelectItem>
                   <SelectItem value="convex">Convex</SelectItem>
                   <SelectItem value="concave">Concave</SelectItem>
+                  <SelectItem value="tapered">Tapered</SelectItem>
+                  <SelectItem value="bulbous">Bulbous</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -243,7 +248,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <span className="text-indigo-600 font-mono font-bold">{params.fitterHeight.toFixed(2)}</span>
                   </div>
                   <Slider value={[params.fitterHeight]} min={0} max={params.height} step={0.01} onValueChange={([v]) => updateParam('fitterHeight', v)} className="py-2" />
-                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Distance from bottom edge</p>
+                </div>
+
+                <div className="space-y-3 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Hash className="w-4 h-4" /> Spoke Count</span>
+                    <span className="text-indigo-600 font-mono font-bold">{params.spokeCount || 4}</span>
+                  </div>
+                  <Slider value={[params.spokeCount || 4]} min={2} max={12} step={1} onValueChange={([v]) => updateParam('spokeCount', v)} className="py-2" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-5">

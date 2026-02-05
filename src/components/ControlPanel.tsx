@@ -107,13 +107,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     showSuccess(`Applied ${preset}`);
   };
 
-  const estimateWeight = () => {
-    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
-    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
-    const volume = surfaceArea * params.thickness;
-    return (volume * 1.24).toFixed(1);
-  };
-
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -395,19 +388,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="flex gap-3 items-center">
                 <div className="w-10 h-10 rounded-lg border border-slate-200 shrink-0" style={{ backgroundColor: material.color }} />
                 <Input type="color" value={material.color} onChange={(e) => updateMaterial('color', e.target.value)} className="h-10 w-full p-1 rounded-lg cursor-pointer" />
-              </div>
-            </div>
-            
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-3">
-              <div className="flex items-center gap-2 text-indigo-600">
-                <Scale className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Print Stats</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] text-indigo-700 font-bold">Est. Weight</span>
-                  <span className="text-xs font-black text-indigo-900">{estimateWeight()}g</span>
-                </div>
               </div>
             </div>
           </TabsContent>

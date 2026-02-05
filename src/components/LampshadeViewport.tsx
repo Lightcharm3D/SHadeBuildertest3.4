@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import * as THREE from 'three';
+import * as THREE from 'this';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
@@ -242,14 +242,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
   }, [isLightOn]);
 
-  // Rough estimation of material weight (PLA density ~1.24 g/cm³)
-  const estimateWeight = () => {
-    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
-    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
-    const volume = surfaceArea * params.thickness;
-    return (volume * 1.24).toFixed(1);
-  };
-
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
@@ -287,14 +279,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
                 <span className="text-[10px] font-black text-white whitespace-nowrap">Bottom: {params.bottomRadius * 2}cm</span>
               </div>
-            </div>
-          </div>
-
-          {/* Weight Label - Moved down to avoid overlap with Live 3D Preview badge */}
-          <div className="absolute top-16 left-6 flex flex-col items-start">
-            <div className="bg-indigo-600/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-2 shadow-2xl">
-              <Scale className="w-3 h-3 text-indigo-200" />
-              <span className="text-[10px] font-black text-white uppercase tracking-widest">Est. {estimateWeight()}g</span>
             </div>
           </div>
         </div>

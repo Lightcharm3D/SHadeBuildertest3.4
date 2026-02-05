@@ -102,6 +102,28 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     showSuccess(`Applied ${preset} filament`);
   };
 
+  // Design Code (Seed) Logic
+  const encodeDesign = () => {
+    try {
+      const code = btoa(JSON.stringify(params));
+      navigator.clipboard.writeText(code);
+      showSuccess("Design Code copied to clipboard!");
+    } catch (e) {
+      showError("Failed to encode design");
+    }
+  };
+
+  const decodeDesign = (code: string) => {
+    if (!code) return;
+    try {
+      const decoded = JSON.parse(atob(code));
+      setParams(decoded);
+      showSuccess("Design loaded from code!");
+    } catch (e) {
+      showError("Invalid Design Code");
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
@@ -117,6 +139,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="h-1 w-16 brand-gradient rounded-full"></div>
         </div>
         <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={encodeDesign} className="h-9 w-9 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Share Design Code">
+            <Share2 className="w-4 h-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={saveToHistory} className="h-9 w-9 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Save Snapshot">
             <Save className="w-4 h-4" />
           </Button>
@@ -324,13 +349,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="space-y-6">
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-                <Hash className="w-3.5 h-3.5" /> Generation Seed
+                <Hash className="w-3.5 h-3.5" /> Design Code (Seed)
               </Label>
               <div className="flex gap-2">
                 <Input 
-                  type="number" 
-                  value={params.seed} 
-                  onChange={(e) => updateParam('seed', parseInt(e.target.value) || 0)} 
+                  placeholder="Paste Design Code..." 
+                  onChange={(e) => decodeDesign(e.target.value)} 
                   className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500"
                 />
                 <Button 

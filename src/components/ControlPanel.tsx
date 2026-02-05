@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot, Info, Waves } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -31,9 +31,10 @@ interface ControlPanelProps {
 const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Modern Minimal': { type: 'slotted', silhouette: 'straight', slotCount: 24, slotWidth: 0.1, height: 18, topRadius: 6, bottomRadius: 6 },
   'Organic Cell': { type: 'organic_cell', silhouette: 'convex', noiseStrength: 1.2, noiseScale: 2.0, height: 15, topRadius: 5, bottomRadius: 8 },
-  'Brick Wall': { type: 'bricks', silhouette: 'straight', gridDensity: 12, thickness: 0.15, height: 16, topRadius: 7, bottomRadius: 7 },
+  'Honeycomb': { type: 'honeycomb', silhouette: 'straight', gridDensity: 15, thickness: 0.15, height: 16, topRadius: 7, bottomRadius: 7, rimThickness: 0.2 },
+  'Knurled Tech': { type: 'knurled', silhouette: 'straight', patternScale: 15, patternDepth: 0.4, height: 14, topRadius: 6, bottomRadius: 6 },
+  'Wave Rings': { type: 'wave_rings', silhouette: 'bell', frequency: 12, amplitude: 0.6, height: 15, topRadius: 4, bottomRadius: 9 },
   'Crystal Gem': { type: 'faceted_gem', silhouette: 'concave', noiseStrength: 1.5, height: 14, topRadius: 5, bottomRadius: 9 },
-  'Petal Bloom': { type: 'petal_bloom', silhouette: 'bell', ribCount: 12, height: 15, topRadius: 3, bottomRadius: 10 },
 };
 
 const FILAMENT_PRESETS: Record<string, Partial<MaterialParams>> = {
@@ -168,6 +169,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="honeycomb">Honeycomb Grid</SelectItem>
+                  <SelectItem value="diamond_mesh">Diamond Mesh</SelectItem>
+                  <SelectItem value="knurled">Knurled Texture</SelectItem>
+                  <SelectItem value="wave_rings">Wave Rings</SelectItem>
                   <SelectItem value="bricks">Bricks Pattern</SelectItem>
                   <SelectItem value="petal_bloom">Petal Bloom</SelectItem>
                   <SelectItem value="faceted_gem">Faceted Gem</SelectItem>
@@ -251,17 +256,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <Input type="number" step={0.01} value={params.fitterOuterDiameter.toFixed(2)} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Spoke Thick (mm)</Label>
-                    <Input type="number" step={0.01} value={params.spokeThickness.toFixed(2)} onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Spoke Width (mm)</Label>
-                    <Input type="number" step={0.01} value={params.spokeWidth.toFixed(2)} onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -279,32 +273,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   value={params.seed} 
                   onChange={(e) => updateParam('seed', parseInt(e.target.value) || 0)} 
                   className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500"
-                  placeholder="Enter seed number..."
                 />
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={() => updateParam('seed', Math.floor(Math.random() * 1000000))}
                   className="h-12 w-12 shrink-0 rounded-2xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600"
-                  title="Randomize Seed"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {(params.type === 'organic_cell' || params.type === 'faceted_gem') && (
-              <div className="grid grid-cols-2 gap-5">
+            <div className="space-y-5 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
+              <div className="space-y-6">
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Noise Scale</Label>
-                  <Input type="number" step={0.01} value={params.noiseScale?.toFixed(2)} onChange={(e) => updateParam('noiseScale', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Sliders className="w-4 h-4" /> Pattern Scale</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.patternScale || 10).toFixed(2)}</span>
+                  </div>
+                  <Slider value={[params.patternScale || 10]} min={1} max={50} step={0.1} onValueChange={([v]) => updateParam('patternScale', v)} className="py-2" />
                 </div>
+
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Strength</Label>
-                  <Input type="number" step={0.01} value={params.noiseStrength?.toFixed(2)} onChange={(e) => updateParam('noiseStrength', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Layers className="w-4 h-4" /> Pattern Depth</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.patternDepth || 0.3).toFixed(2)}</span>
+                  </div>
+                  <Slider value={[params.patternDepth || 0.3]} min={0} max={2} step={0.01} onValueChange={([v]) => updateParam('patternDepth', v)} className="py-2" />
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </TabsContent>
 
@@ -346,26 +345,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 />
               </div>
             </div>
-
-            <div className="space-y-5 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    <span className="flex items-center gap-2.5"><Zap className="w-4 h-4" /> Roughness</span>
-                    <span className="text-indigo-600 font-mono font-bold">{material.roughness.toFixed(2)}</span>
-                  </div>
-                  <Slider value={[material.roughness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('roughness', v)} className="py-2" />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    <span className="flex items-center gap-2.5"><Box className="w-4 h-4" /> Metalness</span>
-                    <span className="text-indigo-600 font-mono font-bold">{material.metalness.toFixed(2)}</span>
-                  </div>
-                  <Slider value={[material.metalness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('metalness', v)} className="py-2" />
-                </div>
-              </div>
-            </div>
           </div>
         </TabsContent>
 
@@ -385,11 +364,23 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             <div className="space-y-5 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
-                <span className="flex items-center gap-2.5"><Layers className="w-4 h-4" /> Wall Thickness</span>
-                <span className="text-indigo-600 font-mono font-bold">{params.thickness.toFixed(2)} cm</span>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Layers className="w-4 h-4" /> Wall Thickness</span>
+                    <span className="text-indigo-600 font-mono font-bold">{params.thickness.toFixed(2)} cm</span>
+                  </div>
+                  <Slider value={[params.thickness]} min={0.04} max={0.5} step={0.01} onValueChange={([v]) => updateParam('thickness', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><CircleDot className="w-4 h-4" /> Rim Reinforcement</span>
+                    <span className="text-indigo-600 font-mono font-bold">{(params.rimThickness || 0).toFixed(2)} cm</span>
+                  </div>
+                  <Slider value={[params.rimThickness || 0]} min={0} max={0.5} step={0.01} onValueChange={([v]) => updateParam('rimThickness', v)} className="py-2" />
+                </div>
               </div>
-              <Slider value={[params.thickness]} min={0.04} max={0.5} step={0.01} onValueChange={([v]) => updateParam('thickness', v)} className="py-2" />
             </div>
           </div>
         </TabsContent>
@@ -440,15 +431,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <Download className="w-4 h-4" />
             Export STL
           </Button>
-        </div>
-
-        <div className="p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100">
-          <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2 mb-1.5">
-            <Info className="w-3 h-3 text-indigo-500" /> License Notice
-          </p>
-          <p className="text-[9px] text-slate-500 leading-relaxed font-medium">
-            All generated models are under a <span className="text-indigo-600 font-bold">Standard Digital File License</span>. For personal use only. Commercial resale of files or physical prints is strictly prohibited.
-          </p>
         </div>
       </div>
     </motion.div>

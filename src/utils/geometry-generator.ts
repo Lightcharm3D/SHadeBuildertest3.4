@@ -15,7 +15,11 @@ export type LampshadeType =
   | 'organic_cell'
   | 'bricks'
   | 'petal_bloom'
-  | 'faceted_gem';
+  | 'faceted_gem'
+  | 'honeycomb'
+  | 'diamond_mesh'
+  | 'knurled'
+  | 'wave_rings';
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave';
 export type FitterType = 'none' | 'spider' | 'uno';
@@ -33,6 +37,7 @@ export interface LampshadeParams {
   // Structure
   internalRibs: number;
   ribThickness: number;
+  rimThickness?: number;
   
   // Fitter params
   fitterType: FitterType;
@@ -59,6 +64,8 @@ export interface LampshadeParams {
   slotCount?: number;
   slotWidth?: number;
   gapDistance?: number;
+  patternScale?: number;
+  patternDepth?: number;
 }
 
 function pseudoNoise(x: number, y: number, z: number, seed: number) {
@@ -97,6 +104,13 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
       return Math.sin(angle * (params.ribCount || 24)) * (params.ribDepth || 0.4);
     case 'wave_shell':
       return Math.sin(angle * (params.frequency || 5) + normY * Math.PI * 2) * (params.amplitude || 1);
+    case 'wave_rings':
+      return Math.sin(normY * (params.frequency || 10) * Math.PI) * (params.amplitude || 0.5);
+    case 'knurled': {
+      const scale = params.patternScale || 10;
+      const depth = params.patternDepth || 0.3;
+      return (Math.sin(angle * scale + normY * scale) * Math.sin(angle * scale - normY * scale)) * depth;
+    }
     case 'petal_bloom': {
       const petals = params.ribCount || 8;
       const bloom = normY * 2;
@@ -173,6 +187,57 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const closedProfile = getClosedProfilePoints();
 
   switch (type) {
+    case 'honeycomb':
+    case 'diamond_mesh': {
+      const density = params.gridDensity || 12;
+      const geoms: THREE.BufferGeometry[] = [];
+      const strutRadius = thickness / 1.5;
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / segments;
+      
+      const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
+        const dist = start.distanceTo(end);
+        const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
+        strut.translate(0, dist / 2, 0);
+        strut.rotateX(Math.PI / 2);
+        strut.lookAt(end.clone().sub(start));
+        strut.translate(start.x, start.y, start.z);
+        return strut;
+      };
+
+      for (let j = 0; j <= density; j++) {
+        const y = -height / 2 + j * hStep;
+        for (let i = 0; i < segments; i++) {
+          const angle = i * aStep;
+          const r = getRadiusAtHeight(y, params);
+          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+
+          if (j < density) {
+            const ny = y + hStep;
+            const nr = getRadiusAtHeight(ny, params);
+            
+            if (type === 'diamond_mesh') {
+              const pUp1 = new THREE.Vector3(Math.cos(angle + aStep) * nr, ny, Math.sin(angle + aStep) * nr);
+              const pUp2 = new THREE.Vector3(Math.cos(angle - aStep) * nr, ny, Math.sin(angle - aStep) * nr);
+              geoms.push(createStrut(p1, pUp1));
+              geoms.push(createStrut(p1, pUp2));
+            } else {
+              // Honeycomb logic
+              const offset = (j % 2 === 0) ? aStep / 2 : -aStep / 2;
+              const pUp = new THREE.Vector3(Math.cos(angle + offset) * nr, ny, Math.sin(angle + offset) * nr);
+              geoms.push(createStrut(p1, pUp));
+              
+              const pNext = new THREE.Vector3(Math.cos(angle + aStep) * r, y, Math.sin(angle + aStep) * r);
+              geoms.push(createStrut(p1, pNext));
+            }
+          }
+        }
+      }
+      
+      geometry = mergeGeometries(geoms);
+      break;
+    }
+
     case 'bricks': {
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
@@ -218,19 +283,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
       }
       
-      const ringThickness = strutRadius * 1.5;
-      const topRingRadius = getRadiusAtHeight(height / 2, params);
-      const topRing = new THREE.TorusGeometry(topRingRadius, ringThickness, 8, segments);
-      topRing.rotateX(Math.PI / 2);
-      topRing.translate(0, height / 2, 0);
-      geoms.push(topRing);
-
-      const bottomRingRadius = getRadiusAtHeight(-height / 2, params);
-      const bottomRing = new THREE.TorusGeometry(bottomRingRadius, ringThickness, 8, segments);
-      bottomRing.rotateX(Math.PI / 2);
-      bottomRing.translate(0, -height / 2, 0);
-      geoms.push(bottomRing);
-
       geometry = mergeGeometries(geoms);
       break;
     }
@@ -252,6 +304,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
 
+    case 'knurled':
+    case 'wave_rings':
     case 'petal_bloom':
     case 'organic_cell':
     case 'perlin_noise':
@@ -354,18 +408,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         geoms.push(strut2);
       }
       
-      const ringTopRadius = getRadiusAtHeight(height / 2, params);
-      const ringTop = new THREE.TorusGeometry(ringTopRadius, strutRadius, 8, segments);
-      ringTop.rotateX(Math.PI / 2);
-      ringTop.translate(0, height / 2, 0);
-      geoms.push(ringTop);
-      
-      const ringBottomRadius = getRadiusAtHeight(-height / 2, params);
-      const ringBottom = new THREE.TorusGeometry(ringBottomRadius, strutRadius, 8, segments);
-      ringBottom.rotateX(Math.PI / 2);
-      ringBottom.translate(0, -height / 2, 0);
-      geoms.push(ringBottom);
-
       geometry = mergeGeometries(geoms);
       break;
     }
@@ -389,6 +431,26 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     
     default:
       geometry = new THREE.LatheGeometry(closedProfile, segments);
+  }
+
+  // Add Rims for structural integrity
+  if (params.rimThickness && params.rimThickness > 0) {
+    const rimGeoms: THREE.BufferGeometry[] = [];
+    const rimThick = params.rimThickness;
+    
+    const topRimRadius = getRadiusAtHeight(height / 2, params);
+    const topRim = new THREE.TorusGeometry(topRimRadius, rimThick, 8, segments);
+    topRim.rotateX(Math.PI / 2);
+    topRim.translate(0, height / 2, 0);
+    rimGeoms.push(topRim);
+
+    const bottomRimRadius = getRadiusAtHeight(-height / 2, params);
+    const bottomRim = new THREE.TorusGeometry(bottomRimRadius, rimThick, 8, segments);
+    bottomRim.rotateX(Math.PI / 2);
+    bottomRim.translate(0, -height / 2, 0);
+    rimGeoms.push(bottomRim);
+    
+    geometry = mergeGeometries([geometry, ...rimGeoms]);
   }
 
   if (params.internalRibs > 0) {

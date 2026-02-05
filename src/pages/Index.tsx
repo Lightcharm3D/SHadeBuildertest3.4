@@ -48,6 +48,9 @@ const DEFAULT_PARAMS: LampshadeParams = {
   fitterHeight: 0,
   spokeThickness: 5,
   spokeWidth: 10,
+  rimThickness: 0.1,
+  patternScale: 10,
+  patternDepth: 0.3,
 };
 
 const DEFAULT_MATERIAL: MaterialParams = {
@@ -106,7 +109,8 @@ const Index = () => {
     const types: LampshadeType[] = [
       'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
       'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 
-      'organic_cell', 'bricks', 'petal_bloom', 'faceted_gem'
+      'organic_cell', 'bricks', 'petal_bloom', 'faceted_gem',
+      'honeycomb', 'diamond_mesh', 'knurled', 'wave_rings'
     ];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     
@@ -122,8 +126,11 @@ const Index = () => {
       bottomRadius: 6 + Math.random() * 8,
       seed: Math.random() * 10000,
       internalRibs: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
-      gridDensity: 8 + Math.floor(Math.random() * 10),
+      gridDensity: 8 + Math.floor(Math.random() * 15),
       twistAngle: Math.random() * 720,
+      patternScale: 5 + Math.random() * 20,
+      patternDepth: 0.1 + Math.random() * 0.8,
+      rimThickness: Math.random() > 0.5 ? 0.1 + Math.random() * 0.2 : 0,
     });
     
     showSuccess("New design generated!");

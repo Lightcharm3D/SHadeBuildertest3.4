@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -56,23 +56,39 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onReset,
   onClose
 }) => {
-  const [history, setHistory] = useState<{id: string, name: string, params: LampshadeParams}[]>([]);
+  const [gallery, setGallery] = useState<{id: string, name: string, params: LampshadeParams, material: MaterialParams}[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('shade_history');
-    if (saved) setHistory(JSON.parse(saved));
+    const saved = localStorage.getItem('shade_gallery');
+    if (saved) setGallery(JSON.parse(saved));
   }, []);
 
-  const saveToHistory = () => {
+  const saveToGallery = () => {
+    const name = prompt("Enter a name for this design:", `Design ${gallery.length + 1}`);
+    if (!name) return;
+
     const newEntry = {
       id: Date.now().toString(),
-      name: `Design ${history.length + 1}`,
-      params: { ...params }
+      name,
+      params: { ...params },
+      material: { ...material }
     };
-    const updated = [newEntry, ...history].slice(0, 10);
-    setHistory(updated);
-    localStorage.setItem('shade_history', JSON.stringify(updated));
-    showSuccess("Design saved!");
+    const updated = [newEntry, ...gallery];
+    setGallery(updated);
+    localStorage.setItem('shade_gallery', JSON.stringify(updated));
+    showSuccess("Design saved to gallery!");
+  };
+
+  const loadFromGallery = (entry: typeof gallery[0]) => {
+    setParams(entry.params);
+    setMaterial(entry.material);
+    showSuccess(`Loaded "${entry.name}"`);
+  };
+
+  const removeFromGallery = (id: string) => {
+    const updated = gallery.filter(e => e.id !== id);
+    setGallery(updated);
+    localStorage.setItem('shade_gallery', JSON.stringify(updated));
   };
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
@@ -91,6 +107,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     showSuccess(`Applied ${preset}`);
   };
 
+  // Rough estimation of material weight (PLA density ~1.24 g/cm³)
+  const estimateWeight = () => {
+    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
+    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
+    const volume = surfaceArea * params.thickness;
+    return (volume * 1.24).toFixed(1);
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -103,8 +127,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Studio Controls</h2>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={saveToHistory} className="h-8 w-8 text-slate-400 hover:text-indigo-600">
-            <Share2 className="w-3.5 h-3.5" />
+          <Button variant="ghost" size="icon" onClick={saveToGallery} className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+            <Save className="w-3.5 h-3.5" />
           </Button>
           <Button variant="ghost" size="icon" onClick={onReset} className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <RotateCcw className="w-3.5 h-3.5" />
@@ -124,7 +148,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <TabsTrigger value="fitter" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Fit</TabsTrigger>
             <TabsTrigger value="pattern" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Pat</TabsTrigger>
             <TabsTrigger value="material" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Mat</TabsTrigger>
-            <TabsTrigger value="build" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Build</TabsTrigger>
+            <TabsTrigger value="gallery" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Gallery</TabsTrigger>
           </TabsList>
 
           <TabsContent value="shape" className="space-y-5 pt-4">
@@ -259,16 +283,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Radius</Label>
-                <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase text-slate-500">Segments</Label>
-                <Input type="number" value={params.segments} onChange={(e) => updateParam('segments', parseInt(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
-              </div>
-            </div>
           </TabsContent>
 
           <TabsContent value="fitter" className="space-y-5 pt-4">
@@ -307,16 +321,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <Input type="number" value={params.fitterOuterDiameter} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Count</Label>
-                    <Input type="number" value={params.spokeCount} onChange={(e) => updateParam('spokeCount', parseInt(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Width (mm)</Label>
-                    <Input type="number" value={params.spokeWidth} onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg" />
-                  </div>
-                </div>
               </div>
             )}
           </TabsContent>
@@ -352,54 +356,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       updateParam('ribDepth', v);
                     }} 
                   />
-                </div>
-                
-                {/* Advanced Pattern Controls */}
-                <div className="pt-2 border-t border-slate-200 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                      <span>Rotation / Twist</span>
-                      <span className="text-indigo-600 font-bold">{(params.patternRotation || params.twistAngle || 0).toFixed(0)}°</span>
-                    </div>
-                    <Slider 
-                      value={[params.patternRotation || params.twistAngle || 0]} 
-                      min={0} max={720} step={1} 
-                      onValueChange={([v]) => {
-                        updateParam('patternRotation', v);
-                        updateParam('twistAngle', v);
-                      }} 
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Count / Freq</Label>
-                      <Input 
-                        type="number" 
-                        value={params.ribCount || params.frequency || params.slotCount || 12} 
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          updateParam('ribCount', v);
-                          updateParam('frequency', v);
-                          updateParam('slotCount', v);
-                        }} 
-                        className="h-8 text-[10px] font-bold rounded-lg" 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Sides / Folds</Label>
-                      <Input 
-                        type="number" 
-                        value={params.sides || params.foldCount || 6} 
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value);
-                          updateParam('sides', v);
-                          updateParam('foldCount', v);
-                        }} 
-                        className="h-8 text-[10px] font-bold rounded-lg" 
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -437,78 +393,56 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Input type="color" value={material.color} onChange={(e) => updateMaterial('color', e.target.value)} className="h-10 w-full p-1 rounded-lg cursor-pointer" />
               </div>
             </div>
+            
+            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
+              <div className="flex items-center gap-2 text-indigo-600">
+                <Scale className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Print Stats</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] text-indigo-700 font-bold">Est. Weight (PLA)</span>
+                <span className="text-xs font-black text-indigo-900">{estimateWeight()}g</span>
+              </div>
+            </div>
           </TabsContent>
 
-          <TabsContent value="build" className="space-y-5 pt-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-3.5 h-3.5 text-indigo-600" />
-                  <span className="text-[9px] font-black uppercase text-slate-700">Low Detail</span>
-                </div>
-                <Switch checked={params.lowDetail} onCheckedChange={(v) => updateParam('lowDetail', v)} />
-              </div>
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
-                  <span className="text-[9px] font-black uppercase text-slate-700">Printability</span>
-                </div>
-                <Switch checked={showPrintability} onCheckedChange={setShowPrintability} />
-              </div>
-            </div>
-
-            {/* Rim / Support Ring Settings */}
-            <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <TabsContent value="gallery" className="space-y-4 pt-4">
+            <div className="flex items-center justify-between mb-2">
               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <Layers className="w-3.5 h-3.5" /> Rim (Support Ring)
+                <FolderHeart className="w-3.5 h-3.5" /> Saved Designs
               </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] font-black uppercase text-slate-500">Thickness (cm)</Label>
-                  <Input type="number" step={0.01} value={params.rimThickness} onChange={(e) => updateParam('rimThickness', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
-                  <Input type="number" step={0.01} value={params.rimHeight} onChange={(e) => updateParam('rimHeight', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
-                </div>
-              </div>
+              <span className="text-[8px] font-bold text-slate-400">{gallery.length}/20</span>
             </div>
-
-            {/* Internal Ribs Settings */}
-            <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <Box className="w-3.5 h-3.5" /> Internal Ribs
-              </Label>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] font-black uppercase text-slate-500">Rib Count</Label>
-                  <Input type="number" value={params.internalRibs} onChange={(e) => updateParam('internalRibs', parseInt(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+            
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide">
+              {gallery.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No saved designs</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Thickness (cm)</Label>
-                    <Input type="number" step={0.01} value={params.ribThickness} onChange={(e) => updateParam('ribThickness', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
+              ) : (
+                gallery.map(entry => (
+                  <div key={entry.id} className="group flex items-center justify-between p-3 bg-slate-50 hover:bg-indigo-50 rounded-xl border border-slate-100 hover:border-indigo-200 transition-all cursor-pointer" onClick={() => loadFromGallery(entry)}>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-slate-900 group-hover:text-indigo-600">{entry.name}</span>
+                      <span className="text-[8px] text-slate-400 uppercase font-bold">{entry.params.type.replace('_', ' ')}</span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={(e) => { e.stopPropagation(); removeFromGallery(entry.id); }}
+                      className="h-7 w-7 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Depth (cm)</Label>
-                    <Input type="number" step={0.01} value={params.internalRibDepth} onChange={(e) => updateParam('internalRibDepth', parseFloat(e.target.value))} className="h-8 text-[10px] font-bold rounded-lg" />
-                  </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
-
-            <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <Sliders className="w-3.5 h-3.5" /> Wall Settings
-              </Label>
-              <div className="space-y-2">
-                <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                  <span>Wall Thickness</span>
-                  <span className="text-indigo-600 font-bold">{params.thickness.toFixed(2)} cm</span>
-                </div>
-                <Slider value={[params.thickness]} min={0.04} max={0.5} step={0.01} onValueChange={([v]) => updateParam('thickness', v)} />
-              </div>
-            </div>
+            
+            <Button onClick={saveToGallery} className="w-full gap-2 h-10 text-[9px] font-black uppercase tracking-widest rounded-xl border-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50">
+              <Save className="w-3.5 h-3.5" />
+              Save Current Design
+            </Button>
           </TabsContent>
         </Tabs>
       </div>

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -41,6 +41,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   
   const [isLightOn, setIsLightOn] = useState(false);
   const [isCutaway, setIsCutaway] = useState(false);
+  const [showMeasurements, setShowMeasurements] = useState(true);
 
   const overhangMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -92,7 +93,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       precision: "mediump" 
     });
     
-    // Optimized for Samsung A53 5G (High DPI but mid-range GPU)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -242,9 +242,39 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
   }, [isLightOn]);
 
+  const maxRadius = Math.max(params.topRadius, params.bottomRadius);
+
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
+      
+      {/* Measurement Overlays */}
+      {showMeasurements && (
+        <div className="absolute inset-0 pointer-events-none z-10">
+          {/* Height Label */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-[120px] flex flex-col items-center" style={{ height: `${params.height * 10}px`, transform: `translate(-120px, -50%)` }}>
+            <div className="w-px h-full bg-white/20 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-px bg-white/40" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-px bg-white/40" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
+                <span className="text-[10px] font-black text-white whitespace-nowrap">{params.height}cm</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Width Label */}
+          <div className="absolute left-1/2 bottom-10 -translate-x-1/2 flex flex-col items-center" style={{ width: `${maxRadius * 20}px` }}>
+            <div className="h-px w-full bg-white/20 relative">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
+                <span className="text-[10px] font-black text-white whitespace-nowrap">Ø {maxRadius * 2}cm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="absolute bottom-6 left-6 flex gap-3 z-20">
         <Button 
           variant="secondary" 
@@ -254,6 +284,15 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         >
           <Lightbulb className={`w-4 h-4 ${!isLightOn ? 'opacity-50' : ''}`} />
           {isLightOn ? 'Light On' : 'Light Off'}
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => setShowMeasurements(!showMeasurements)}
+          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showMeasurements ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
+        >
+          <Ruler className="w-4 h-4" />
+          {showMeasurements ? 'Ruler On' : 'Ruler Off'}
         </Button>
         <Button 
           variant="secondary" 

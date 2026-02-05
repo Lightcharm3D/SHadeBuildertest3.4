@@ -274,7 +274,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
               <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Top Ø {params.topRadius * 2}cm</span>
+                <span className="text-[10px] font-black text-white whitespace-nowrap">Top Dia: {params.topRadius * 2}cm</span>
               </div>
             </div>
           </div>
@@ -285,7 +285,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
               <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Bottom Ø {params.bottomRadius * 2}cm</span>
+                <span className="text-[10px] font-black text-white whitespace-nowrap">Bottom Dia: {params.bottomRadius * 2}cm</span>
               </div>
             </div>
           </div>

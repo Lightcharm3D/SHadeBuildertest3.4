@@ -10,7 +10,7 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Image as ImageIcon, Share2, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -104,22 +104,6 @@ const LithophaneGenerator = () => {
     }
   }, [params, history]);
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My 3D Lithophane Design',
-          text: 'Check out this 3D printable lithophane I created!',
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log('Share failed', err);
-      }
-    } else {
-      showError("Sharing not supported on this browser");
-    }
-  };
-
   const handleApplyPreset = useCallback((preset: string) => {
     switch (preset) {
       case 'portrait':
@@ -175,12 +159,6 @@ const LithophaneGenerator = () => {
             LITHOSTUDIO <span className="text-slate-400">X</span> SHADEBUILDER
             <span className="bg-indigo-100 text-indigo-600 text-[8px] px-1.5 py-0.5 rounded-full font-black tracking-widest">BETA</span>
           </h1>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-lg h-8 w-8 text-slate-400 hover:text-indigo-600">
-            <Share2 className="w-3.5 h-3.5" />
-          </Button>
         </div>
       </header>
       

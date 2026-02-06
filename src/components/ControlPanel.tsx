@@ -408,9 +408,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
                   <Sliders className="w-3 h-3" /> Pattern Tuning
                 </Label>
-                <Button variant="ghost" size="sm" onClick={() => updateParam('seed', Math.random() * 10000, true)} className="h-6 text-[8px] font-black uppercase tracking-widest gap-1 text-indigo-600">
-                  <RefreshCw className="w-2.5 h-2.5" /> New Seed
-                </Button>
               </div>
 
               <div className="space-y-4">

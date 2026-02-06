@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw, Eye } from 'lucide-react';
+import { Lightbulb, RotateCcw } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -38,21 +38,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
-  const shadowPlaneRef = useRef<THREE.Mesh | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
-  const [isCutaway, setIsCutaway] = useState(false);
-  const [showMeasurements, setShowMeasurements] = useState(true);
-  const [showShadowPlane, setShowShadowPlane] = useState(false);
-
-  const overhangMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: { uColor: { value: new THREE.Color(material.color) }, uThreshold: { value: Math.cos(Math.PI / 4) } },
-      vertexShader: `varying vec3 vWorldNormal; void main() { vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `varying vec3 vWorldNormal; uniform vec3 uColor; uniform float uThreshold; void main() { float dotUp = dot(vWorldNormal, vec3(0.0, 1.0, 0.0)); vec3 color = uColor; if (dotUp < uThreshold && dotUp > -0.1) { color = mix(uColor, vec3(1.0, 0.2, 0.2), 0.8); } gl_FragColor = vec4(color, 1.0); }`,
-      side: THREE.DoubleSide
-    });
-  }, [material.color]);
 
   const resetView = () => {
     if (cameraRef.current && controlsRef.current) {
@@ -85,27 +72,12 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(300, 500, 300);
     mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 1024; 
-    mainLight.shadow.mapSize.height = 1024;
     scene.add(mainLight);
 
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 1000);
     bulbLight.castShadow = true;
-    bulbLight.shadow.mapSize.width = 2048;
-    bulbLight.shadow.mapSize.height = 2048;
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
-
-    // Shadow Projection Plane (Simulates a wall/floor)
-    const shadowPlaneGeom = new THREE.PlaneGeometry(1000, 1000);
-    const shadowPlaneMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 1 });
-    const shadowPlane = new THREE.Mesh(shadowPlaneGeom, shadowPlaneMat);
-    shadowPlane.rotation.x = -Math.PI / 2;
-    shadowPlane.position.y = -100;
-    shadowPlane.receiveShadow = true;
-    shadowPlane.visible = false;
-    scene.add(shadowPlane);
-    shadowPlaneRef.current = shadowPlane;
 
     const bedGroup = new THREE.Group();
     const bedSize = 200; 
@@ -127,7 +99,12 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
-    const meshMaterial = new THREE.MeshPhysicalMaterial({ color: material.color, roughness: material.roughness, metalness: material.metalness, side: THREE.DoubleSide });
+    const meshMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: material.color, 
+      roughness: material.roughness, 
+      metalness: material.metalness, 
+      side: THREE.DoubleSide 
+    });
     const mesh = new THREE.Mesh(geometry, meshMaterial);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -169,37 +146,42 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.position.y = (params.height * 10) / 2;
       if (bulbLightRef.current) bulbLightRef.current.position.y = (params.height * 10) / 2;
       
-      if (showPrintability) {
-        meshRef.current.material = overhangMaterial;
-        overhangMaterial.uniforms.uColor.value.set(material.color);
-      } else {
-        const mat = new THREE.MeshPhysicalMaterial({
-          color: material.color, roughness: material.roughness, metalness: material.metalness,
-          transmission: material.transmission, opacity: material.opacity, transparent: material.opacity < 1,
-          side: THREE.DoubleSide, wireframe: showWireframe,
-          clippingPlanes: isCutaway ? [new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)] : []
-        });
-        meshRef.current.material = mat;
-      }
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: material.color, 
+        roughness: material.roughness, 
+        metalness: material.metalness,
+        transmission: material.transmission, 
+        opacity: material.opacity, 
+        transparent: material.opacity < 1,
+        side: THREE.DoubleSide, 
+        wireframe: showWireframe
+      });
+      meshRef.current.material = mat;
     }
-  }, [params, material, showWireframe, isLightOn, showPrintability, isCutaway]);
+  }, [params, material, showWireframe, isLightOn, showPrintability]);
 
   useEffect(() => {
     if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
-    if (shadowPlaneRef.current) shadowPlaneRef.current.visible = isLightOn && showShadowPlane;
-  }, [isLightOn, showShadowPlane]);
+  }, [isLightOn]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
       <div className="absolute bottom-6 left-6 flex flex-wrap gap-3 z-20">
-        <Button variant="secondary" size="sm" onClick={() => setIsLightOn(!isLightOn)} className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => setIsLightOn(!isLightOn)} 
+          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
+        >
           <Lightbulb className="w-4 h-4" /> {isLightOn ? 'Light On' : 'Light Off'}
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => setShowShadowPlane(!showShadowPlane)} className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showShadowPlane ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}>
-          <Eye className="w-4 h-4" /> {showShadowPlane ? 'Projection On' : 'Projection Off'}
-        </Button>
-        <Button variant="secondary" size="sm" onClick={resetView} className="gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl bg-slate-800 text-slate-300">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={resetView} 
+          className="gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl bg-slate-800 text-slate-300"
+        >
           <RotateCcw className="w-4 h-4" /> Reset View
         </Button>
       </div>

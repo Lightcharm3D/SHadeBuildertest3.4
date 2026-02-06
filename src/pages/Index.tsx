@@ -178,7 +178,6 @@ const Index = () => {
       </header>
       
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden w-full relative">
-        {/* 3D Viewport - Takes priority */}
         <div className="flex-1 relative bg-slate-950 overflow-hidden">
           <LampshadeViewport 
             params={params} 
@@ -227,7 +226,7 @@ const Index = () => {
           </AnimatePresence>
 
           {isMobile && (
-            <div className="absolute top-4 right-4 z-30">
+            <div className="absolute bottom-6 right-6 z-30">
               <Drawer>
                 <DrawerTrigger asChild>
                   <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 border-2 border-white/20">
@@ -256,7 +255,6 @@ const Index = () => {
           )}
         </div>
         
-        {/* Permanent Sidebar for Desktop/Tablets */}
         <AnimatePresence initial={false}>
           {isSidebarOpen && !isMobile && (
             <motion.div 
@@ -286,7 +284,6 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Floating Toggle Button when sidebar is closed */}
         {!isSidebarOpen && !isMobile && (
           <Button 
             onClick={() => setIsSidebarOpen(true)}

@@ -12,9 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType, LampshadeType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff, Search } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
+import PresetGallery from './PresetGallery';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -31,15 +32,6 @@ interface ControlPanelProps {
   onRepair?: () => void;
   onClose?: () => void;
 }
-
-const PRESETS: Record<string, Partial<LampshadeParams>> = {
-  'Modern Slotted': { type: 'slotted', silhouette: 'straight', slotCount: 24, slotWidth: 0.1, height: 18, topRadius: 6, bottomRadius: 6 },
-  'Organic Cell': { type: 'organic_cell', silhouette: 'convex', noiseStrength: 1.2, noiseScale: 2.0, height: 15, topRadius: 5, bottomRadius: 8 },
-  'Honeycomb': { type: 'honeycomb', silhouette: 'straight', gridDensity: 15, thickness: 0.15, height: 16, topRadius: 7, bottomRadius: 7, rimThickness: 0.2 },
-  'Spiral Vortex': { type: 'spiral_vortex', silhouette: 'hourglass', twistAngle: 720, ribCount: 12, height: 20, topRadius: 8, bottomRadius: 8 },
-  'Origami Fold': { type: 'origami', silhouette: 'straight', foldCount: 16, foldDepth: 1.2, height: 15, topRadius: 6, bottomRadius: 6 },
-  'Lattice Shell': { type: 'lattice', silhouette: 'bell', gridDensity: 18, height: 18, topRadius: 5, bottomRadius: 10 },
-};
 
 const TYPES: { id: LampshadeType; label: string }[] = [
   { id: 'plain_wall', label: 'Plain Wall' },
@@ -105,6 +97,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const [gallery, setGallery] = useState<{id: string, name: string, params: LampshadeParams, material: MaterialParams}[]>([]);
   const [dnaInput, setDnaInput] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('shade_gallery');
@@ -119,6 +112,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setGallery(updated);
     localStorage.setItem('shade_gallery', JSON.stringify(updated));
     showSuccess("Design saved to gallery!");
+  };
+
+  const deleteFromGallery = (id: string) => {
+    const updated = gallery.filter(item => item.id !== id);
+    setGallery(updated);
+    localStorage.setItem('shade_gallery', JSON.stringify(updated));
+    showSuccess("Design removed from gallery");
   };
 
   const shareDNA = () => {
@@ -195,6 +195,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </TabsList>
 
           <TabsContent value="shape" className="space-y-4 pt-4">
+            <Button 
+              onClick={() => setIsGalleryOpen(true)}
+              className="w-full h-14 brand-gradient text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <Search className="w-4 h-4" />
+              Browse Design Gallery
+            </Button>
+
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Layout className="w-3 h-3" /> Design Type</Label>
@@ -218,24 +226,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             <Accordion type="single" collapsible className="w-full space-y-2">
-              <AccordionItem value="presets" className="border-none">
-                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Sparkles className="w-3 h-3 text-indigo-500" /> Design Presets
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.keys(PRESETS).map(name => (
-                      <Button key={name} variant="outline" size="sm" onClick={() => setParams({...params, ...PRESETS[name]})} className="h-10 text-[8px] font-black uppercase tracking-widest px-2 rounded-xl border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 justify-start">
-                        <div className="w-1.5 h-full bg-indigo-500 mr-2 shrink-0" />
-                        <span className="truncate">{name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
               <AccordionItem value="dimensions" className="border-none">
                 <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
@@ -637,6 +627,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           {params.splitSegments && params.splitSegments > 1 ? `Export Part ${(params.activePart || 0) + 1}` : 'Export STL'}
         </Button>
       </div>
+
+      <PresetGallery 
+        open={isGalleryOpen} 
+        onOpenChange={setIsGalleryOpen} 
+        onSelect={(newParams) => setParams({ ...params, ...newParams })}
+        savedDesigns={gallery}
+        onDeleteSaved={deleteFromGallery}
+      />
     </div>
   );
 };

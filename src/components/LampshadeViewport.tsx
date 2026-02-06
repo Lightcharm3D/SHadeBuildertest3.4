@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
-import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
+import { LampshadeParams, generateLampshadeGeometry, getRadiusAtHeight } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, RotateCcw, Ruler } from 'lucide-react';
 
@@ -95,12 +95,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const h = params.height * 10;
     const tr = params.topRadius * 10;
     const br = params.bottomRadius * 10;
-    const offset = Math.max(tr, br) + 20;
+    const mr = getRadiusAtHeight(0, params) * 10;
+    const offset = Math.max(tr, br, mr) + 20;
+
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.6 });
 
     // Height Line
     const hPoints = [new THREE.Vector3(-offset, 0, 0), new THREE.Vector3(-offset, h, 0)];
     const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.6 });
     const hLine = new THREE.Line(hGeom, lineMat);
     group.add(hLine);
 
@@ -114,9 +116,19 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const tLine = new THREE.Line(tGeom, lineMat);
     group.add(tLine);
 
-    const tLabel = createTextLabel(`Ø ${(params.topRadius * 2).toFixed(1)} cm`);
+    const tLabel = createTextLabel(`Top Ø ${(params.topRadius * 2).toFixed(1)} cm`);
     tLabel.position.set(0, h + 15, 0);
     group.add(tLabel);
+
+    // Middle Diameter Line
+    const mPoints = [new THREE.Vector3(-mr, h / 2, 0), new THREE.Vector3(mr, h / 2, 0)];
+    const mGeom = new THREE.BufferGeometry().setFromPoints(mPoints);
+    const mLine = new THREE.Line(mGeom, lineMat);
+    group.add(mLine);
+
+    const mLabel = createTextLabel(`Mid Ø ${(mr * 2 / 10).toFixed(1)} cm`);
+    mLabel.position.set(0, h / 2 + 15, 0);
+    group.add(mLabel);
 
     // Bottom Diameter Line
     const bPoints = [new THREE.Vector3(-br, 0, 0), new THREE.Vector3(br, 0, 0)];
@@ -124,7 +136,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const bLine = new THREE.Line(bGeom, lineMat);
     group.add(bLine);
 
-    const bLabel = createTextLabel(`Ø ${(params.bottomRadius * 2).toFixed(1)} cm`);
+    const bLabel = createTextLabel(`Bot Ø ${(params.bottomRadius * 2).toFixed(1)} cm`);
     bLabel.position.set(0, -15, 0);
     group.add(bLabel);
 

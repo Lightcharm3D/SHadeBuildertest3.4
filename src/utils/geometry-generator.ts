@@ -115,7 +115,7 @@ function pseudoNoise(x: number, y: number, z: number, seed: number) {
   return n - Math.floor(n);
 }
 
-function getRadiusAtHeight(y: number, params: LampshadeParams): number {
+export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   const { height, topRadius, bottomRadius, silhouette } = params;
   const t = (y + height / 2) / height;
   let r = bottomRadius + (topRadius - bottomRadius) * t;

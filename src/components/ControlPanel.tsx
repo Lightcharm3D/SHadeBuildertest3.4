@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType, LampshadeType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 
@@ -268,7 +268,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </TabsContent>
 
           <TabsContent value="fit" className="space-y-4 pt-4">
-            <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
+            <div className="p-4 bg-slate-50 rounded-2xl space-y-6">
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Anchor className="w-3 h-3" /> Fitter Type</Label>
                 <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
@@ -280,6 +280,75 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+
+              {params.fitterType !== 'none' && (
+                <div className="space-y-5 pt-2 border-t border-slate-200">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span className="flex items-center gap-1"><MoveVertical className="w-2.5 h-2.5" /> Placement Height</span>
+                      <span>{params.fitterHeight.toFixed(1)} cm</span>
+                    </div>
+                    <Slider 
+                      value={[params.fitterHeight]} 
+                      min={0} 
+                      max={params.height} 
+                      step={0.1} 
+                      onValueChange={([v]) => updateParam('fitterHeight', v)} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span className="flex items-center gap-1"><Ruler className="w-2.5 h-2.5" /> Inner Diameter</span>
+                      <span>{params.fitterDiameter.toFixed(1)} mm</span>
+                    </div>
+                    <Slider 
+                      value={[params.fitterDiameter]} 
+                      min={10} 
+                      max={100} 
+                      step={0.1} 
+                      onValueChange={([v]) => updateParam('fitterDiameter', v)} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span>Spoke Amount</span>
+                      <span>{params.spokeCount}</span>
+                    </div>
+                    <Slider 
+                      value={[params.spokeCount || 4]} 
+                      min={2} 
+                      max={12} 
+                      step={1} 
+                      onValueChange={([v]) => updateParam('spokeCount', v)} 
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Width (mm)</Label>
+                      <Input 
+                        type="number" 
+                        step={0.1} 
+                        value={params.spokeWidth} 
+                        onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} 
+                        className="h-9 text-[10px] font-bold rounded-lg bg-white" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Thick (mm)</Label>
+                      <Input 
+                        type="number" 
+                        step={0.1} 
+                        value={params.spokeThickness} 
+                        onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} 
+                        className="h-9 text-[10px] font-bold rounded-lg bg-white" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
 

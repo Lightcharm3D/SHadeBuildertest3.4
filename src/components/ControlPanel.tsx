@@ -73,7 +73,6 @@ const SILHOUETTES: { id: SilhouetteType; label: string }[] = [
   { id: 'flared', label: 'Flared' },
   { id: 'waisted', label: 'Waisted' },
   { id: 'asymmetric', label: 'Asymmetric' },
-  { id: 'trumpet', label: 'Trumpet' },
   { id: 'teardrop', label: 'Teardrop' },
   { id: 'diamond', label: 'Diamond' },
   { id: 'stepped', label: 'Stepped' },

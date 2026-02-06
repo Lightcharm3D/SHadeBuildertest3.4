@@ -147,7 +147,7 @@ const Index = () => {
     const silhouettes: SilhouetteType[] = [
       'straight', 'hourglass', 'bell', 'convex', 'concave', 
       'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric', 
-      'trumpet', 'teardrop', 'diamond', 'stepped', 'wavy', 'onion'
+      'teardrop', 'diamond', 'stepped', 'wavy', 'onion'
     ];
     
     const newType = robustTypes[Math.floor(Math.random() * robustTypes.length)];

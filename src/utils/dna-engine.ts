@@ -23,7 +23,7 @@ const TYPES: LampshadeType[] = [
 const SILHOUETTES: SilhouetteType[] = [
   'straight', 'hourglass', 'bell', 'convex', 'concave', 
   'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric', 
-  'trumpet', 'teardrop', 'diamond', 'stepped', 'wavy',
+  'teardrop', 'diamond', 'stepped', 'wavy',
   'ovoid', 'scalloped', 'conic_stepped', 'twisted_profile', 'fluted',
   'onion', 'pagoda', 'egg', 'barrel', 'spindle', 'chalice', 'urn',
   'pagoda_v2', 'lotus', 'diamond_v2', 'stepped_v2'

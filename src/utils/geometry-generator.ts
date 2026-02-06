@@ -20,7 +20,7 @@ export type LampshadeType =
 export type SilhouetteType = 
   | 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' 
   | 'tapered' | 'bulbous' | 'flared' | 'waisted' | 'asymmetric' 
-  | 'trumpet' | 'teardrop' | 'diamond' | 'stepped' | 'wavy'
+  | 'teardrop' | 'diamond' | 'stepped' | 'wavy'
   | 'ovoid' | 'scalloped' | 'conic_stepped' | 'twisted_profile' | 'fluted'
   | 'onion' | 'pagoda' | 'egg' | 'barrel' | 'spindle' | 'chalice' | 'urn'
   | 'pagoda_v2' | 'lotus' | 'diamond_v2' | 'stepped_v2' | 'custom';
@@ -190,7 +190,6 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
     case 'flared': r *= 1 + Math.pow(t, 3) * 0.8; break;
     case 'waisted': r *= 1 + Math.pow(Math.sin(t * Math.PI), 4) * -0.4; break;
     case 'asymmetric': r *= 1 + Math.sin(t * Math.PI * 0.5) * 0.3; break;
-    case 'trumpet': r *= 1 + Math.pow(t, 4) * 1.5; break;
     case 'teardrop': r *= 1 + Math.sin(t * Math.PI * 0.8) * 0.6; break;
     case 'diamond': r *= 1 - Math.abs(t - 0.5) * 0.8; break;
     case 'stepped': r *= 1 + Math.floor(t * 5) * 0.1; break;

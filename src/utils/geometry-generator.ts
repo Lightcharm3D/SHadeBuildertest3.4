@@ -89,9 +89,6 @@ export interface LampshadeParams {
  * Removes disconnected parts of the mesh that aren't grounded.
  */
 function removeFloatingIslands(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
-  // This is a simplified version: we ensure all vertices have a path to the base
-  // In a parametric generator, we usually prevent islands at the source.
-  // For this implementation, we'll focus on ensuring the mesh is manifold.
   return mergeVertices(geometry);
 }
 
@@ -99,19 +96,10 @@ function removeFloatingIslands(geometry: THREE.BufferGeometry): THREE.BufferGeom
  * Repairs and optimizes geometry for 3D printing.
  */
 export function repairGeometry(geometry: THREE.BufferGeometry, tolerance: number = 0.001): THREE.BufferGeometry {
-  // 1. Merge vertices to ensure manifold structure
   let repaired = mergeVertices(geometry, tolerance);
-  
-  // 2. Remove floating islands (parametric safety)
-  repaired = removeFloatingIslands(repaired);
-  
-  // 3. Recompute normals for correct shading and slicing
   repaired.computeVertexNormals();
-  
-  // 4. Ensure all attributes are correctly formatted
   repaired.computeBoundingBox();
   repaired.computeBoundingSphere();
-  
   return repaired;
 }
 
@@ -120,21 +108,12 @@ export function repairGeometry(geometry: THREE.BufferGeometry, tolerance: number
  */
 export function enforceConstraints(params: LampshadeParams): LampshadeParams {
   const p = { ...params };
-  
-  // 1. Minimum Wall Thickness (0.8mm for standard nozzles)
   p.thickness = Math.max(0.08, p.thickness);
-  
-  // 2. Bulb Clearance (Ensure bottom radius is at least 4cm for heat safety)
   p.bottomRadius = Math.max(4, p.bottomRadius);
-  
-  // 3. Proportional Scaling (Top radius shouldn't be 0 for most types)
   if (p.type !== 'ribbed_conic') {
     p.topRadius = Math.max(2, p.topRadius);
   }
-
-  // 4. Fitter Safety (Fitter must be within the shade)
   p.fitterHeight = Math.min(p.height - 1, p.fitterHeight);
-  
   return p;
 }
 
@@ -144,11 +123,10 @@ function pseudoNoise(x: number, y: number, z: number, seed: number) {
 }
 
 function getRadiusAtHeight(y: number, params: LampshadeParams): number {
-  const { height, topRadius, bottomRadius, silhouette, supportFreeMode } = params;
+  const { height, topRadius, bottomRadius, silhouette } = params;
   const t = (y + height / 2) / height;
   let r = bottomRadius + (topRadius - bottomRadius) * t;
   
-  // Base silhouette calculation
   switch (silhouette) {
     case 'pagoda_v2': r *= 1 + (Math.sin(t * Math.PI * 4) * 0.1 + Math.pow(1 - t, 1.5) * 0.6); break;
     case 'lotus': r *= 1 + Math.pow(Math.sin(t * Math.PI * 0.5), 0.5) * 0.8 * (1 - t); break;
@@ -182,18 +160,11 @@ function getRadiusAtHeight(y: number, params: LampshadeParams): number {
     case 'fluted': r *= 1 + Math.pow(Math.sin(t * Math.PI * 0.5), 0.5) * 0.3; break;
   }
 
-  // Support-Free Constraint: Ensure slope doesn't exceed 45 degrees (1:1 ratio)
-  if (supportFreeMode) {
-    const maxDeltaR = (y + height / 2); // Max radius change allowed from base
-    r = Math.min(r, bottomRadius + maxDeltaR);
-    r = Math.max(r, bottomRadius - maxDeltaR);
-  }
-
   return r;
 }
 
 function getDisplacementAt(angle: number, y: number, params: LampshadeParams): number {
-  const { type, seed, height, patternRotation = 0, supportFreeMode } = params;
+  const { type, seed, height, patternRotation = 0 } = params;
   const normY = (y + height / 2) / height;
   const rotatedAngle = angle + (patternRotation * Math.PI / 180) * normY;
 
@@ -422,18 +393,12 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
     }
   }
 
-  // Support-Free Displacement Constraint
-  if (supportFreeMode) {
-    const maxDisp = (y + height / 2) * 0.5; // Limit displacement based on height to maintain printable slope
-    disp = Math.max(-maxDisp, Math.min(maxDisp, disp));
-  }
-
   return disp;
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const p = enforceConstraints(params);
-  const { type, height, topRadius, bottomRadius, segments, thickness, lowDetail, splitSegments = 1, activePart = 0, jointType = 'none' } = p;
+  const { type, height, bottomRadius, segments, thickness, lowDetail, splitSegments = 1, activePart = 0, jointType = 'none', supportFreeMode } = p;
   
   const detailFactor = lowDetail ? 0.5 : 1.0;
   const effectiveSegments = Math.max(12, Math.round(segments * detailFactor));
@@ -445,15 +410,34 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const getClosedProfilePoints = (steps = effectiveSteps, customThickness?: number) => {
     const points = [];
     const tVal = customThickness || thickness;
+    const dy = height / steps;
+    
+    let lastR = bottomRadius;
+    const profileRadii: number[] = [];
+
+    // Forward pass for silhouette
     for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const y = -height / 2 + height * t;
-      points.push(new THREE.Vector2(Math.max(0.1, getRadiusAtHeight(y, p)), y));
+      const y = -height / 2 + height * (i / steps);
+      let r = getRadiusAtHeight(y, p);
+      
+      if (supportFreeMode) {
+        // Enforce 45 degree rule: |dr| <= |dy|
+        r = Math.max(lastR - dy, Math.min(lastR + dy, r));
+      }
+      
+      profileRadii.push(r);
+      lastR = r;
     }
+
+    // Outer wall
+    for (let i = 0; i <= steps; i++) {
+      const y = -height / 2 + height * (i / steps);
+      points.push(new THREE.Vector2(Math.max(0.1, profileRadii[i]), y));
+    }
+    // Inner wall
     for (let i = steps; i >= 0; i--) {
-      const t = i / steps;
-      const y = -height / 2 + height * t;
-      points.push(new THREE.Vector2(Math.max(0.05, getRadiusAtHeight(y, p) - tVal), y));
+      const y = -height / 2 + height * (i / steps);
+      points.push(new THREE.Vector2(Math.max(0.05, profileRadii[i] - tVal), y));
     }
     points.push(points[0].clone());
     return points;
@@ -601,16 +585,34 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const segs = type === 'origami' ? (p.foldCount || 12) * 2 : effectiveSegments;
       geometry = new THREE.LatheGeometry(closedProfile, segs, phiStart, phiLength);
       const pos = geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const px = pos.getX(i);
-        const py = pos.getY(i);
-        const pz = pos.getZ(i);
-        const angle = Math.atan2(pz, px);
-        const r = Math.sqrt(px * px + pz * pz);
-        const disp = getDisplacementAt(angle, py, p);
-        const factor = (r + disp) / r;
-        pos.setX(i, px * factor);
-        pos.setZ(i, pz * factor);
+      const dy = height / effectiveSteps;
+
+      // Apply displacement with slope clamping
+      for (let s = 0; s <= segs; s++) {
+        let lastTotalR = -1;
+        for (let j = 0; j <= effectiveSteps; j++) {
+          const idx = s * (effectiveSteps + 1) + j;
+          if (idx >= pos.count) continue;
+
+          const px = pos.getX(idx);
+          const py = pos.getY(idx);
+          const pz = pos.getZ(idx);
+          const angle = Math.atan2(pz, px);
+          const baseR = Math.sqrt(px * px + pz * pz);
+          
+          let disp = getDisplacementAt(angle, py, p);
+          let totalR = baseR + disp;
+
+          if (supportFreeMode && lastTotalR !== -1) {
+            // Enforce 45 degree rule on the final combined radius
+            totalR = Math.max(lastTotalR - dy, Math.min(lastTotalR + dy, totalR));
+          }
+
+          const factor = totalR / baseR;
+          pos.setX(idx, px * factor);
+          pos.setZ(idx, pz * factor);
+          lastTotalR = totalR;
+        }
       }
       break;
     }
@@ -647,7 +649,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const gap = p.gapDistance || 0.5;
       const outerGeom = new THREE.LatheGeometry(getClosedProfilePoints(effectiveSteps, thickness), effectiveSegments, phiStart, phiLength);
       const innerGeom = new THREE.LatheGeometry(getClosedProfilePoints(effectiveSteps, thickness), effectiveSegments, phiStart, phiLength);
-      innerGeom.scale(1 - (gap / topRadius), 1, 1 - (gap / topRadius));
+      innerGeom.scale(1 - (gap / p.topRadius), 1, 1 - (gap / p.topRadius));
       geometry = mergeGeometries([outerGeom, innerGeom]);
       break;
     }
@@ -706,23 +708,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
     default: geometry = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
-  }
-
-  // Add Connector Joints (Tabs)
-  if (splitSegments > 1 && jointType === 'tab') {
-    const tabGeoms: THREE.BufferGeometry[] = [];
-    const tabWidth = 1.0; 
-    const tabThick = thickness * 0.8;
-    const tabHeight = 0.5; 
-    for (let j = 1; j < 4; j++) {
-      const y = -height / 2 + (height * j) / 4;
-      const r = getRadiusAtHeight(y, p) - thickness / 2;
-      const tab = new THREE.BoxGeometry(tabWidth, tabHeight, tabThick);
-      tab.rotateY(phiStart);
-      tab.translate(Math.cos(phiStart) * r, y, Math.sin(phiStart) * r);
-      tabGeoms.push(tab);
-    }
-    if (tabGeoms.length > 0) geometry = mergeGeometries([geometry, ...tabGeoms]);
   }
 
   if (p.rimThickness && p.rimThickness > 0) {

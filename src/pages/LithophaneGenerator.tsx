@@ -10,11 +10,12 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Image as ImageIcon, ChevronLeft, History as HistoryIcon } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, ChevronLeft, History as HistoryIcon, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
+import OnboardingTutorial from '@/components/OnboardingTutorial';
 
 const LithophaneGenerator = () => {
   const [params, setParams] = useState<LithophaneParams>({
@@ -158,6 +159,8 @@ const LithophaneGenerator = () => {
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
+      <OnboardingTutorial />
+      
       <header className="h-14 border-b border-slate-200 bg-white/80 backdrop-blur-2xl px-4 flex items-center justify-between shrink-0 z-30">
         <div className="flex items-center gap-4">
           <Link to="/" className="p-1.5 hover:bg-slate-100 rounded-lg transition-all">
@@ -167,6 +170,13 @@ const LithophaneGenerator = () => {
             LITHOSTUDIO <span className="text-slate-400">X</span> SHADEBUILDER
             <span className="bg-indigo-100 text-indigo-600 text-[8px] px-1.5 py-0.5 rounded-full font-black tracking-widest">BETA</span>
           </h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all">
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Shade Builder</span>
+          </Link>
         </div>
       </header>
       

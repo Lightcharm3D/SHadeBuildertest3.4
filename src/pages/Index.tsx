@@ -9,11 +9,12 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Settings2, ChevronLeft, ArrowRight } from 'lucide-react';
+import { Settings2, ChevronLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
+import OnboardingTutorial from '@/components/OnboardingTutorial';
 
 const DEFAULT_PARAMS: LampshadeParams = {
   type: 'ribbed_drum',
@@ -152,6 +153,8 @@ const Index = () => {
       animate={{ opacity: 1 }}
       className="h-screen bg-[#f8fafc] flex flex-col font-sans overflow-hidden"
     >
+      <OnboardingTutorial />
+      
       <header className="h-14 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-4 lg:px-6 flex items-center justify-between shrink-0 z-40">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md">
@@ -166,8 +169,10 @@ const Index = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Link to="/lithophane" className="p-1.5 hover:bg-slate-100 rounded-lg transition-all">
-            <ArrowRight className="w-4 h-4 text-slate-400" />
+          <Link to="/lithophane" className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all">
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Litho Studio</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </header>

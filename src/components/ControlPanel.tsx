@@ -185,14 +185,46 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
-        <Tabs defaultValue="shape" className="w-full">
+        <Tabs defaultValue="dims" className="w-full">
           <TabsList className="grid grid-cols-5 w-full h-10 bg-slate-100 p-1 rounded-xl">
+            <TabsTrigger value="dims" className="text-[8px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1">
+              <Ruler className="w-2.5 h-2.5" /> Dims
+            </TabsTrigger>
             <TabsTrigger value="shape" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Shape</TabsTrigger>
             <TabsTrigger value="pattern" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Pattern</TabsTrigger>
             <TabsTrigger value="fit" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Fit</TabsTrigger>
-            <TabsTrigger value="split" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Split</TabsTrigger>
             <TabsTrigger value="tools" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Tools</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dims" className="space-y-4 pt-4">
+            <div className="p-4 bg-slate-50 rounded-2xl space-y-5">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
+                <Ruler className="w-3 h-3" /> Dimensions
+              </Label>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
+                  <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Wall (cm)</Label>
+                  <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Top Diameter (cm)</Label>
+                  <Input type="number" step={0.1} value={params.topRadius * 2} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Diameter (cm)</Label>
+                  <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="shape" className="space-y-4 pt-4">
             <div className="space-y-4">
@@ -218,54 +250,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             <Accordion type="single" collapsible className="w-full space-y-2">
-              <AccordionItem value="presets" className="border-none">
-                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Sparkles className="w-3 h-3 text-indigo-500" /> Design Presets
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.keys(PRESETS).map(name => (
-                      <Button key={name} variant="outline" size="sm" onClick={() => setParams({...params, ...PRESETS[name]})} className="h-10 text-[8px] font-black uppercase tracking-widest px-2 rounded-xl border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 justify-start">
-                        <div className="w-1.5 h-full bg-indigo-500 mr-2 shrink-0" />
-                        <span className="truncate">{name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="dimensions" className="border-none">
-                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Ruler className="w-3 h-3 text-indigo-500" /> Dimensions
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4 space-y-4 px-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
-                      <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Wall (cm)</Label>
-                      <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Top Diameter (cm)</Label>
-                      <Input type="number" step={0.1} value={params.topRadius * 2} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Diameter (cm)</Label>
-                      <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
               <AccordionItem value="structure" className="border-none">
                 <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
@@ -330,6 +314,24 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </div>
                 </AccordionContent>
               </AccordionItem>
+
+              <AccordionItem value="presets" className="border-none">
+                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <Sparkles className="w-3 h-3 text-indigo-500" /> Design Presets
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.keys(PRESETS).map(name => (
+                      <Button key={name} variant="outline" size="sm" onClick={() => setParams({...params, ...PRESETS[name]})} className="h-10 text-[8px] font-black uppercase tracking-widest px-2 rounded-xl border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 justify-start">
+                        <div className="w-1.5 h-full bg-indigo-500 mr-2 shrink-0" />
+                        <span className="truncate">{name}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           </TabsContent>
 
@@ -345,7 +347,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
 
               <div className="space-y-4">
-                {/* Dynamic Controls based on Type */}
                 {(params.type.includes('ribbed') || params.type.includes('spiral') || params.type === 'slotted' || params.type === 'origami') && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
@@ -521,16 +522,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="split" className="space-y-4 pt-4">
+          <TabsContent value="tools" className="space-y-4 pt-4">
             <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
               <div className="space-y-3">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
                   <Scissors className="w-3 h-3 text-indigo-500" /> Multi-Part Splitting
                 </Label>
-                <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
-                  Split the model into vertical segments for printing on smaller beds.
-                </p>
-                
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
@@ -559,12 +556,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   )}
                 </div>
               </div>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="tools" className="space-y-4 pt-4">
-            <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
-              <div className="space-y-3">
+              <div className="space-y-3 pt-4 border-t border-slate-200">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
                   <Dna className="w-3 h-3 text-indigo-500" /> DNA Studio
                 </Label>
@@ -598,9 +591,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
                   <Wrench className="w-3 h-3 text-indigo-500" /> Mesh Repair System
                 </Label>
-                <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
-                  Ensures geometry is manifold and optimized for 3D printing.
-                </p>
                 <Button 
                   onClick={onRepair} 
                   variant="outline" 

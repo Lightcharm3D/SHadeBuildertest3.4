@@ -161,8 +161,6 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   const t = (y + height / 2) / height;
   
   if (silhouette === 'custom' && customProfile && customProfile.length > 0) {
-    // Use the Bezier curve to interpolate between bottom and top radius
-    // The editor's X axis (0-1) maps to the range between 0 and max possible radius
     const maxR = Math.max(topRadius, bottomRadius) * 1.5;
     return getBezierPoint(t, customProfile) * maxR;
   }
@@ -212,6 +210,31 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
   let disp = 0;
   switch (type) {
     case 'plain_wall': disp = 0; break;
+    case 'honeycomb':
+    case 'honeycomb_v2': {
+      const scale = params.gridDensity || 15;
+      const depth = params.patternDepth || 0.4;
+      
+      // Hexagonal grid logic
+      const q = (Math.sqrt(3)/3 * rotatedAngle * scale - 1/3 * normY * scale * 1.5);
+      const r = (2/3 * normY * scale * 1.5);
+      
+      const rx = Math.round(q);
+      const ry = Math.round(r);
+      const rz = Math.round(-q-r);
+      
+      const dq = Math.abs(rx - q);
+      const dr = Math.abs(ry - r);
+      const dz = Math.abs(rz - (-q-r));
+      
+      let fx = rx, fy = ry;
+      if (dq > dr && dq > dz) fx = -ry-rz;
+      else if (dr > dz) fy = -rx-rz;
+      
+      const dist = Math.sqrt(Math.pow(q - fx, 2) + Math.pow(r - fy, 2) + Math.pow((-q-r) - (-fx-fy), 2));
+      disp = dist > 0.4 ? depth : 0;
+      break;
+    }
     case 'voronoi_v3': {
       if (!precomputedPoints) return 0;
       const strength = params.noiseStrength || 1.2;
@@ -428,7 +451,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const phiLength = (Math.PI * 2) / splitSegments;
   const phiStart = activePart * phiLength;
 
-  // Precompute Voronoi points if needed
   let precomputedPoints: THREE.Vector3[] | undefined;
   if (type.includes('voronoi')) {
     const cells = p.cellCount || (type === 'voronoi_v3' ? 30 : type === 'voronoi_v2' ? 20 : 12);
@@ -512,12 +534,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           if (!isAngleInPart(angle)) continue;
           
           const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
-          
-          // Strut leaning right
           const pRight = new THREE.Vector3(Math.cos(angle + aStep) * nr, ny, Math.sin(angle + aStep) * nr);
           geoms.push(createStrut(p1, pRight, strutRadius));
-          
-          // Strut leaning left
           const pLeft = new THREE.Vector3(Math.cos(angle - aStep) * nr, ny, Math.sin(angle - aStep) * nr);
           geoms.push(createStrut(p1, pLeft, strutRadius));
         }
@@ -535,8 +553,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       for (let j = 0; j <= density; j++) {
         const y = -height / 2 + j * hStep;
         const r = getRadiusAtHeight(y, p);
-        
-        // Horizontal Rings (Mortar)
         const ringProfile = [
           new THREE.Vector2(r - strutRadius, y),
           new THREE.Vector2(r, y),
@@ -546,7 +562,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         ];
         geoms.push(new THREE.LatheGeometry(ringProfile, effectiveSegments, phiStart, phiLength));
 
-        // Angled Vertical Struts (The "Bricks")
         if (j < density) {
           const ny = y + hStep;
           const nr = getRadiusAtHeight(ny, p);
@@ -684,7 +699,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'organic_veins':
     case 'parametric_waves':
     case 'scalloped_edge':
-    case 'twisted_column': {
+    case 'twisted_column':
+    case 'honeycomb':
+    case 'honeycomb_v2': {
       const segs = type === 'origami' ? (p.foldCount || 12) * 2 : effectiveSegments;
       geometry = new THREE.LatheGeometry(closedProfile, segs, phiStart, phiLength);
       const pos = geometry.attributes.position;
@@ -775,11 +792,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const density = Math.round((p.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
-      
-      // Add top and bottom rims for structural integrity
       const rimThick = thickness * 2;
       const rimHeight = 0.2;
-      
       const topR = getRadiusAtHeight(height / 2, p);
       const topRimProfile = [
         new THREE.Vector2(topR - rimThick, height / 2),
@@ -789,7 +803,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         new THREE.Vector2(topR - rimThick, height / 2)
       ];
       geoms.push(new THREE.LatheGeometry(topRimProfile, effectiveSegments, phiStart, phiLength));
-
       const botR = getRadiusAtHeight(-height / 2, p);
       const botRimProfile = [
         new THREE.Vector2(botR - rimThick, -height / 2),
@@ -799,7 +812,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         new THREE.Vector2(botR - rimThick, -height / 2)
       ];
       geoms.push(new THREE.LatheGeometry(botRimProfile, effectiveSegments, phiStart, phiLength));
-
       for (let i = 0; i < density; i++) {
         const angle = (i / density) * Math.PI * 2;
         if (!isAngleInPart(angle)) continue;
@@ -853,7 +865,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     const rimThick = p.rimThickness;
     const rimHeight = p.rimHeight || rimThick;
     const segs = type === 'geometric_poly' ? (p.sides || 6) : effectiveSegments;
-    
     const topRadiusAtEdge = getRadiusAtHeight(height / 2, p);
     const topRimProfile = [
       new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2),
@@ -863,7 +874,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2)
     ];
     rimGeoms.push(new THREE.LatheGeometry(topRimProfile, segs, phiStart, phiLength));
-
     const bottomRadiusAtEdge = getRadiusAtHeight(-height / 2, p);
     const bottomRimProfile = [
       new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2),
@@ -911,14 +921,12 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { fitterType, fitterDiameter, fitterOuterDiameter, fitterRingHeight, fitterHeight, height, thickness, type, sides = 6, lowDetail } = params;
   const detailFactor = lowDetail ? 0.5 : 1.0;
   const geoms: THREE.BufferGeometry[] = [];
-  
   const innerRadius = fitterDiameter / 20; 
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
   const spokeThickCm = (params.spokeThickness || 5) / 10;
   const spokeYPos = -height / 2 + fitterHeight + spokeThickCm / 2;
   const ringYPos = -height / 2 + fitterHeight + ringHeightCm / 2;
-
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
     new THREE.Vector2(outerRadius, -ringHeightCm / 2),
@@ -929,25 +937,21 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const ring = new THREE.LatheGeometry(ringProfile, Math.round(64 * detailFactor));
   ring.translate(0, ringYPos, 0);
   geoms.push(ring);
-
   const wallThicknessCm = thickness;
   const safetyMarginCm = 0.05; 
   const connectionOverlapCm = 0.2; 
   let spokeCount = params.spokeCount || 4;
   const fuseDepthCm = wallThicknessCm * 0.5;
-
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
     if (type === 'geometric_poly') {
       const step = (Math.PI * 2) / sides;
       angle = Math.round(angle / step) * step;
     }
-    
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
     const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, 1);
     spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, spokeYPos, 0);
     spoke.rotateY(angle);
-    
     const pos = spoke.attributes.position;
     for (let j = 0; j < pos.count; j++) {
       const vx = pos.getX(j);
@@ -955,19 +959,15 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vz = pos.getZ(j);
       const currentR = Math.sqrt(vx * vx + vz * vz);
       const currentAngle = Math.atan2(vz, vx);
-      
       let baseR = getRadiusAtHeight(vy, params);
       let disp = getDisplacementAt(currentAngle, vy, params);
-      
       if (type === 'slotted') { baseR *= 0.8; disp = 0; } 
       else if (type === 'double_wall') { const gap = params.gapDistance || 0.5; baseR *= (1 - (gap / params.topRadius)); }
-      
       const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
       const absoluteLimitR = localOuterR - safetyMarginCm;
       const targetFusionR = localInnerR + fuseDepthCm;
       const safeR = Math.min(targetFusionR, absoluteLimitR);
-      
       if (currentR > outerRadius + 0.01) {
         const factor = safeR / currentR;
         if (factor < 1.0) { pos.setX(j, vx * factor); pos.setZ(j, vz * factor); }

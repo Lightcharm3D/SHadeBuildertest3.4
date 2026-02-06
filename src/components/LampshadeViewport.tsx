@@ -81,17 +81,46 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
-    const bedGroup = new THREE.Group();
+    // Build Plate 200x200mm (20cm)
     const bedSize = 200; 
+    const bedGroup = new THREE.Group();
+    
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    const bedMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+    
+    // Create Branding Texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, 502, 502);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
+    }
+    const bedTexture = new THREE.CanvasTexture(canvas);
+
+    const bedMat = new THREE.MeshStandardMaterial({ 
+      map: bedTexture,
+      color: 0xffffff, 
+      roughness: 0.8,
+      metalness: 0.2
+    });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
     bed.receiveShadow = true;
     bedGroup.add(bed);
-    const grid = new THREE.GridHelper(bedSize, 20, 0x334155, 0x1e293b);
+    
+    const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
     grid.position.y = 0.1;
     bedGroup.add(grid);
+
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);

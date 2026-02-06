@@ -456,6 +456,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     return normalizedAngle >= phiStart && normalizedAngle <= phiStart + phiLength;
   };
 
+  // Initialize geometry with a fallback wall to ensure something is always visible
+  const fallbackWall = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
+
   switch (type) {
     case 'fractal_tree': {
       const geoms: THREE.BufferGeometry[] = [];
@@ -479,7 +482,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const start = new THREE.Vector3(Math.cos(angle) * r, -height / 2, Math.sin(angle) * r);
         generateBranch(start, new THREE.Vector3(0, 1, 0), height / 3, levels);
       }
-      geometry = geoms.length > 0 ? mergeGeometries(geoms) : new THREE.BufferGeometry();
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
     case 'geometric_weave': {
@@ -505,7 +508,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = geoms.length > 0 ? mergeGeometries(geoms) : new THREE.BufferGeometry();
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
     case 'diamond_lattice':
@@ -540,7 +543,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           }
         }
       }
-      geometry = geoms.length > 0 ? mergeGeometries(geoms) : new THREE.BufferGeometry();
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
     case 'organic_coral':
@@ -651,7 +654,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
-      geometry = geoms.length > 0 ? mergeGeometries(geoms) : new THREE.BufferGeometry();
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
     case 'double_wall': {
@@ -697,7 +700,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
         geoms.push(strut2);
       }
-      geometry = geoms.length > 0 ? mergeGeometries(geoms) : new THREE.BufferGeometry();
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
     case 'spiral_twist': {
@@ -716,7 +719,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-    default: geometry = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
+    default: geometry = fallbackWall;
   }
 
   if (p.rimThickness && p.rimThickness > 0) {

@@ -133,40 +133,50 @@ const Index = () => {
   };
 
   const handleRandomize = () => {
-    const types: LampshadeType[] = [
+    // Curated list of robust types that are guaranteed to generate a full wall
+    const robustTypes: LampshadeType[] = [
       'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
       'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 
       'organic_cell', 'bricks', 'petal_bloom', 'faceted_gem',
       'honeycomb', 'diamond_mesh', 'knurled', 'wave_rings',
-      'triangular_lattice', 'square_grid', 'radial_spokes', 'chevron_mesh',
-      'spiral_ribs', 'voronoi_wire', 'star_mesh', 'organic_mesh',
-      'woven_basket', 'bubble_foam', 'parametric_fins', 'spiral_stairs', 'diamond_plate',
-      'knurled_v2', 'radial_fins', 'cellular_automata', 'voronoi_v2', 'spiral_mesh', 'diamond_lattice',
-      'honeycomb_v2', 'crystal_lattice', 'organic_veins', 'geometric_tiles', 'spiral_vortex', 'ribbed_conic'
+      'spiral_ribs', 'voronoi_v2', 'spiral_mesh', 'diamond_lattice',
+      'crystal_lattice', 'organic_veins', 'geometric_tiles', 'spiral_vortex',
+      'ribbed_conic', 'parametric_waves', 'scalloped_edge', 'twisted_column'
     ];
-    const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave', 'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric', 'trumpet', 'teardrop', 'diamond', 'stepped', 'wavy'];
     
-    const newType = types[Math.floor(Math.random() * types.length)];
+    const silhouettes: SilhouetteType[] = [
+      'straight', 'hourglass', 'bell', 'convex', 'concave', 
+      'tapered', 'bulbous', 'flared', 'waisted', 'asymmetric', 
+      'trumpet', 'teardrop', 'diamond', 'stepped', 'wavy', 'onion'
+    ];
+    
+    const newType = robustTypes[Math.floor(Math.random() * robustTypes.length)];
     const newSilhouette = silhouettes[Math.floor(Math.random() * silhouettes.length)];
     
+    // Ensure radii are balanced to prevent "invisible" walls
+    const baseR = 5 + Math.random() * 5;
+    const topR = baseR * (0.6 + Math.random() * 0.8);
+    const bottomR = baseR * (0.8 + Math.random() * 0.6);
+
     setParams({
       ...params,
       type: newType,
       silhouette: newSilhouette,
-      height: 12 + Math.random() * 12,
-      topRadius: 4 + Math.random() * 6,
-      bottomRadius: 6 + Math.random() * 8,
+      height: 12 + Math.random() * 15,
+      topRadius: topR,
+      bottomRadius: bottomR,
+      thickness: 0.15 + Math.random() * 0.15,
       seed: Math.random() * 10000,
-      internalRibs: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
-      gridDensity: 8 + Math.floor(Math.random() * 15),
-      twistAngle: Math.random() * 720,
-      patternScale: 5 + Math.random() * 20,
-      patternDepth: 0.1 + Math.random() * 0.8,
-      patternRotation: Math.random() * 360,
-      noiseFrequency: 0.5 + Math.random() * 2.0,
-      rimThickness: Math.random() > 0.5 ? 0.1 + Math.random() * 0.2 : 0,
-      rimHeight: Math.random() > 0.5 ? 0.1 + Math.random() * 0.5 : 0,
-      spokeCount: 3 + Math.floor(Math.random() * 5),
+      internalRibs: Math.random() > 0.8 ? Math.floor(Math.random() * 6) : 0,
+      gridDensity: 10 + Math.floor(Math.random() * 10),
+      twistAngle: Math.random() * 360,
+      patternScale: 8 + Math.random() * 12,
+      patternDepth: 0.2 + Math.random() * 0.4,
+      patternRotation: Math.random() * 180,
+      noiseFrequency: 0.8 + Math.random() * 1.2,
+      rimThickness: Math.random() > 0.7 ? 0.1 + Math.random() * 0.1 : 0,
+      rimHeight: Math.random() > 0.7 ? 0.1 + Math.random() * 0.2 : 0,
+      spokeCount: 3 + Math.floor(Math.random() * 3),
     });
     
     showSuccess("New design generated!");

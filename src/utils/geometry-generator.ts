@@ -175,25 +175,6 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
   let disp = 0;
   switch (type) {
     case 'plain_wall': disp = 0; break;
-    case 'bricks': {
-      const scale = params.patternScale || 12;
-      const depth = params.patternDepth || 0.4;
-      const row = Math.floor(normY * scale);
-      const offset = (row % 2 === 0) ? 0 : (Math.PI / scale);
-      const col = Math.floor((rotatedAngle + offset) * scale);
-      
-      const rowFrac = (normY * scale) % 1;
-      const colFrac = ((rotatedAngle + offset) * scale) % 1;
-      
-      // Mortar lines
-      const mortar = 0.1;
-      if (rowFrac < mortar || colFrac < mortar) {
-        disp = -depth;
-      } else {
-        disp = 0;
-      }
-      break;
-    }
     case 'voronoi_v3': {
       const cells = params.cellCount || 30;
       const strength = params.noiseStrength || 1.2;
@@ -484,6 +465,32 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const fallbackWall = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
 
   switch (type) {
+    case 'bricks': {
+      const scale = Math.round((p.patternScale || 12) * detailFactor);
+      const geoms: THREE.BufferGeometry[] = [];
+      const brickHeight = height / scale;
+      const brickWidth = (Math.PI * 2) / scale;
+      const brickThick = thickness;
+      
+      for (let j = 0; j < scale; j++) {
+        const y = -height / 2 + j * brickHeight + brickHeight / 2;
+        const offset = (j % 2 === 0) ? 0 : brickWidth / 2;
+        for (let i = 0; i < scale; i++) {
+          const angle = i * brickWidth + offset;
+          if (!isAngleInPart(angle)) continue;
+          
+          const r = getRadiusAtHeight(y, p);
+          // Create a brick as a small box segment
+          const brick = new THREE.BoxGeometry(r * brickWidth * 0.9, brickHeight * 0.9, brickThick, 2, 2, 1);
+          brick.translate(0, 0, r);
+          brick.rotateY(angle);
+          brick.translate(0, y, 0);
+          geoms.push(brick);
+        }
+      }
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
+      break;
+    }
     case 'fractal_tree': {
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
@@ -571,7 +578,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
     case 'plain_wall':
-    case 'bricks':
     case 'organic_coral':
     case 'geometric_stars':
     case 'ribbed_spiral':

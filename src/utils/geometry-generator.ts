@@ -161,8 +161,10 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   const t = (y + height / 2) / height;
   
   if (silhouette === 'custom' && customProfile && customProfile.length > 0) {
-    const profileScale = getBezierPoint(t, customProfile);
-    return bottomRadius + (topRadius - bottomRadius) * t * profileScale;
+    // Use the Bezier curve to interpolate between bottom and top radius
+    // The editor's X axis (0-1) maps to the range between 0 and max possible radius
+    const maxR = Math.max(topRadius, bottomRadius) * 1.5;
+    return getBezierPoint(t, customProfile) * maxR;
   }
 
   let r = bottomRadius + (topRadius - bottomRadius) * t;

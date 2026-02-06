@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ControlPoint } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, MousePointer2, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, MousePointer2 } from 'lucide-react';
 
 interface ProfileEditorProps {
   points: ControlPoint[];
@@ -44,7 +44,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ points, onChange }) => {
       
       for (let t = 0; t <= 1; t += 0.01) {
         const xVal = getBezierPoint(t, points);
-        const px = padding + (width - 2 * padding) * ((xVal - 0.5) + 0.5);
+        const px = padding + (width - 2 * padding) * xVal;
         const py = height - (padding + (height - 2 * padding) * t);
         if (t === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
@@ -61,7 +61,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ points, onChange }) => {
       ctx.strokeStyle = '#6366f1';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.arc(px, py, 8, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     });
@@ -88,28 +88,42 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ points, onChange }) => {
     draw();
   }, [points, draggingIdx]);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const getCoords = (e: React.MouseEvent | React.TouchEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    if (!rect) return { mx: 0, my: 0 };
+    
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    return {
+      mx: clientX - rect.left,
+      my: clientY - rect.top
+    };
+  };
+
+  const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const { mx, my } = getCoords(e);
 
     const idx = points.findIndex(p => {
       const px = padding + (width - 2 * padding) * p.x;
       const py = height - (padding + (height - 2 * padding) * p.y);
-      return Math.sqrt(Math.pow(mx - px, 2) + Math.pow(my - py, 2)) < 15;
+      return Math.sqrt(Math.pow(mx - px, 2) + Math.pow(my - py, 2)) < 20;
     });
 
     if (idx !== -1) setDraggingIdx(idx);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (draggingIdx === null) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (e.cancelable) e.preventDefault();
     
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const { mx, my } = getCoords(e);
     
     const nx = Math.max(0, Math.min(1, (mx - padding) / (width - 2 * padding)));
     const ny = Math.max(0, Math.min(1, (height - my - padding) / (height - 2 * padding)));
@@ -119,7 +133,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ points, onChange }) => {
     onChange(newPoints);
   };
 
-  const handleMouseUp = () => setDraggingIdx(null);
+  const handleEnd = () => setDraggingIdx(null);
 
   const addPoint = () => {
     const newPoints = [...points];
@@ -150,21 +164,24 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ points, onChange }) => {
         </div>
       </div>
       
-      <div className="relative bg-white rounded-xl border border-slate-200 overflow-hidden cursor-crosshair">
+      <div className="relative bg-white rounded-xl border border-slate-200 overflow-hidden cursor-crosshair touch-none">
         <canvas
           ref={canvasRef}
           width={width}
           height={height}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onMouseDown={handleStart}
+          onMouseMove={handleMove}
+          onMouseUp={handleEnd}
+          onMouseLeave={handleEnd}
+          onTouchStart={handleStart}
+          onTouchMove={handleMove}
+          onTouchEnd={handleEnd}
           className="w-full h-auto"
         />
       </div>
       
       <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight text-center">
-        Drag points to shape the silhouette. Top is 1.0, Bottom is 0.0.
+        Drag points to shape the silhouette. Left is center, Right is outer.
       </p>
     </div>
   );

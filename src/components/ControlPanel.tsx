@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 
@@ -57,6 +57,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onClose
 }) => {
   const [gallery, setGallery] = useState<{id: string, name: string, params: LampshadeParams, material: MaterialParams}[]>([]);
+  const [dnaInput, setDnaInput] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('shade_gallery');
@@ -81,16 +83,27 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     showSuccess("Share link with DNA copied to clipboard!");
   };
 
-  const importDNA = () => {
-    const dna = prompt("Paste Lamp DNA string here:");
-    if (!dna) return;
-    const importedParams = parseLampDNA(dna);
+  const handleImportDNA = () => {
+    if (!dnaInput) {
+      showError("Please paste a DNA string first");
+      return;
+    }
+    const importedParams = parseLampDNA(dnaInput);
     if (importedParams) {
       setParams(importedParams);
       showSuccess("Design loaded from DNA!");
+      setDnaInput('');
     } else {
-      showError("Invalid DNA string");
+      showError("Invalid DNA string. Please check the code.");
     }
+  };
+
+  const copyCurrentDNA = () => {
+    const dna = generateLampDNA(params);
+    navigator.clipboard.writeText(dna);
+    setCopied(true);
+    showSuccess("Current design DNA copied!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
@@ -112,9 +125,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={onRandomize} title="Randomize Design" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <RefreshCw className="w-3.5 h-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={importDNA} title="Import DNA" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
-            <FileInput className="w-3.5 h-3.5" />
           </Button>
           <Button variant="ghost" size="icon" onClick={shareDNA} title="Share Link" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <Share2 className="w-3.5 h-3.5" />
@@ -198,12 +208,42 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           <TabsContent value="tools" className="space-y-4 pt-4">
             <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-3">
+                <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
+                  <Dna className="w-3 h-3 text-indigo-500" /> DNA Studio
+                </Label>
+                <div className="space-y-2">
+                  <Input 
+                    placeholder="Paste Lamp DNA here..." 
+                    value={dnaInput} 
+                    onChange={(e) => setDnaInput(e.target.value)}
+                    className="h-9 text-[10px] font-bold rounded-lg bg-white"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      onClick={handleImportDNA} 
+                      className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl"
+                    >
+                      Load Design
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={copyCurrentDNA} 
+                      className="h-9 text-[9px] font-black uppercase tracking-widest rounded-xl border-slate-200"
+                    >
+                      {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                      Copy DNA
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-4 border-t border-slate-200">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
                   <Wrench className="w-3 h-3 text-indigo-500" /> Mesh Repair System
                 </Label>
                 <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
-                  Ensures geometry is manifold and optimized for 3D printing by merging close vertices and recomputing normals.
+                  Ensures geometry is manifold and optimized for 3D printing.
                 </p>
                 <Button 
                   onClick={onRepair} 
@@ -219,9 +259,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <Label className="text-[9px] font-black uppercase text-slate-500">Wireframe Mode</Label>
                   <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
                 </div>
-                <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
-                  Inspect the underlying mesh structure for defects.
-                </p>
               </div>
             </div>
           </TabsContent>

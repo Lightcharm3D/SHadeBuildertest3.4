@@ -86,28 +86,47 @@ export interface LampshadeParams {
 }
 
 /**
- * Repairs and optimizes geometry for 3D printing.
+ * Enforces CAD constraints to ensure printability and physical validity.
+ * This is the core of the constraint-based parametric engine.
  */
+export function enforceConstraints(params: LampshadeParams): LampshadeParams {
+  const p = { ...params };
+  
+  // 1. Minimum Wall Thickness (Physical limit for FDM printing)
+  p.thickness = Math.max(0.12, p.thickness);
+  
+  // 2. Radius Constraints (Prevent zero-width or inverted shapes)
+  p.bottomRadius = Math.max(4, p.bottomRadius);
+  p.topRadius = Math.max(2, p.topRadius);
+  
+  // 3. Fitter Constraints (Fitter must be inside the shade)
+  const fitterY = -p.height / 2 + p.fitterHeight;
+  const shadeRadiusAtFitter = getRadiusAtHeight(fitterY, p);
+  const maxFitterRadius = (shadeRadiusAtFitter * 10) - 5; // 5mm safety margin
+  p.fitterDiameter = Math.min(p.fitterDiameter, maxFitterRadius * 2);
+  p.fitterHeight = Math.min(p.height - 1, Math.max(0.5, p.fitterHeight));
+
+  // 4. Pattern Depth Constraints (Prevent patterns from punching through the wall)
+  const maxDepth = Math.min(p.topRadius, p.bottomRadius) * 0.4;
+  if (p.patternDepth !== undefined) p.patternDepth = Math.min(p.patternDepth, maxDepth);
+  if (p.ribDepth !== undefined) p.ribDepth = Math.min(p.ribDepth, maxDepth);
+  if (p.noiseStrength !== undefined) p.noiseStrength = Math.min(p.noiseStrength, maxDepth);
+
+  // 5. Structural Integrity
+  if (p.internalRibs > 0) {
+    p.ribThickness = Math.max(0.2, p.ribThickness);
+    p.internalRibDepth = Math.max(0.2, p.internalRibDepth || 0.5);
+  }
+
+  return p;
+}
+
 export function repairGeometry(geometry: THREE.BufferGeometry, tolerance: number = 0.001): THREE.BufferGeometry {
   let repaired = mergeVertices(geometry, tolerance);
   repaired.computeVertexNormals();
   repaired.computeBoundingBox();
   repaired.computeBoundingSphere();
   return repaired;
-}
-
-/**
- * Enforces CAD constraints to ensure printability and physical validity.
- */
-export function enforceConstraints(params: LampshadeParams): LampshadeParams {
-  const p = { ...params };
-  p.thickness = Math.max(0.08, p.thickness);
-  p.bottomRadius = Math.max(4, p.bottomRadius);
-  if (p.type !== 'ribbed_conic') {
-    p.topRadius = Math.max(2, p.topRadius);
-  }
-  p.fitterHeight = Math.min(p.height - 1, p.fitterHeight);
-  return p;
 }
 
 function pseudoNoise(x: number, y: number, z: number, seed: number) {
@@ -153,7 +172,7 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
     case 'fluted': r *= 1 + Math.pow(Math.sin(t * Math.PI * 0.5), 0.5) * 0.3; break;
   }
 
-  return r;
+  return Math.max(0.5, r); // Absolute minimum radius to prevent mesh collapse
 }
 
 function getDisplacementAt(angle: number, y: number, params: LampshadeParams): number {
@@ -409,7 +428,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     let lastR = bottomRadius;
     const profileRadii: number[] = [];
 
-    // Forward pass for silhouette
+    // Forward pass for silhouette with slope clamping
     for (let i = 0; i <= steps; i++) {
       const y = -height / 2 + height * (i / steps);
       let r = getRadiusAtHeight(y, p);
@@ -586,13 +605,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const dy = height / effectiveSteps;
       const profilePointsCount = closedProfile.length;
 
-      // Apply displacement with slope clamping
+      // Apply displacement with slope clamping for printability
       for (let s = 0; s <= segs; s++) {
         let lastTotalR = -1;
         for (let j = 0; j <= effectiveSteps; j++) {
-          // Outer wall index
           const outerIdx = s * profilePointsCount + j;
-          // Inner wall index (profile goes up outer then down inner)
           const innerIdx = s * profilePointsCount + (profilePointsCount - 1 - j);
 
           if (outerIdx >= pos.count || innerIdx >= pos.count) continue;
@@ -611,16 +628,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
             totalR = Math.max(lastTotalR - dy, Math.min(lastTotalR + dy, totalR));
           }
 
-          // Apply to outer wall
           const outerFactor = totalR / baseR;
           pos.setX(outerIdx, px * outerFactor);
           pos.setZ(outerIdx, pz * outerFactor);
 
-          // Apply to inner wall (maintain thickness)
           const innerPx = pos.getX(innerIdx);
           const innerPz = pos.getZ(innerIdx);
           const innerBaseR = Math.sqrt(innerPx * innerPx + innerPz * innerPz);
-          const innerTotalR = totalR - thickness;
+          const innerTotalR = Math.max(0.05, totalR - thickness);
           const innerFactor = innerTotalR / innerBaseR;
           pos.setX(innerIdx, innerPx * innerFactor);
           pos.setZ(innerIdx, innerPz * innerFactor);
@@ -724,11 +739,13 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     default: geometry = fallbackWall;
   }
 
+  // Add Rims with constraints
   if (p.rimThickness && p.rimThickness > 0) {
     const rimGeoms: THREE.BufferGeometry[] = [];
     const rimThick = p.rimThickness;
     const rimHeight = p.rimHeight || rimThick;
     const segs = type === 'geometric_poly' ? (p.sides || 6) : effectiveSegments;
+    
     const topRadiusAtEdge = getRadiusAtHeight(height / 2, p);
     const topRimProfile = [
       new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2),
@@ -737,8 +754,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2 + rimHeight),
       new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2)
     ];
-    const topRim = new THREE.LatheGeometry(topRimProfile, segs, phiStart, phiLength);
-    rimGeoms.push(topRim);
+    rimGeoms.push(new THREE.LatheGeometry(topRimProfile, segs, phiStart, phiLength));
+
     const bottomRadiusAtEdge = getRadiusAtHeight(-height / 2, p);
     const bottomRimProfile = [
       new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2),
@@ -747,11 +764,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2 - rimHeight),
       new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2)
     ];
-    const bottomRim = new THREE.LatheGeometry(bottomRimProfile, segs, phiStart, phiLength);
-    rimGeoms.push(bottomRim);
+    rimGeoms.push(new THREE.LatheGeometry(bottomRimProfile, segs, phiStart, phiLength));
     geometry = mergeGeometries([geometry, ...rimGeoms]);
   }
 
+  // Add Internal Ribs with constraints
   if (p.internalRibs > 0) {
     const ribGeoms: THREE.BufferGeometry[] = [];
     for (let i = 0; i < p.internalRibs; i++) {
@@ -774,6 +791,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     if (ribGeoms.length > 0) geometry = mergeGeometries([geometry, ...ribGeoms]);
   }
 
+  // Add Fitter with constraints
   if (p.fitterType !== 'none' && activePart === 0) {
     const fitterGeom = generateFitterGeometry(p);
     geometry = mergeGeometries([geometry, fitterGeom]);
@@ -787,12 +805,14 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { fitterType, fitterDiameter, fitterOuterDiameter, fitterRingHeight, fitterHeight, height, thickness, type, sides = 6, lowDetail } = params;
   const detailFactor = lowDetail ? 0.5 : 1.0;
   const geoms: THREE.BufferGeometry[] = [];
+  
   const innerRadius = fitterDiameter / 20; 
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
   const spokeThickCm = (params.spokeThickness || 5) / 10;
   const spokeYPos = -height / 2 + fitterHeight + spokeThickCm / 2;
   const ringYPos = -height / 2 + fitterHeight + ringHeightCm / 2;
+
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
     new THREE.Vector2(outerRadius, -ringHeightCm / 2),
@@ -803,23 +823,25 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const ring = new THREE.LatheGeometry(ringProfile, Math.round(64 * detailFactor));
   ring.translate(0, ringYPos, 0);
   geoms.push(ring);
-  const baseRadiusAtZ = getRadiusAtHeight(spokeYPos, params);
-  const diameterMm = baseRadiusAtZ * 2 * 10;
+
   const wallThicknessCm = thickness;
-  const safetyMarginCm = Math.min(0.05, wallThicknessCm * 0.2); 
+  const safetyMarginCm = 0.05; 
   const connectionOverlapCm = 0.2; 
-  let spokeCount = params.spokeCount || Math.max(4, Math.round(diameterMm / 20));
+  let spokeCount = params.spokeCount || 4;
   const fuseDepthCm = wallThicknessCm * 0.5;
+
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
     if (type === 'geometric_poly') {
       const step = (Math.PI * 2) / sides;
       angle = Math.round(angle / step) * step;
     }
+    
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
     const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, 1);
     spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, spokeYPos, 0);
     spoke.rotateY(angle);
+    
     const pos = spoke.attributes.position;
     for (let j = 0; j < pos.count; j++) {
       const vx = pos.getX(j);
@@ -827,15 +849,19 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vz = pos.getZ(j);
       const currentR = Math.sqrt(vx * vx + vz * vz);
       const currentAngle = Math.atan2(vz, vx);
+      
       let baseR = getRadiusAtHeight(vy, params);
       let disp = getDisplacementAt(currentAngle, vy, params);
+      
       if (type === 'slotted') { baseR *= 0.8; disp = 0; } 
       else if (type === 'double_wall') { const gap = params.gapDistance || 0.5; baseR *= (1 - (gap / params.topRadius)); }
+      
       const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
       const absoluteLimitR = localOuterR - safetyMarginCm;
       const targetFusionR = localInnerR + fuseDepthCm;
       const safeR = Math.min(targetFusionR, absoluteLimitR);
+      
       if (currentR > outerRadius + 0.01) {
         const factor = safeR / currentR;
         if (factor < 1.0) { pos.setX(j, vx * factor); pos.setZ(j, vz * factor); }

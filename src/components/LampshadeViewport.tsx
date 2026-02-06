@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw, Eye } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -38,39 +38,18 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
+  const shadowPlaneRef = useRef<THREE.Mesh | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
   const [isCutaway, setIsCutaway] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(true);
+  const [showShadowPlane, setShowShadowPlane] = useState(false);
 
   const overhangMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
-      uniforms: {
-        uColor: { value: new THREE.Color(material.color) },
-        uThreshold: { value: Math.cos(Math.PI / 4) }, 
-      },
-      vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vWorldNormal;
-        void main() {
-          vNormal = normal;
-          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vWorldNormal;
-        uniform vec3 uColor;
-        uniform float uThreshold;
-        void main() {
-          float dotUp = dot(vWorldNormal, vec3(0.0, 1.0, 0.0));
-          vec3 color = uColor;
-          if (dotUp < uThreshold && dotUp > -0.1) {
-            color = mix(uColor, vec3(1.0, 0.2, 0.2), 0.8);
-          }
-          gl_FragColor = vec4(color, 1.0);
-        }
-      `,
+      uniforms: { uColor: { value: new THREE.Color(material.color) }, uThreshold: { value: Math.cos(Math.PI / 4) } },
+      vertexShader: `varying vec3 vWorldNormal; void main() { vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `varying vec3 vWorldNormal; uniform vec3 uColor; uniform float uThreshold; void main() { float dotUp = dot(vWorldNormal, vec3(0.0, 1.0, 0.0)); vec3 color = uColor; if (dotUp < uThreshold && dotUp > -0.1) { color = mix(uColor, vec3(1.0, 0.2, 0.2), 0.8); } gl_FragColor = vec4(color, 1.0); }`,
       side: THREE.DoubleSide
     });
   }, [material.color]);
@@ -85,7 +64,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
   useEffect(() => {
     if (!containerRef.current) return;
-
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
@@ -94,17 +72,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     camera.position.set(250, 250, 250);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true, 
-      alpha: true,
-      powerPreference: "high-performance",
-      precision: "mediump" 
-    });
-    
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ReinhardToneMapping;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -114,54 +85,36 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(300, 500, 300);
     mainLight.castShadow = true;
-    
-    mainLight.shadow.camera.left = -200;
-    mainLight.shadow.camera.right = 200;
-    mainLight.shadow.camera.top = 200;
-    mainLight.shadow.camera.bottom = -200;
-    mainLight.shadow.camera.far = 2000;
     mainLight.shadow.mapSize.width = 1024; 
     mainLight.shadow.mapSize.height = 1024;
-    mainLight.shadow.bias = -0.001;
-    
     scene.add(mainLight);
 
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 1000);
+    bulbLight.castShadow = true;
+    bulbLight.shadow.mapSize.width = 2048;
+    bulbLight.shadow.mapSize.height = 2048;
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
+
+    // Shadow Projection Plane (Simulates a wall/floor)
+    const shadowPlaneGeom = new THREE.PlaneGeometry(1000, 1000);
+    const shadowPlaneMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 1 });
+    const shadowPlane = new THREE.Mesh(shadowPlaneGeom, shadowPlaneMat);
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = -100;
+    shadowPlane.receiveShadow = true;
+    shadowPlane.visible = false;
+    scene.add(shadowPlane);
+    shadowPlaneRef.current = shadowPlane;
 
     const bedGroup = new THREE.Group();
     const bedSize = 200; 
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 512, 512);
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
-      ctx.lineWidth = 10;
-      ctx.strokeRect(5, 5, 502, 502);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = 'bold 30px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
-    }
-    const bedTexture = new THREE.CanvasTexture(canvas);
-    
-    const bedMat = new THREE.MeshStandardMaterial({ 
-      map: bedTexture,
-      color: 0xffffff, 
-      roughness: 0.8 
-    });
+    const bedMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
     bed.receiveShadow = true;
     bedGroup.add(bed);
-    
     const grid = new THREE.GridHelper(bedSize, 20, 0x334155, 0x1e293b);
     grid.position.y = 0.1;
     bedGroup.add(grid);
@@ -170,24 +123,11 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.rotateSpeed = 0.8;
-    controls.zoomSpeed = 1.2;
-    controls.enablePan = true;
-    controls.panSpeed = 0.8;
-    controls.touches = {
-      ONE: THREE.TOUCH.ROTATE,
-      TWO: THREE.TOUCH.DOLLY_PAN
-    };
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
-    const meshMaterial = new THREE.MeshPhysicalMaterial({ 
-      color: material.color, 
-      roughness: material.roughness, 
-      metalness: material.metalness,
-      side: THREE.DoubleSide 
-    });
-    
+    const meshMaterial = new THREE.MeshPhysicalMaterial({ color: material.color, roughness: material.roughness, metalness: material.metalness, side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geometry, meshMaterial);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -227,125 +167,42 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.geometry.dispose();
       meshRef.current.geometry = newGeom;
       meshRef.current.position.y = (params.height * 10) / 2;
+      if (bulbLightRef.current) bulbLightRef.current.position.y = (params.height * 10) / 2;
       
       if (showPrintability) {
         meshRef.current.material = overhangMaterial;
         overhangMaterial.uniforms.uColor.value.set(material.color);
       } else {
         const mat = new THREE.MeshPhysicalMaterial({
-          color: material.color,
-          roughness: material.roughness,
-          metalness: material.metalness,
-          transmission: material.transmission,
-          opacity: material.opacity,
-          transparent: material.opacity < 1,
-          side: THREE.DoubleSide,
-          wireframe: showWireframe,
+          color: material.color, roughness: material.roughness, metalness: material.metalness,
+          transmission: material.transmission, opacity: material.opacity, transparent: material.opacity < 1,
+          side: THREE.DoubleSide, wireframe: showWireframe,
           clippingPlanes: isCutaway ? [new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)] : []
         });
         meshRef.current.material = mat;
-        if (rendererRef.current) rendererRef.current.localClippingEnabled = isCutaway;
-      }
-      
-      if (isLightOn && !showPrintability) {
-        (meshRef.current.material as THREE.MeshPhysicalMaterial).emissive?.set(0xffaa44);
-        (meshRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.4;
       }
     }
-  }, [params, material, showWireframe, isLightOn, showPrintability, isCutaway, overhangMaterial]);
+  }, [params, material, showWireframe, isLightOn, showPrintability, isCutaway]);
 
   useEffect(() => {
     if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
-  }, [isLightOn]);
+    if (shadowPlaneRef.current) shadowPlaneRef.current.visible = isLightOn && showShadowPlane;
+  }, [isLightOn, showShadowPlane]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      
-      {/* Measurement Overlays */}
-      {showMeasurements && (
-        <div className="absolute inset-0 pointer-events-none z-10">
-          {/* Height Label */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-[120px] flex flex-col items-center" style={{ height: `${params.height * 10}px`, transform: `translate(-120px, -50%)` }}>
-            <div className="w-px h-full bg-white/20 relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-px bg-white/40" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-px bg-white/40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">{params.height}cm</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Top Diameter Label */}
-          <div className="absolute left-1/2 top-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${params.topRadius * 20}px` }}>
-            <div className="h-px w-full bg-white/20 relative">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Top: {params.topRadius * 2}cm</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Diameter Label */}
-          <div className="absolute left-1/2 bottom-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${params.bottomRadius * 20}px` }}>
-            <div className="h-px w-full bg-white/20 relative">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Bottom: {params.bottomRadius * 2}cm</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="absolute bottom-6 left-6 flex flex-wrap gap-3 z-20">
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => setIsLightOn(!isLightOn)}
-          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
-        >
-          <Lightbulb className={`w-4 h-4 ${!isLightOn ? 'opacity-50' : ''}`} />
-          {isLightOn ? 'Light On' : 'Light Off'}
+        <Button variant="secondary" size="sm" onClick={() => setIsLightOn(!isLightOn)} className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}>
+          <Lightbulb className="w-4 h-4" /> {isLightOn ? 'Light On' : 'Light Off'}
         </Button>
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => setShowMeasurements(!showMeasurements)}
-          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showMeasurements ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
-        >
-          <Ruler className="w-4 h-4" />
-          {showMeasurements ? 'Ruler On' : 'Ruler Off'}
+        <Button variant="secondary" size="sm" onClick={() => setShowShadowPlane(!showShadowPlane)} className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showShadowPlane ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}>
+          <Eye className="w-4 h-4" /> {showShadowPlane ? 'Projection On' : 'Projection Off'}
         </Button>
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => setIsCutaway(!isCutaway)}
-          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${isCutaway ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
-        >
-          <Scissors className="w-4 h-4" />
-          {isCutaway ? 'Full' : 'Cut'}
-        </Button>
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          onClick={resetView}
-          className="gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl bg-slate-800 text-slate-300"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Reset View
+        <Button variant="secondary" size="sm" onClick={resetView} className="gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl bg-slate-800 text-slate-300">
+          <RotateCcw className="w-4 h-4" /> Reset View
         </Button>
       </div>
-      {showPrintability && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
-          <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhangs Detected</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

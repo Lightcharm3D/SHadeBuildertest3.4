@@ -56,25 +56,31 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.Sprite();
     
-    canvas.width = 256;
-    canvas.height = 64;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-    ctx.roundRect(0, 0, 256, 64, 12);
+    canvas.width = 300;
+    canvas.height = 80;
+    
+    // Background pill
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 300, 80, 20);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
-    ctx.lineWidth = 2;
+    
+    // Border
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.8)';
+    ctx.lineWidth = 4;
     ctx.stroke();
     
-    ctx.font = 'bold 32px sans-serif';
+    // Text
+    ctx.font = 'bold 36px sans-serif';
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 128, 32);
+    ctx.fillText(text, 150, 40);
     
     const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(40, 10, 1);
+    sprite.scale.set(45, 12, 1);
     return sprite;
   };
 
@@ -96,48 +102,49 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const tr = params.topRadius * 10;
     const br = params.bottomRadius * 10;
     const mr = getRadiusAtHeight(0, params) * 10;
-    const offset = Math.max(tr, br, mr) + 20;
+    const maxR = Math.max(tr, br, mr);
+    const offset = maxR + 30;
 
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.6 });
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.8, depthTest: false });
 
-    // Height Line
+    // 1. Height Line & Label
     const hPoints = [new THREE.Vector3(-offset, 0, 0), new THREE.Vector3(-offset, h, 0)];
     const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
     const hLine = new THREE.Line(hGeom, lineMat);
     group.add(hLine);
 
-    const hLabel = createTextLabel(`${params.height.toFixed(1)} cm`);
-    hLabel.position.set(-offset - 25, h / 2, 0);
+    const hLabel = createTextLabel(`${params.height.toFixed(1)} cm Height`);
+    hLabel.position.set(-offset - 35, h / 2, 0);
     group.add(hLabel);
 
-    // Top Diameter Line
+    // 2. Top Diameter Line & Label
     const tPoints = [new THREE.Vector3(-tr, h, 0), new THREE.Vector3(tr, h, 0)];
     const tGeom = new THREE.BufferGeometry().setFromPoints(tPoints);
     const tLine = new THREE.Line(tGeom, lineMat);
     group.add(tLine);
 
-    const tLabel = createTextLabel(`Top Ø ${(params.topRadius * 2).toFixed(1)} cm`);
-    tLabel.position.set(0, h + 15, 0);
+    const tLabel = createTextLabel(`Top: ${(params.topRadius * 2).toFixed(1)} cm`);
+    tLabel.position.set(0, h + 20, 0);
     group.add(tLabel);
 
-    // Middle Diameter Line
+    // 3. Middle Diameter Line & Label
     const mPoints = [new THREE.Vector3(-mr, h / 2, 0), new THREE.Vector3(mr, h / 2, 0)];
     const mGeom = new THREE.BufferGeometry().setFromPoints(mPoints);
     const mLine = new THREE.Line(mGeom, lineMat);
     group.add(mLine);
 
-    const mLabel = createTextLabel(`Mid Ø ${(mr * 2 / 10).toFixed(1)} cm`);
-    mLabel.position.set(0, h / 2 + 15, 0);
+    const mLabel = createTextLabel(`Mid: ${(mr * 2 / 10).toFixed(1)} cm`);
+    mLabel.position.set(0, h / 2 + 20, 0);
     group.add(mLabel);
 
-    // Bottom Diameter Line
+    // 4. Bottom Diameter Line & Label
     const bPoints = [new THREE.Vector3(-br, 0, 0), new THREE.Vector3(br, 0, 0)];
     const bGeom = new THREE.BufferGeometry().setFromPoints(bPoints);
     const bLine = new THREE.Line(bGeom, lineMat);
     group.add(bLine);
 
-    const bLabel = createTextLabel(`Bot Ø ${(params.bottomRadius * 2).toFixed(1)} cm`);
-    bLabel.position.set(0, -15, 0);
+    const bLabel = createTextLabel(`Base: ${(params.bottomRadius * 2).toFixed(1)} cm`);
+    bLabel.position.set(0, -20, 0);
     group.add(bLabel);
 
     sceneRef.current.add(group);
@@ -176,13 +183,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
-    // Build Plate 200x200mm (20cm)
+    // Build Plate
     const bedSize = 200; 
     const bedGroup = new THREE.Group();
-    
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    
-    // Create Branding Texture
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
@@ -200,22 +204,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
     }
     const bedTexture = new THREE.CanvasTexture(canvas);
-
-    const bedMat = new THREE.MeshStandardMaterial({ 
-      map: bedTexture,
-      color: 0xffffff, 
-      roughness: 0.8,
-      metalness: 0.2
-    });
+    const bedMat = new THREE.MeshStandardMaterial({ map: bedTexture, color: 0xffffff, roughness: 0.8, metalness: 0.2 });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
     bed.receiveShadow = true;
     bedGroup.add(bed);
-    
     const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
     grid.position.y = 0.1;
     bedGroup.add(grid);
-
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -225,12 +221,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
-    const meshMaterial = new THREE.MeshPhysicalMaterial({ 
-      color: material.color, 
-      roughness: material.roughness, 
-      metalness: material.metalness, 
-      side: THREE.DoubleSide 
-    });
+    const meshMaterial = new THREE.MeshPhysicalMaterial({ color: material.color, roughness: material.roughness, metalness: material.metalness, side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geometry, meshMaterial);
     mesh.castShadow = true;
     mesh.receiveShadow = true;

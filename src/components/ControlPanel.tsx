@@ -616,12 +616,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
-            <ShieldAlert className="w-3 h-3 text-emerald-500" /> Print Ready
-          </span>
-          <Switch checked={showPrintability} onCheckedChange={setShowPrintability} />
-        </div>
         <Button onClick={onExport} className="w-full brand-gradient text-white h-14 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
           <Download className="w-4 h-4 mr-2" />
           {params.splitSegments && params.splitSegments > 1 ? `Export Part ${(params.activePart || 0) + 1}` : 'Export STL'}

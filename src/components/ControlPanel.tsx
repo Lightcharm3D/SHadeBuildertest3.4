@@ -12,9 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
-import { generateLampDNA } from '@/utils/dna-engine';
+import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -75,8 +75,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const shareDNA = () => {
     const dna = generateLampDNA(params);
-    navigator.clipboard.writeText(dna);
-    showSuccess("Lamp DNA copied to clipboard!");
+    const url = new URL(window.location.href);
+    url.searchParams.set('dna', dna);
+    navigator.clipboard.writeText(url.toString());
+    showSuccess("Share link with DNA copied to clipboard!");
+  };
+
+  const importDNA = () => {
+    const dna = prompt("Paste Lamp DNA string here:");
+    if (!dna) return;
+    const importedParams = parseLampDNA(dna);
+    if (importedParams) {
+      setParams(importedParams);
+      showSuccess("Design loaded from DNA!");
+    } else {
+      showError("Invalid DNA string");
+    }
   };
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
@@ -99,7 +113,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <Button variant="ghost" size="icon" onClick={onRandomize} title="Randomize Design" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={shareDNA} title="Share DNA" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+          <Button variant="ghost" size="icon" onClick={importDNA} title="Import DNA" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+            <FileInput className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={shareDNA} title="Share Link" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <Share2 className="w-3.5 h-3.5" />
           </Button>
           <Button variant="ghost" size="icon" onClick={saveToGallery} title="Save to Gallery" className="h-8 w-8 text-slate-400 hover:text-indigo-600">

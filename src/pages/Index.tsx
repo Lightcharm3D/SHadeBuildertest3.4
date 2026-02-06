@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
+import { parseLampDNA } from '@/utils/dna-engine';
 
 const DEFAULT_PARAMS: LampshadeParams = {
   type: 'ribbed_drum',
@@ -74,8 +75,21 @@ const Index = () => {
   const [showPrintability, setShowPrintability] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [searchParams] = useSearchParams();
   const meshRef = useRef<THREE.Mesh | null>(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const dna = searchParams.get('dna');
+    if (dna) {
+      const importedParams = parseLampDNA(dna);
+      if (importedParams) {
+        setParams(importedParams);
+        setShowWelcome(false);
+        showSuccess("Design loaded from link!");
+      }
+    }
+  }, [searchParams]);
 
   const handleSceneReady = (scene: THREE.Scene, mesh: THREE.Mesh) => {
     meshRef.current = mesh;

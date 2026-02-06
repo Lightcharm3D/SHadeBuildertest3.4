@@ -85,6 +85,23 @@ export interface LampshadeParams {
 }
 
 /**
+ * Repairs and optimizes geometry for 3D printing.
+ */
+export function repairGeometry(geometry: THREE.BufferGeometry, tolerance: number = 0.001): THREE.BufferGeometry {
+  // 1. Merge vertices to ensure manifold structure
+  const repaired = mergeVertices(geometry, tolerance);
+  
+  // 2. Recompute normals for correct shading and slicing
+  repaired.computeVertexNormals();
+  
+  // 3. Ensure all attributes are correctly formatted
+  repaired.computeBoundingBox();
+  repaired.computeBoundingSphere();
+  
+  return repaired;
+}
+
+/**
  * Enforces CAD constraints to ensure printability and physical validity.
  */
 export function enforceConstraints(params: LampshadeParams): LampshadeParams {

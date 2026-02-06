@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
-import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry-generator';
+import { LampshadeParams, LampshadeType, SilhouetteType, repairGeometry } from '@/utils/geometry-generator';
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
@@ -79,6 +79,17 @@ const Index = () => {
 
   const handleSceneReady = (scene: THREE.Scene, mesh: THREE.Mesh) => {
     meshRef.current = mesh;
+  };
+
+  const handleRepair = () => {
+    if (!meshRef.current) return;
+    try {
+      const repairedGeom = repairGeometry(meshRef.current.geometry);
+      meshRef.current.geometry = repairedGeom;
+      showSuccess("Mesh repaired and optimized for printing!");
+    } catch (err) {
+      showError("Failed to repair mesh");
+    }
   };
 
   const handleExport = async () => {
@@ -247,6 +258,7 @@ const Index = () => {
                       onExport={handleExport} 
                       onRandomize={handleRandomize}
                       onReset={handleReset}
+                      onRepair={handleRepair}
                     />
                   </div>
                 </DrawerContent>
@@ -277,6 +289,7 @@ const Index = () => {
                   onExport={handleExport} 
                   onRandomize={handleRandomize}
                   onReset={handleReset}
+                  onRepair={handleRepair}
                   onClose={() => setIsSidebarOpen(false)}
                 />
               </div>

@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA } from '@/utils/dna-engine';
 
@@ -28,6 +28,7 @@ interface ControlPanelProps {
   onExport: () => void;
   onRandomize: () => void;
   onReset: () => void;
+  onRepair?: () => void;
   onClose?: () => void;
 }
 
@@ -38,14 +39,6 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Spiral Vortex': { type: 'spiral_vortex', silhouette: 'hourglass', twistAngle: 720, ribCount: 12, height: 20, topRadius: 8, bottomRadius: 8 },
   'Origami Fold': { type: 'origami', silhouette: 'straight', foldCount: 16, foldDepth: 1.2, height: 15, topRadius: 6, bottomRadius: 6 },
   'Lattice Shell': { type: 'lattice', silhouette: 'bell', gridDensity: 18, height: 18, topRadius: 5, bottomRadius: 10 },
-};
-
-const FILAMENT_PRESETS: Record<string, Partial<MaterialParams>> = {
-  'Matte White': { color: '#ffffff', roughness: 0.9, metalness: 0, transmission: 0, opacity: 1 },
-  'Silk Gold': { color: '#ffd700', roughness: 0.2, metalness: 0.6, transmission: 0, opacity: 1 },
-  'Clear PETG': { color: '#e0f2fe', roughness: 0.3, metalness: 0, transmission: 0.9, opacity: 0.6 },
-  'Marble': { color: '#f1f5f9', roughness: 0.8, metalness: 0, transmission: 0, opacity: 1 },
-  'Wood': { color: '#78350f', roughness: 1.0, metalness: 0, transmission: 0, opacity: 1 },
 };
 
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -60,6 +53,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onExport, 
   onRandomize,
   onReset,
+  onRepair,
   onClose
 }) => {
   const [gallery, setGallery] = useState<{id: string, name: string, params: LampshadeParams, material: MaterialParams}[]>([]);
@@ -119,11 +113,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
         <Tabs defaultValue="shape" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full h-10 bg-slate-100 p-1 rounded-xl">
+          <TabsList className="grid grid-cols-5 w-full h-10 bg-slate-100 p-1 rounded-xl">
             <TabsTrigger value="shape" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Shape</TabsTrigger>
             <TabsTrigger value="fit" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Fit</TabsTrigger>
             <TabsTrigger value="split" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Split</TabsTrigger>
             <TabsTrigger value="mat" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Mat</TabsTrigger>
+            <TabsTrigger value="tools" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Tools</TabsTrigger>
           </TabsList>
 
           <TabsContent value="shape" className="space-y-4 pt-4">
@@ -163,57 +158,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Top Radius</Label>
-                      <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Radius</Label>
-                      <Input type="number" step={0.1} value={params.bottomRadius} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="pattern" className="border-none">
-                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Zap className="w-3 h-3 text-indigo-500" /> Pattern Engine
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4 space-y-4 px-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Template</Label>
-                    <Select value={params.type} onValueChange={(v: any) => updateParam('type', v)}>
-                      <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="voronoi_v3">Voronoi V3</SelectItem>
-                        <SelectItem value="spiral_stairs_v2">Spiral Stairs V2</SelectItem>
-                        <SelectItem value="diamond_plate_v2">Diamond Plate V2</SelectItem>
-                        <SelectItem value="organic_coral">Organic Coral</SelectItem>
-                        <SelectItem value="geometric_stars">Geometric Stars</SelectItem>
-                        <SelectItem value="ribbed_spiral">Ribbed Spiral</SelectItem>
-                        <SelectItem value="faceted_poly">Faceted Poly</SelectItem>
-                        <SelectItem value="wave_shell_v2">Wave Shell V2</SelectItem>
-                        <SelectItem value="fractal_tree">Fractal Tree</SelectItem>
-                        <SelectItem value="geometric_weave">Geometric Weave</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Silhouette</Label>
-                    <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v)}>
-                      <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pagoda_v2">Pagoda V2</SelectItem>
-                        <SelectItem value="lotus">Lotus</SelectItem>
-                        <SelectItem value="diamond_v2">Diamond V2</SelectItem>
-                        <SelectItem value="stepped_v2">Stepped V2</SelectItem>
-                        <SelectItem value="onion">Onion</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -232,51 +176,36 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-              {params.fitterType !== 'none' && (
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-400"><span>Height (cm)</span><span>{params.fitterHeight.toFixed(1)}</span></div>
-                    <Slider value={[params.fitterHeight]} min={0} max={params.height} step={0.1} onValueChange={([v]) => updateParam('fitterHeight', v)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Inner ID (mm)</Label>
-                      <Input type="number" value={params.fitterDiameter} onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Outer OD (mm)</Label>
-                      <Input type="number" value={params.fitterOuterDiameter} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="split" className="space-y-4 pt-4">
+          <TabsContent value="tools" className="space-y-4 pt-4">
             <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
-              <div className="space-y-1">
-                <div className="flex justify-between text-[9px] font-black uppercase text-slate-400"><span>Split Segments</span><span>{params.splitSegments || 1}</span></div>
-                <Slider value={[params.splitSegments || 1]} min={1} max={8} step={1} onValueChange={([v]) => updateParam('splitSegments', v)} />
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
+                  <Wrench className="w-3 h-3 text-indigo-500" /> Mesh Repair System
+                </Label>
+                <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
+                  Ensures geometry is manifold and optimized for 3D printing by merging close vertices and recomputing normals.
+                </p>
+                <Button 
+                  onClick={onRepair} 
+                  variant="outline" 
+                  className="w-full h-10 text-[9px] font-black uppercase tracking-widest rounded-xl border-indigo-100 hover:bg-indigo-50 text-indigo-600"
+                >
+                  Repair & Optimize Mesh
+                </Button>
               </div>
-              {params.splitSegments && params.splitSegments > 1 && (
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-400"><span>Active Part</span><span>{(params.activePart || 0) + 1}</span></div>
-                    <Slider value={[params.activePart || 0]} min={0} max={params.splitSegments - 1} step={1} onValueChange={([v]) => updateParam('activePart', v)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-500">Joint Type</Label>
-                    <Select value={params.jointType || 'none'} onValueChange={(v: any) => updateParam('jointType', v)}>
-                      <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None (Flat)</SelectItem>
-                        <SelectItem value="tab">Alignment Tabs</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              
+              <div className="space-y-2 pt-2 border-t border-slate-200">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Wireframe Mode</Label>
+                  <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
                 </div>
-              )}
+                <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
+                  Inspect the underlying mesh structure for defects.
+                </p>
+              </div>
             </div>
           </TabsContent>
 
@@ -287,16 +216,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <div className="flex gap-3 items-center">
                   <div className="w-10 h-10 rounded-lg border border-slate-200 shrink-0 shadow-sm" style={{ backgroundColor: material.color }} />
                   <Input type="color" value={material.color} onChange={(e) => updateMaterial('color', e.target.value)} className="h-10 w-full p-1 rounded-lg cursor-pointer bg-white" />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-400"><span>Roughness</span><span>{material.roughness.toFixed(2)}</span></div>
-                  <Slider value={[material.roughness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('roughness', v)} />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-400"><span>Metalness</span><span>{material.metalness.toFixed(2)}</span></div>
-                  <Slider value={[material.metalness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('metalness', v)} />
                 </div>
               </div>
             </div>

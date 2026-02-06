@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield, Cylinder, Type, Info } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LithophaneParams, MappingMode } from '@/utils/lithophane-generator';
+import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield, Cylinder, Type, Info, SunMedium, Zap } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
@@ -107,7 +108,51 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           </div>
         </div>
 
-        {/* Text Personalization */}
+        <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+            <Sliders className="w-3 h-3" /> Image Adjustments
+          </Label>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <div className="flex justify-between text-[9px] font-medium"><span>Brightness</span><span>{params.brightness.toFixed(2)}</span></div>
+              <Slider value={[params.brightness]} min={-100} max={100} step={0.01} onValueChange={([v]) => updateParam('brightness', v)} className="py-1" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[9px] font-medium"><span>Contrast</span><span>{params.contrast.toFixed(2)}</span></div>
+              <Slider value={[params.contrast]} min={-100} max={100} step={0.01} onValueChange={([v]) => updateParam('contrast', v)} className="py-1" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[9px] font-medium flex items-center gap-1"><SunMedium className="w-2 h-2" /> <span>Gamma Correction</span><span>{params.gamma.toFixed(2)}</span></div>
+              <Slider value={[params.gamma]} min={0.1} max={3.0} step={0.01} onValueChange={([v]) => updateParam('gamma', v)} className="py-1" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[9px] font-medium"><span>Smoothing</span><span>{params.smoothing.toFixed(2)}</span></div>
+              <Slider value={[params.smoothing]} min={0} max={5} step={0.01} onValueChange={([v]) => updateParam('smoothing', v)} className="py-1" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1">
+            <Zap className="w-3 h-3" /> Thickness Mapping
+          </Label>
+          <div className="space-y-2">
+            <Select value={params.mappingMode} onValueChange={(v: MappingMode) => updateParam('mappingMode', v)}>
+              <SelectTrigger className="h-8 text-[10px] font-bold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="linear">Linear (Standard)</SelectItem>
+                <SelectItem value="exponential">Exponential (High Contrast)</SelectItem>
+                <SelectItem value="logarithmic">Logarithmic (Soft Midtones)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[8px] text-slate-400 leading-tight">
+              Nonlinear mapping accounts for light absorption (Beer-Lambert law) for more realistic photo reproduction.
+            </p>
+          </div>
+        </div>
+
         <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
             <Type className="w-3 h-3" /> Personalization
@@ -153,26 +198,6 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               </div>
             </div>
           )}
-        </div>
-
-        <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-            <Sliders className="w-3 h-3" /> Image Adjustments
-          </Label>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px] font-medium"><span>Brightness</span><span>{params.brightness.toFixed(2)}</span></div>
-              <Slider value={[params.brightness]} min={-100} max={100} step={0.01} onValueChange={([v]) => updateParam('brightness', v)} className="py-1" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px] font-medium"><span>Contrast</span><span>{params.contrast.toFixed(2)}</span></div>
-              <Slider value={[params.contrast]} min={-100} max={100} step={0.01} onValueChange={([v]) => updateParam('contrast', v)} className="py-1" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px] font-medium"><span>Smoothing</span><span>{params.smoothing.toFixed(2)}</span></div>
-              <Slider value={[params.smoothing]} min={0} max={5} step={0.01} onValueChange={([v]) => updateParam('smoothing', v)} className="py-1" />
-            </div>
-          </div>
         </div>
 
         <div className="space-y-3">

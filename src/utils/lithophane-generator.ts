@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 export type LithophaneType = 'flat' | 'circle' | 'heart' | 'badge' | 'curved' | 'cylinder';
+export type MappingMode = 'linear' | 'exponential' | 'logarithmic';
 
 export interface LithophaneParams {
   type: LithophaneType;
@@ -14,6 +15,8 @@ export interface LithophaneParams {
   inverted: boolean;
   brightness: number;
   contrast: number;
+  gamma: number; // New: Gamma correction
+  mappingMode: MappingMode; // New: Nonlinear mapping
   smoothing: number;
   hasHole: boolean;
   holeSize: number;
@@ -33,7 +36,7 @@ export function generateLithophaneGeometry(
   const { 
     width, height, minThickness, maxThickness, 
     resolution, type, inverted,
-    brightness, contrast, smoothing, hasHole, holeSize,
+    brightness, contrast, gamma, mappingMode, smoothing, hasHole, holeSize,
     hasBorder, borderThickness, borderHeight, curveRadius,
     text, textSize = 40, textY = 0.8
   } = params;
@@ -100,13 +103,24 @@ export function generateLithophaneGeometry(
     const y2 = Math.min(y1 + 1, finalImageData.height - 1);
     const dx = x - x1;
     const dy = y - y1;
+
     const getPixelGray = (px: number, py: number) => {
       const idx = (py * finalImageData.width + px) * 4;
       const cFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-      const process = (val: number) => Math.min(255, Math.max(0, cFactor * (val + brightness - 128) + 128));
-      const gray = (process(processedData[idx]) * 0.299 + process(processedData[idx+1]) * 0.587 + process(processedData[idx+2]) * 0.114) / 255;
+      
+      const process = (val: number) => {
+        // Apply Brightness & Contrast
+        let v = cFactor * (val + brightness - 128) + 128;
+        v = Math.min(255, Math.max(0, v)) / 255;
+        
+        // Apply Gamma Correction
+        return Math.pow(v, 1 / gamma);
+      };
+
+      const gray = (process(processedData[idx]) * 0.299 + process(processedData[idx+1]) * 0.587 + process(processedData[idx+2]) * 0.114);
       return inverted ? gray : 1 - gray;
     };
+
     return (getPixelGray(x1, y1) * (1 - dx) * (1 - dy)) +
            (getPixelGray(x2, y1) * dx * (1 - dy)) +
            (getPixelGray(x1, y2) * (1 - dx) * dy) +
@@ -141,7 +155,15 @@ export function generateLithophaneGeometry(
       validPoints.push(inside || inBorder);
       let thickness = 0;
       if (inside) {
-        const bVal = getInterpolatedVal(u, v);
+        let bVal = getInterpolatedVal(u, v);
+        
+        // Apply Nonlinear Mapping
+        if (mappingMode === 'exponential') {
+          bVal = (Math.exp(bVal) - 1) / (Math.E - 1);
+        } else if (mappingMode === 'logarithmic') {
+          bVal = Math.log(1 + bVal * (Math.E - 1));
+        }
+
         thickness = minThickness + bVal * (maxThickness - minThickness);
       } else if (inBorder) {
         thickness = borderHeight;
@@ -164,7 +186,6 @@ export function generateLithophaneGeometry(
   for (let j = 0; j < gridY - 1; j++) {
     for (let i = 0; i < gridX; i++) {
       const nextI = (i + 1) % gridX;
-      // If not a cylinder, don't wrap the last column
       if (type !== 'cylinder' && i === gridX - 1) continue;
 
       const a = j * gridX + i;
@@ -187,9 +208,7 @@ export function generateLithophaneGeometry(
       if (!validPoints[idx]) continue;
       
       const nextI = (i + 1) % gridX;
-      const nextJ = (j + 1) % gridY;
 
-      // Left/Right edges (only if not cylinder)
       if (type !== 'cylinder') {
         if (i === 0 || !validPoints[idx - 1]) {
           if (j < gridY - 1 && validPoints[(j + 1) * gridX + i]) {
@@ -205,7 +224,6 @@ export function generateLithophaneGeometry(
         }
       }
 
-      // Top/Bottom edges
       if (j === 0 || !validPoints[idx - gridX]) {
         if (i < gridX - 1 && validPoints[j * gridX + i + 1]) {
           const a = idx, b = idx + backOffset, c = j * gridX + i + 1, d = j * gridX + i + 1 + backOffset;

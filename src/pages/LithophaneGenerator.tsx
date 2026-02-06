@@ -29,6 +29,8 @@ const LithophaneGenerator = () => {
     inverted: false,
     brightness: 0,
     contrast: 20,
+    gamma: 1.0,
+    mappingMode: 'linear',
     smoothing: 1.0,
     hasHole: false,
     holeSize: 3,
@@ -107,10 +109,10 @@ const LithophaneGenerator = () => {
   const handleApplyPreset = useCallback((preset: string) => {
     switch (preset) {
       case 'portrait':
-        setParams({ ...params, width: 8, height: 10, resolution: 250, contrast: 30, smoothing: 1.0 });
+        setParams({ ...params, width: 8, height: 10, resolution: 250, contrast: 30, smoothing: 1.0, gamma: 1.2, mappingMode: 'exponential' });
         break;
       case 'keychain':
-        setParams({ ...params, width: 4, height: 4, resolution: 150, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true });
+        setParams({ ...params, width: 4, height: 4, resolution: 150, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true, gamma: 1.0, mappingMode: 'linear' });
         break;
     }
     showSuccess(`Applied ${preset} preset`);

@@ -87,32 +87,24 @@ export interface LampshadeParams {
 
 /**
  * Enforces CAD constraints to ensure printability and physical validity.
- * This is the core of the constraint-based parametric engine.
  */
 export function enforceConstraints(params: LampshadeParams): LampshadeParams {
   const p = { ...params };
-  
-  // 1. Minimum Wall Thickness (Physical limit for FDM printing)
   p.thickness = Math.max(0.12, p.thickness);
-  
-  // 2. Radius Constraints (Prevent zero-width or inverted shapes)
   p.bottomRadius = Math.max(4, p.bottomRadius);
   p.topRadius = Math.max(2, p.topRadius);
   
-  // 3. Fitter Constraints (Fitter must be inside the shade)
   const fitterY = -p.height / 2 + p.fitterHeight;
   const shadeRadiusAtFitter = getRadiusAtHeight(fitterY, p);
-  const maxFitterRadius = (shadeRadiusAtFitter * 10) - 5; // 5mm safety margin
+  const maxFitterRadius = (shadeRadiusAtFitter * 10) - 5;
   p.fitterDiameter = Math.min(p.fitterDiameter, maxFitterRadius * 2);
   p.fitterHeight = Math.min(p.height - 1, Math.max(0.5, p.fitterHeight));
 
-  // 4. Pattern Depth Constraints (Prevent patterns from punching through the wall)
   const maxDepth = Math.min(p.topRadius, p.bottomRadius) * 0.4;
   if (p.patternDepth !== undefined) p.patternDepth = Math.min(p.patternDepth, maxDepth);
   if (p.ribDepth !== undefined) p.ribDepth = Math.min(p.ribDepth, maxDepth);
   if (p.noiseStrength !== undefined) p.noiseStrength = Math.min(p.noiseStrength, maxDepth);
 
-  // 5. Structural Integrity
   if (p.internalRibs > 0) {
     p.ribThickness = Math.max(0.2, p.ribThickness);
     p.internalRibDepth = Math.max(0.2, p.internalRibDepth || 0.5);
@@ -172,7 +164,7 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
     case 'fluted': r *= 1 + Math.pow(Math.sin(t * Math.PI * 0.5), 0.5) * 0.3; break;
   }
 
-  return Math.max(0.5, r); // Absolute minimum radius to prevent mesh collapse
+  return Math.max(0.5, r);
 }
 
 function getDisplacementAt(angle: number, y: number, params: LampshadeParams): number {
@@ -183,6 +175,25 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
   let disp = 0;
   switch (type) {
     case 'plain_wall': disp = 0; break;
+    case 'bricks': {
+      const scale = params.patternScale || 12;
+      const depth = params.patternDepth || 0.4;
+      const row = Math.floor(normY * scale);
+      const offset = (row % 2 === 0) ? 0 : (Math.PI / scale);
+      const col = Math.floor((rotatedAngle + offset) * scale);
+      
+      const rowFrac = (normY * scale) % 1;
+      const colFrac = ((rotatedAngle + offset) * scale) % 1;
+      
+      // Mortar lines
+      const mortar = 0.1;
+      if (rowFrac < mortar || colFrac < mortar) {
+        disp = -depth;
+      } else {
+        disp = 0;
+      }
+      break;
+    }
     case 'voronoi_v3': {
       const cells = params.cellCount || 30;
       const strength = params.noiseStrength || 1.2;
@@ -428,26 +439,20 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     let lastR = bottomRadius;
     const profileRadii: number[] = [];
 
-    // Forward pass for silhouette with slope clamping
     for (let i = 0; i <= steps; i++) {
       const y = -height / 2 + height * (i / steps);
       let r = getRadiusAtHeight(y, p);
-      
       if (supportFreeMode) {
-        // Enforce 45 degree rule: |dr| <= |dy|
         r = Math.max(lastR - dy, Math.min(lastR + dy, r));
       }
-      
       profileRadii.push(r);
       lastR = r;
     }
 
-    // Outer wall
     for (let i = 0; i <= steps; i++) {
       const y = -height / 2 + height * (i / steps);
       points.push(new THREE.Vector2(Math.max(0.1, profileRadii[i]), y));
     }
-    // Inner wall
     for (let i = steps; i >= 0; i--) {
       const y = -height / 2 + height * (i / steps);
       points.push(new THREE.Vector2(Math.max(0.05, profileRadii[i] - tVal), y));
@@ -476,7 +481,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     return normalizedAngle >= phiStart && normalizedAngle <= phiStart + phiLength;
   };
 
-  // Initialize geometry with a fallback wall to ensure something is always visible
   const fallbackWall = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
 
   switch (type) {
@@ -567,6 +571,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
     case 'plain_wall':
+    case 'bricks':
     case 'organic_coral':
     case 'geometric_stars':
     case 'ribbed_spiral':
@@ -605,7 +610,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const dy = height / effectiveSteps;
       const profilePointsCount = closedProfile.length;
 
-      // Apply displacement with slope clamping for printability
       for (let s = 0; s <= segs; s++) {
         let lastTotalR = -1;
         for (let j = 0; j <= effectiveSteps; j++) {
@@ -624,7 +628,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           let totalR = baseR + disp;
 
           if (supportFreeMode && lastTotalR !== -1) {
-            // Enforce 45 degree rule on the final combined radius
             totalR = Math.max(lastTotalR - dy, Math.min(lastTotalR + dy, totalR));
           }
 
@@ -739,7 +742,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     default: geometry = fallbackWall;
   }
 
-  // Add Rims with constraints
   if (p.rimThickness && p.rimThickness > 0) {
     const rimGeoms: THREE.BufferGeometry[] = [];
     const rimThick = p.rimThickness;
@@ -768,7 +770,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     geometry = mergeGeometries([geometry, ...rimGeoms]);
   }
 
-  // Add Internal Ribs with constraints
   if (p.internalRibs > 0) {
     const ribGeoms: THREE.BufferGeometry[] = [];
     for (let i = 0; i < p.internalRibs; i++) {
@@ -791,7 +792,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     if (ribGeoms.length > 0) geometry = mergeGeometries([geometry, ...ribGeoms]);
   }
 
-  // Add Fitter with constraints
   if (p.fitterType !== 'none' && activePart === 0) {
     const fitterGeom = generateFitterGeometry(p);
     geometry = mergeGeometries([geometry, fitterGeom]);

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler, Scale } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -75,6 +75,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     });
   }, [material.color]);
 
+  const resetView = () => {
+    if (cameraRef.current && controlsRef.current) {
+      cameraRef.current.position.set(250, 250, 250);
+      controlsRef.current.target.set(0, (params.height * 10) / 2, 0);
+      controlsRef.current.update();
+    }
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -93,7 +101,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       precision: "mediump" 
     });
     
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -112,8 +120,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.shadow.camera.top = 200;
     mainLight.shadow.camera.bottom = -200;
     mainLight.shadow.camera.far = 2000;
-    mainLight.shadow.mapSize.width = 512; 
-    mainLight.shadow.mapSize.height = 512;
+    mainLight.shadow.mapSize.width = 1024; 
+    mainLight.shadow.mapSize.height = 1024;
     mainLight.shadow.bias = -0.001;
     
     scene.add(mainLight);
@@ -161,7 +169,15 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.8;
+    controls.zoomSpeed = 1.2;
+    controls.enablePan = true;
+    controls.panSpeed = 0.8;
+    controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
@@ -243,7 +259,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   }, [isLightOn]);
 
   return (
-    <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950">
+    <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
       
       {/* Measurement Overlays */}
@@ -284,7 +300,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         </div>
       )}
 
-      <div className="absolute bottom-6 left-6 flex gap-3 z-20">
+      <div className="absolute bottom-6 left-6 flex flex-wrap gap-3 z-20">
         <Button 
           variant="secondary" 
           size="sm" 
@@ -311,6 +327,15 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         >
           <Scissors className="w-4 h-4" />
           {isCutaway ? 'Full' : 'Cut'}
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={resetView}
+          className="gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl bg-slate-800 text-slate-300"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Reset View
         </Button>
       </div>
       {showPrintability && (

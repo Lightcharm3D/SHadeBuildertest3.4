@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
 
 interface ViewportProps {
   geometry: THREE.BufferGeometry | null;
@@ -20,6 +21,14 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   const backlightRef = useRef<THREE.PointLight | null>(null);
   
   const [isBacklightOn, setIsBacklightOn] = useState(false);
+
+  const resetView = () => {
+    if (cameraRef.current && controlsRef.current) {
+      cameraRef.current.position.set(0, 150, 250);
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -56,8 +65,8 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     mainLight.shadow.camera.top = 100;
     mainLight.shadow.camera.bottom = -100;
     mainLight.shadow.camera.far = 1000;
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.mapSize.width = 1024;
+    mainLight.shadow.mapSize.height = 1024;
     mainLight.shadow.bias = -0.0005;
     
     scene.add(mainLight);
@@ -75,29 +84,25 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     
     // Create Branding Texture
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext('2d');
     if (ctx) {
       // Background
       ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 512, 512);
       
       // Border
       ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
-      ctx.lineWidth = 20;
-      ctx.strokeRect(10, 10, 1004, 1004);
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, 502, 502);
       
       // Branding Text
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = 'bold 60px sans-serif';
+      ctx.font = 'bold 30px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 900);
-      
-      ctx.font = 'bold 40px sans-serif';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.fillText('200 x 200 mm', 512, 960);
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
     }
     const bedTexture = new THREE.CanvasTexture(canvas);
 
@@ -120,8 +125,16 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.8;
+    controls.zoomSpeed = 1.2;
+    controls.enablePan = true;
+    controls.panSpeed = 0.8;
     controls.maxPolarAngle = Math.PI / 2.1;
+    controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
     controlsRef.current = controls;
 
     const handleResize = () => {
@@ -205,9 +218,9 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   }, [isBacklightOn]);
 
   return (
-    <div className="w-full h-full relative bg-slate-950">
+    <div className="w-full h-full relative bg-slate-950 touch-none">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-6 left-6 z-30">
+      <div className="absolute bottom-6 left-6 z-30 flex gap-3">
         <Button 
           variant="secondary" 
           size="sm" 
@@ -216,6 +229,15 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
         >
           <img src="light-icon.png" alt="Light" className={`w-4 h-4 ${!isBacklightOn ? 'opacity-50 grayscale' : ''}`} />
           {isBacklightOn ? 'Backlight On' : 'Backlight Off'}
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={resetView}
+          className="gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all bg-slate-800 text-slate-300 hover:bg-slate-700"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Reset View
         </Button>
       </div>
     </div>

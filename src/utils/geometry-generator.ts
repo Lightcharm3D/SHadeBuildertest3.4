@@ -486,18 +486,21 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         ];
         geoms.push(new THREE.LatheGeometry(ringProfile, effectiveSegments, phiStart, phiLength));
 
-        // Vertical Struts (Offset every other row)
+        // Angled Vertical Struts (The "Bricks")
         if (j < density) {
           const ny = y + hStep;
           const nr = getRadiusAtHeight(ny, p);
           const offset = (j % 2 === 0) ? 0 : aStep / 2;
+          
+          // Apply a tilt to every brick using patternRotation
+          const tiltAngle = (p.patternRotation || 20) * (Math.PI / 180);
           
           for (let i = 0; i < effectiveSegments; i++) {
             const angle = i * aStep + offset;
             if (!isAngleInPart(angle)) continue;
             
             const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
-            const p2 = new THREE.Vector3(Math.cos(angle) * nr, ny, Math.sin(angle) * nr);
+            const p2 = new THREE.Vector3(Math.cos(angle + tiltAngle) * nr, ny, Math.sin(angle + tiltAngle) * nr);
             geoms.push(createStrut(p1, p2, strutRadius));
           }
         }

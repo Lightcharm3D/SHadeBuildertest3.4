@@ -10,7 +10,7 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Image as ImageIcon, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, ChevronLeft, History as HistoryIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -109,10 +109,16 @@ const LithophaneGenerator = () => {
   const handleApplyPreset = useCallback((preset: string) => {
     switch (preset) {
       case 'portrait':
-        setParams({ ...params, width: 8, height: 10, resolution: 250, contrast: 30, smoothing: 1.0, gamma: 1.2, mappingMode: 'exponential' });
+        setParams({ ...params, type: 'flat', width: 8, height: 10, resolution: 250, contrast: 30, smoothing: 1.0, gamma: 1.2, mappingMode: 'exponential', hasBorder: true, borderThickness: 2, borderHeight: 2 });
         break;
       case 'keychain':
-        setParams({ ...params, width: 4, height: 4, resolution: 150, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true, gamma: 1.0, mappingMode: 'linear' });
+        setParams({ ...params, type: 'heart', width: 4, height: 4, resolution: 150, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true, gamma: 1.0, mappingMode: 'linear', hasBorder: false });
+        break;
+      case 'nightlight':
+        setParams({ ...params, type: 'curved', width: 10, height: 12, curveRadius: 12, resolution: 200, contrast: 25, smoothing: 1.2, gamma: 1.1, mappingMode: 'exponential', hasBorder: true, borderThickness: 3, borderHeight: 3 });
+        break;
+      case 'cylinder':
+        setParams({ ...params, type: 'cylinder', width: 10, height: 15, resolution: 250, contrast: 20, smoothing: 1.0, gamma: 1.0, mappingMode: 'linear', hasBorder: false });
         break;
     }
     showSuccess(`Applied ${preset} preset`);

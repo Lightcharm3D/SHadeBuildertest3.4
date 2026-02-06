@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType, LampshadeType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 
@@ -187,9 +187,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <Tabs defaultValue="shape" className="w-full">
           <TabsList className="grid grid-cols-5 w-full h-10 bg-slate-100 p-1 rounded-xl">
             <TabsTrigger value="shape" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Shape</TabsTrigger>
+            <TabsTrigger value="pattern" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Pattern</TabsTrigger>
             <TabsTrigger value="fit" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Fit</TabsTrigger>
             <TabsTrigger value="split" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Split</TabsTrigger>
-            <TabsTrigger value="mat" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Mat</TabsTrigger>
             <TabsTrigger value="tools" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Tools</TabsTrigger>
           </TabsList>
 
@@ -265,6 +265,109 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+          </TabsContent>
+
+          <TabsContent value="pattern" className="space-y-4 pt-4">
+            <div className="p-4 bg-slate-50 rounded-2xl space-y-5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
+                  <Sliders className="w-3 h-3" /> Pattern Tuning
+                </Label>
+                <Button variant="ghost" size="sm" onClick={() => updateParam('seed', Math.random() * 10000)} className="h-6 text-[8px] font-black uppercase tracking-widest gap-1 text-indigo-600">
+                  <RefreshCw className="w-2.5 h-2.5" /> New Seed
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Dynamic Controls based on Type */}
+                {(params.type.includes('ribbed') || params.type.includes('spiral') || params.type === 'slotted' || params.type === 'origami') && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span>Count / Density</span>
+                      <span>{params.ribCount || params.slotCount || params.foldCount || 24}</span>
+                    </div>
+                    <Slider 
+                      value={[params.ribCount || params.slotCount || params.foldCount || 24]} 
+                      min={4} max={120} step={1} 
+                      onValueChange={([v]) => {
+                        if (params.type === 'slotted') updateParam('slotCount', v);
+                        else if (params.type === 'origami') updateParam('foldCount', v);
+                        else updateParam('ribCount', v);
+                      }} 
+                    />
+                  </div>
+                )}
+
+                {(params.type.includes('twist') || params.type.includes('spiral') || params.type === 'lattice') && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span>Twist Angle</span>
+                      <span>{params.twistAngle || 0}°</span>
+                    </div>
+                    <Slider 
+                      value={[params.twistAngle || 0]} 
+                      min={-720} max={720} step={1} 
+                      onValueChange={([v]) => updateParam('twistAngle', v)} 
+                    />
+                  </div>
+                )}
+
+                {(params.type.includes('wave') || params.type.includes('parametric')) && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Frequency</span>
+                        <span>{params.frequency || 5}</span>
+                      </div>
+                      <Slider value={[params.frequency || 5]} min={1} max={30} step={0.1} onValueChange={([v]) => updateParam('frequency', v)} />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Amplitude</span>
+                        <span>{params.amplitude || 1}</span>
+                      </div>
+                      <Slider value={[params.amplitude || 1]} min={0} max={5} step={0.1} onValueChange={([v]) => updateParam('amplitude', v)} />
+                    </div>
+                  </>
+                )}
+
+                {(params.type.includes('noise') || params.type.includes('organic') || params.type.includes('voronoi')) && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Noise Strength</span>
+                        <span>{params.noiseStrength || 0.5}</span>
+                      </div>
+                      <Slider value={[params.noiseStrength || 0.5]} min={0} max={3} step={0.01} onValueChange={([v]) => updateParam('noiseStrength', v)} />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Noise Scale</span>
+                        <span>{params.noiseScale || 0.5}</span>
+                      </div>
+                      <Slider value={[params.noiseScale || 0.5]} min={0.1} max={5} step={0.01} onValueChange={([v]) => updateParam('noiseScale', v)} />
+                    </div>
+                  </>
+                )}
+
+                <div className="pt-4 border-t border-slate-200 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span>Pattern Scale</span>
+                      <span>{params.patternScale || 10}</span>
+                    </div>
+                    <Slider value={[params.patternScale || 10]} min={1} max={50} step={0.1} onValueChange={([v]) => updateParam('patternScale', v)} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span>Pattern Depth</span>
+                      <span>{params.patternDepth || 0.3} mm</span>
+                    </div>
+                    <Slider value={[params.patternDepth || 0.3]} min={0} max={5} step={0.01} onValueChange={([v]) => updateParam('patternDepth', v)} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="fit" className="space-y-4 pt-4">
@@ -352,6 +455,47 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           </TabsContent>
 
+          <TabsContent value="split" className="space-y-4 pt-4">
+            <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
+              <div className="space-y-3">
+                <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
+                  <Scissors className="w-3 h-3 text-indigo-500" /> Multi-Part Splitting
+                </Label>
+                <p className="text-[8px] text-slate-400 font-bold uppercase leading-tight">
+                  Split the model into vertical segments for printing on smaller beds.
+                </p>
+                
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span>Number of Parts</span>
+                      <span>{params.splitSegments || 1}</span>
+                    </div>
+                    <Slider 
+                      value={[params.splitSegments || 1]} 
+                      min={1} max={8} step={1} 
+                      onValueChange={([v]) => updateParam('splitSegments', v)} 
+                    />
+                  </div>
+
+                  {params.splitSegments && params.splitSegments > 1 && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Active Part</span>
+                        <span>{(params.activePart || 0) + 1} of {params.splitSegments}</span>
+                      </div>
+                      <Slider 
+                        value={[params.activePart || 0]} 
+                        min={0} max={params.splitSegments - 1} step={1} 
+                        onValueChange={([v]) => updateParam('activePart', v)} 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="tools" className="space-y-4 pt-4">
             <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
               <div className="space-y-3">
@@ -408,18 +552,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <div className="flex items-center justify-between">
                   <Label className="text-[9px] font-black uppercase text-slate-500">Wireframe Mode</Label>
                   <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mat" className="space-y-4 pt-4">
-            <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
-              <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase text-slate-500">Custom Color</Label>
-                <div className="flex gap-3 items-center">
-                  <div className="w-10 h-10 rounded-lg border border-slate-200 shrink-0 shadow-sm" style={{ backgroundColor: material.color }} />
-                  <Input type="color" value={material.color} onChange={(e) => updateMaterial('color', e.target.value)} className="h-10 w-full p-1 rounded-lg cursor-pointer bg-white" />
                 </div>
               </div>
             </div>

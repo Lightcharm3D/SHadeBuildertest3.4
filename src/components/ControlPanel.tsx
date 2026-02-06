@@ -10,12 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { LampshadeParams, FitterType, SilhouetteType, LampshadeType } from '@/utils/geometry-generator';
+import { LampshadeParams, FitterType, SilhouetteType, LampshadeType, ControlPoint } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff, Search, Undo2, Redo2 } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff, Search, Undo2, Redo2, MousePointer2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 import PresetGallery from './PresetGallery';
+import ProfileEditor from './ProfileEditor';
+import PatternPreview2D from './PatternPreview2D';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -77,6 +79,7 @@ const SILHOUETTES: { id: SilhouetteType; label: string }[] = [
   { id: 'stepped', label: 'Stepped' },
   { id: 'wavy', label: 'Wavy' },
   { id: 'onion', label: 'Onion' },
+  { id: 'custom', label: 'Custom Bezier' },
 ];
 
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -163,9 +166,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const addToHistory = (currentParams: LampshadeParams) => {
-    // Only add to history if params have actually changed from the last saved state
     if (JSON.stringify(currentParams) === JSON.stringify(lastHistoryParams.current)) return;
-    
     setHistory(prev => [...prev.slice(-19), { ...lastHistoryParams.current }]);
     lastHistoryParams.current = { ...currentParams };
     setRedoStack([]);
@@ -202,9 +203,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setParams({ ...params, [key]: roundedValue });
   };
 
-  const updateMaterial = (key: keyof MaterialParams, value: any) => {
-    const roundedValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
-    setMaterial({ ...material, [key]: roundedValue });
+  const updateCustomProfile = (points: ControlPoint[]) => {
+    setParams({ ...params, customProfile: points });
   };
 
   return (
@@ -269,6 +269,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+
+              {params.silhouette === 'custom' && (
+                <ProfileEditor 
+                  points={params.customProfile || [{x: 1, y: 0}, {x: 1, y: 1}]} 
+                  onChange={updateCustomProfile} 
+                />
+              )}
             </div>
 
             <Accordion type="single" collapsible className="w-full space-y-2">
@@ -395,6 +402,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </TabsContent>
 
           <TabsContent value="pattern" className="space-y-4 pt-4">
+            <PatternPreview2D params={params} />
+            
             <div className="p-4 bg-slate-50 rounded-2xl space-y-5">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">

@@ -23,9 +23,14 @@ export type SilhouetteType =
   | 'trumpet' | 'teardrop' | 'diamond' | 'stepped' | 'wavy'
   | 'ovoid' | 'scalloped' | 'conic_stepped' | 'twisted_profile' | 'fluted'
   | 'onion' | 'pagoda' | 'egg' | 'barrel' | 'spindle' | 'chalice' | 'urn'
-  | 'pagoda_v2' | 'lotus' | 'diamond_v2' | 'stepped_v2';
+  | 'pagoda_v2' | 'lotus' | 'diamond_v2' | 'stepped_v2' | 'custom';
 
 export type FitterType = 'none' | 'spider' | 'uno';
+
+export interface ControlPoint {
+  x: number;
+  y: number;
+}
 
 export interface LampshadeParams {
   type: LampshadeType;
@@ -36,6 +41,9 @@ export interface LampshadeParams {
   thickness: number;
   segments: number;
   seed: number;
+  
+  // Custom Profile
+  customProfile?: ControlPoint[];
   
   // Structure
   internalRibs: number;
@@ -126,9 +134,37 @@ function pseudoNoise(x: number, y: number, z: number, seed: number) {
   return n - Math.floor(n);
 }
 
+function getBezierPoint(t: number, points: ControlPoint[]): number {
+  if (points.length === 0) return 1;
+  if (points.length === 1) return points[0].x;
+  
+  const n = points.length - 1;
+  let x = 0;
+  
+  for (let i = 0; i <= n; i++) {
+    const binom = factorial(n) / (factorial(i) * factorial(n - i));
+    x += binom * Math.pow(1 - t, n - i) * Math.pow(t, i) * points[i].x;
+  }
+  
+  return x;
+}
+
+function factorial(n: number): number {
+  if (n <= 1) return 1;
+  let res = 1;
+  for (let i = 2; i <= n; i++) res *= i;
+  return res;
+}
+
 export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
-  const { height, topRadius, bottomRadius, silhouette } = params;
+  const { height, topRadius, bottomRadius, silhouette, customProfile } = params;
   const t = (y + height / 2) / height;
+  
+  if (silhouette === 'custom' && customProfile && customProfile.length > 0) {
+    const profileScale = getBezierPoint(t, customProfile);
+    return bottomRadius + (topRadius - bottomRadius) * t * profileScale;
+  }
+
   let r = bottomRadius + (topRadius - bottomRadius) * t;
   
   switch (silhouette) {
@@ -167,7 +203,7 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   return Math.max(0.5, r);
 }
 
-function getDisplacementAt(angle: number, y: number, params: LampshadeParams, precomputedPoints?: THREE.Vector3[]): number {
+export function getDisplacementAt(angle: number, y: number, params: LampshadeParams, precomputedPoints?: THREE.Vector3[]): number {
   const { type, seed, height, patternRotation = 0 } = params;
   const normY = (y + height / 2) / height;
   const rotatedAngle = angle + (patternRotation * Math.PI / 180) * normY;

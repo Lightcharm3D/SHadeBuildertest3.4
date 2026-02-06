@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, RotateCcw } from 'lucide-react';
+import { Lightbulb, RotateCcw, Ruler } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -38,8 +38,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
+  const dimensionsGroupRef = useRef<THREE.Group | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
+  const [showDimensions, setShowDimensions] = useState(false);
 
   const resetView = () => {
     if (cameraRef.current && controlsRef.current) {
@@ -47,6 +49,87 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       controlsRef.current.target.set(0, (params.height * 10) / 2, 0);
       controlsRef.current.update();
     }
+  };
+
+  const createTextLabel = (text: string, color: string = '#ffffff') => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return new THREE.Sprite();
+    
+    canvas.width = 256;
+    canvas.height = 64;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.roundRect(0, 0, 256, 64, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(40, 10, 1);
+    return sprite;
+  };
+
+  const updateDimensions = () => {
+    if (!sceneRef.current) return;
+    
+    if (dimensionsGroupRef.current) {
+      sceneRef.current.remove(dimensionsGroupRef.current);
+      dimensionsGroupRef.current.traverse((obj: any) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) obj.material.dispose();
+      });
+    }
+
+    if (!showDimensions) return;
+
+    const group = new THREE.Group();
+    const h = params.height * 10;
+    const tr = params.topRadius * 10;
+    const br = params.bottomRadius * 10;
+    const offset = Math.max(tr, br) + 20;
+
+    // Height Line
+    const hPoints = [new THREE.Vector3(-offset, 0, 0), new THREE.Vector3(-offset, h, 0)];
+    const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.6 });
+    const hLine = new THREE.Line(hGeom, lineMat);
+    group.add(hLine);
+
+    const hLabel = createTextLabel(`${params.height.toFixed(1)} cm`);
+    hLabel.position.set(-offset - 25, h / 2, 0);
+    group.add(hLabel);
+
+    // Top Diameter Line
+    const tPoints = [new THREE.Vector3(-tr, h, 0), new THREE.Vector3(tr, h, 0)];
+    const tGeom = new THREE.BufferGeometry().setFromPoints(tPoints);
+    const tLine = new THREE.Line(tGeom, lineMat);
+    group.add(tLine);
+
+    const tLabel = createTextLabel(`Ø ${(params.topRadius * 2).toFixed(1)} cm`);
+    tLabel.position.set(0, h + 15, 0);
+    group.add(tLabel);
+
+    // Bottom Diameter Line
+    const bPoints = [new THREE.Vector3(-br, 0, 0), new THREE.Vector3(br, 0, 0)];
+    const bGeom = new THREE.BufferGeometry().setFromPoints(bPoints);
+    const bLine = new THREE.Line(bGeom, lineMat);
+    group.add(bLine);
+
+    const bLabel = createTextLabel(`Ø ${(params.bottomRadius * 2).toFixed(1)} cm`);
+    bLabel.position.set(0, -15, 0);
+    group.add(bLabel);
+
+    sceneRef.current.add(group);
+    dimensionsGroupRef.current = group;
   };
 
   useEffect(() => {
@@ -194,8 +277,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         emissiveIntensity: isLightOn ? 0.4 : 0
       });
       meshRef.current.material = mat;
+      
+      updateDimensions();
     }
-  }, [params, material, showWireframe, isLightOn, showPrintability]);
+  }, [params, material, showWireframe, isLightOn, showPrintability, showDimensions]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">
@@ -208,6 +293,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
           className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
         >
           <Lightbulb className="w-4 h-4" /> {isLightOn ? 'Light On' : 'Light Off'}
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => setShowDimensions(!showDimensions)} 
+          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${showDimensions ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
+        >
+          <Ruler className="w-4 h-4" /> {showDimensions ? 'Ruler On' : 'Ruler Off'}
         </Button>
         <Button 
           variant="secondary" 

@@ -9,7 +9,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType, repairGeometry } from '
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Settings2, ChevronLeft, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Settings2, ChevronLeft, ArrowRight, Image as ImageIcon, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -212,11 +212,19 @@ const Index = () => {
             onSceneReady={handleSceneReady} 
           />
           
-          <div className="absolute top-4 left-4 z-20">
+          <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-xl border border-white/10">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/80">Live 3D Preview</span>
             </div>
+            
+            <Button 
+              onClick={handleRandomize}
+              className="h-10 px-4 bg-indigo-600/80 hover:bg-indigo-600 backdrop-blur-xl text-white border border-white/20 rounded-xl shadow-2xl flex items-center gap-2 transition-all active:scale-95"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Magic Randomize</span>
+            </Button>
           </div>
 
           <AnimatePresence>

@@ -124,17 +124,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="flex items-center gap-2">
           <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Studio Controls</h2>
         </div>
-        <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={onRandomize} title="Randomize Design" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+        <div className="flex gap-1.5">
+          <Button variant="secondary" size="icon" onClick={onRandomize} title="Randomize Design" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={shareDNA} title="Share Link" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+          <Button variant="secondary" size="icon" onClick={shareDNA} title="Share Link" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
             <Share2 className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={saveToGallery} title="Save to Gallery" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+          <Button variant="secondary" size="icon" onClick={saveToGallery} title="Save to Gallery" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
             <Save className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onReset} title="Reset All" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+          <Button variant="secondary" size="icon" onClick={onReset} title="Reset All" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
             <RotateCcw className="w-3.5 h-3.5" />
           </Button>
         </div>

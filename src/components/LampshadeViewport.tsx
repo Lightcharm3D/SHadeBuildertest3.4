@@ -5,8 +5,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw, ThermometerSun, WallPreview } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw, ThermometerSun, Layout } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface MaterialParams {
   color: string;
@@ -114,7 +115,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.VSMShadowMap; // Better for soft shadows
+    renderer.shadowMap.type = THREE.VSMShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     containerRef.current.appendChild(renderer.domElement);
@@ -127,7 +128,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.position.set(300, 500, 300);
     scene.add(mainLight);
 
-    // Enhanced Bulb Light for Shadow Projection
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 2000, 1.5);
     bulbLight.castShadow = true;
     bulbLight.shadow.mapSize.width = 2048;
@@ -135,11 +135,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     bulbLight.shadow.camera.near = 1;
     bulbLight.shadow.camera.far = 2000;
     bulbLight.shadow.bias = -0.0001;
-    bulbLight.shadow.radius = 4; // Soften shadows
+    bulbLight.shadow.radius = 4;
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
-    // Shadow Projection Walls (Environment)
     const wallGeom = new THREE.BoxGeometry(1000, 1000, 1000);
     const wallMat = new THREE.MeshStandardMaterial({ 
       color: 0x1e293b, 
@@ -210,7 +209,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.geometry = newGeom;
       meshRef.current.position.y = (params.height * 10) / 2;
       
-      // Update bulb position to center of shade
       if (bulbLightRef.current) {
         bulbLightRef.current.position.y = (params.height * 10) / 2;
       }
@@ -250,7 +248,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
       
-      {/* Thermal Safety Warning */}
       <AnimatePresence>
         {thermalWarning && (
           <motion.div 
@@ -271,7 +268,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Measurement Overlays */}
       {showMeasurements && (
         <div className="absolute inset-0 pointer-events-none z-10">
           <div className="absolute left-1/2 top-1/2 -translate-x-[120px] flex flex-col items-center" style={{ height: `${params.height * 10}px`, transform: `translate(-120px, -50%)` }}>
@@ -300,7 +296,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
           onClick={() => setShowWalls(!showWalls)}
           className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showWalls ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
         >
-          <WallPreview className="w-4 h-4" />
+          <Layout className="w-4 h-4" />
           {showWalls ? 'Walls On' : 'Walls Off'}
         </Button>
         <Button 

@@ -210,31 +210,6 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
   let disp = 0;
   switch (type) {
     case 'plain_wall': disp = 0; break;
-    case 'honeycomb':
-    case 'honeycomb_v2': {
-      const scale = params.gridDensity || 15;
-      const depth = params.patternDepth || 0.4;
-      
-      // Hexagonal grid logic
-      const q = (Math.sqrt(3)/3 * rotatedAngle * scale - 1/3 * normY * scale * 1.5);
-      const r = (2/3 * normY * scale * 1.5);
-      
-      const rx = Math.round(q);
-      const ry = Math.round(r);
-      const rz = Math.round(-q-r);
-      
-      const dq = Math.abs(rx - q);
-      const dr = Math.abs(ry - r);
-      const dz = Math.abs(rz - (-q-r));
-      
-      let fx = rx, fy = ry;
-      if (dq > dr && dq > dz) fx = -ry-rz;
-      else if (dr > dz) fy = -rx-rz;
-      
-      const dist = Math.sqrt(Math.pow(q - fx, 2) + Math.pow(r - fy, 2) + Math.pow((-q-r) - (-fx-fy), 2));
-      disp = dist > 0.4 ? depth : 0;
-      break;
-    }
     case 'voronoi_v3': {
       if (!precomputedPoints) return 0;
       const strength = params.noiseStrength || 1.2;
@@ -516,6 +491,43 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const fallbackWall = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
 
   switch (type) {
+    case 'honeycomb':
+    case 'honeycomb_v2': {
+      const density = Math.round((p.gridDensity || 12) * detailFactor);
+      const geoms: THREE.BufferGeometry[] = [];
+      const strutRadius = thickness / 1.5;
+      const rows = density;
+      const cols = density * 2;
+      const dy = height / rows;
+      const da = (Math.PI * 2) / cols;
+
+      for (let j = 0; j <= rows; j++) {
+        const y = -height / 2 + j * dy;
+        const r = getRadiusAtHeight(y, p);
+        
+        for (let i = 0; i < cols; i++) {
+          const a1 = i * da;
+          const a2 = (i + 1) * da;
+          
+          const isPeak = (i + j) % 2 === 0;
+          
+          if (!isAngleInPart(a1)) continue;
+
+          const p1 = new THREE.Vector3(Math.cos(a1) * r, y + (isPeak ? dy/4 : -dy/4), Math.sin(a1) * r);
+          const p2 = new THREE.Vector3(Math.cos(a2) * r, y + (isPeak ? -dy/4 : dy/4), Math.sin(a2) * r);
+          geoms.push(createStrut(p1, p2, strutRadius));
+          
+          if (j < rows && isPeak) {
+            const ny = y + dy;
+            const nr = getRadiusAtHeight(ny, p);
+            const pUp = new THREE.Vector3(Math.cos(a1) * nr, ny - dy/4, Math.sin(a1) * nr);
+            geoms.push(createStrut(p1, pUp, strutRadius));
+          }
+        }
+      }
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
+      break;
+    }
     case 'diamond_mesh': {
       const density = Math.round((p.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
@@ -699,9 +711,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'organic_veins':
     case 'parametric_waves':
     case 'scalloped_edge':
-    case 'twisted_column':
-    case 'honeycomb':
-    case 'honeycomb_v2': {
+    case 'twisted_column': {
       const segs = type === 'origami' ? (p.foldCount || 12) * 2 : effectiveSegments;
       geometry = new THREE.LatheGeometry(closedProfile, segs, phiStart, phiLength);
       const pos = geometry.attributes.position;

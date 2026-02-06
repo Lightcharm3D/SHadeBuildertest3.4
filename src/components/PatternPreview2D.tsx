@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { LampshadeParams, getDisplacementAt } from '@/utils/geometry-generator';
+import { Grid3X3 } from 'lucide-react';
 
 interface PatternPreview2DProps {
   params: LampshadeParams;

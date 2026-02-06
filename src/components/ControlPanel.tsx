@@ -42,6 +42,7 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
 };
 
 const TYPES: { id: LampshadeType; label: string }[] = [
+  { id: 'plain_wall', label: 'Plain Wall' },
   { id: 'ribbed_drum', label: 'Ribbed Drum' },
   { id: 'spiral_twist', label: 'Spiral Twist' },
   { id: 'voronoi', label: 'Voronoi' },

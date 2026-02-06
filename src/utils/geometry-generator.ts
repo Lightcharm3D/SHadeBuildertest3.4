@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeBufferGeometries as mergeGeometries, mergeVertices } from 'three-stdlib';
 
 export type LampshadeType = 
-  | 'ribbed_drum' | 'spiral_twist' | 'voronoi' | 'wave_shell' | 'geometric_poly' 
+  | 'plain_wall' | 'ribbed_drum' | 'spiral_twist' | 'voronoi' | 'wave_shell' | 'geometric_poly' 
   | 'lattice' | 'origami' | 'perlin_noise' | 'slotted' | 'double_wall'
   | 'organic_cell' | 'bricks' | 'petal_bloom' | 'faceted_gem'
   | 'honeycomb' | 'diamond_mesh' | 'knurled' | 'wave_rings'
@@ -163,6 +163,7 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
 
   let disp = 0;
   switch (type) {
+    case 'plain_wall': disp = 0; break;
     case 'voronoi_v3': {
       const cells = params.cellCount || 30;
       const strength = params.noiseStrength || 1.2;
@@ -546,6 +547,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
+    case 'plain_wall':
     case 'organic_coral':
     case 'geometric_stars':
     case 'ribbed_spiral':
@@ -789,9 +791,8 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
   const spokeThickCm = (params.spokeThickness || 5) / 10;
-  const spokeWidthCm = (params.spokeWidth || 10) / 10;
-  const ringYPos = -height / 2 + fitterHeight + ringHeightCm / 2;
   const spokeYPos = -height / 2 + fitterHeight + spokeThickCm / 2;
+  const ringYPos = -height / 2 + fitterHeight + ringHeightCm / 2;
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
     new THREE.Vector2(outerRadius, -ringHeightCm / 2),
@@ -816,7 +817,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
-    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, Math.round(60 * detailFactor), 1, 1);
+    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, 1);
     spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, spokeYPos, 0);
     spoke.rotateY(angle);
     const pos = spoke.attributes.position;

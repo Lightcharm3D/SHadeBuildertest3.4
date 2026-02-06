@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb, Ruler, RotateCcw, ThermometerSun, WallPreview } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface MaterialParams {
   color: string;
@@ -38,10 +39,20 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
+  const wallRef = useRef<THREE.Mesh | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
   const [isCutaway, setIsCutaway] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(true);
+  const [showWalls, setShowWalls] = useState(false);
+
+  // Thermal Safety Calculation
+  const thermalWarning = useMemo(() => {
+    const minR = Math.min(params.topRadius, params.bottomRadius);
+    if (minR < 3.5) return { level: 'critical', msg: 'CRITICAL: Shade is too close to bulb. Risk of melting/fire.' };
+    if (minR < 5.0) return { level: 'warning', msg: 'WARNING: Narrow clearance. Use LED bulbs only (max 9W).' };
+    return null;
+  }, [params.topRadius, params.bottomRadius]);
 
   const overhangMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -103,60 +114,49 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.shadowMap.type = THREE.VSMShadowMap; // Better for soft shadows
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
     
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
     mainLight.position.set(300, 500, 300);
-    mainLight.castShadow = true;
-    
-    mainLight.shadow.camera.left = -200;
-    mainLight.shadow.camera.right = 200;
-    mainLight.shadow.camera.top = 200;
-    mainLight.shadow.camera.bottom = -200;
-    mainLight.shadow.camera.far = 2000;
-    mainLight.shadow.mapSize.width = 1024; 
-    mainLight.shadow.mapSize.height = 1024;
-    mainLight.shadow.bias = -0.001;
-    
     scene.add(mainLight);
 
-    const bulbLight = new THREE.PointLight(0xffaa44, 0, 1000);
+    // Enhanced Bulb Light for Shadow Projection
+    const bulbLight = new THREE.PointLight(0xffaa44, 0, 2000, 1.5);
+    bulbLight.castShadow = true;
+    bulbLight.shadow.mapSize.width = 2048;
+    bulbLight.shadow.mapSize.height = 2048;
+    bulbLight.shadow.camera.near = 1;
+    bulbLight.shadow.camera.far = 2000;
+    bulbLight.shadow.bias = -0.0001;
+    bulbLight.shadow.radius = 4; // Soften shadows
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
+
+    // Shadow Projection Walls (Environment)
+    const wallGeom = new THREE.BoxGeometry(1000, 1000, 1000);
+    const wallMat = new THREE.MeshStandardMaterial({ 
+      color: 0x1e293b, 
+      side: THREE.BackSide,
+      roughness: 1.0
+    });
+    const walls = new THREE.Mesh(wallGeom, wallMat);
+    walls.position.y = 400;
+    walls.receiveShadow = true;
+    walls.visible = false;
+    scene.add(walls);
+    wallRef.current = walls;
 
     const bedGroup = new THREE.Group();
     const bedSize = 200; 
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 512, 512);
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
-      ctx.lineWidth = 10;
-      ctx.strokeRect(5, 5, 502, 502);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = 'bold 30px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
-    }
-    const bedTexture = new THREE.CanvasTexture(canvas);
-    
-    const bedMat = new THREE.MeshStandardMaterial({ 
-      map: bedTexture,
-      color: 0xffffff, 
-      roughness: 0.8 
-    });
+    const bedMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
     bed.receiveShadow = true;
@@ -170,14 +170,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.rotateSpeed = 0.8;
-    controls.zoomSpeed = 1.2;
-    controls.enablePan = true;
-    controls.panSpeed = 0.8;
-    controls.touches = {
-      ONE: THREE.TOUCH.ROTATE,
-      TWO: THREE.TOUCH.DOLLY_PAN
-    };
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
@@ -205,17 +197,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     };
     requestRef.current = requestAnimationFrame(animate);
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (!entries[0] || !rendererRef.current || !cameraRef.current) return;
-      const { width, height } = entries[0].contentRect;
-      cameraRef.current.aspect = width / height;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(width, height, false);
-    });
-    resizeObserver.observe(containerRef.current);
-
     return () => {
-      resizeObserver.disconnect();
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       if (rendererRef.current) rendererRef.current.dispose();
     };
@@ -228,6 +210,11 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.geometry = newGeom;
       meshRef.current.position.y = (params.height * 10) / 2;
       
+      // Update bulb position to center of shade
+      if (bulbLightRef.current) {
+        bulbLightRef.current.position.y = (params.height * 10) / 2;
+      }
+
       if (showPrintability) {
         meshRef.current.material = overhangMaterial;
         overhangMaterial.uniforms.uColor.value.set(material.color);
@@ -249,51 +236,48 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       
       if (isLightOn && !showPrintability) {
         (meshRef.current.material as THREE.MeshPhysicalMaterial).emissive?.set(0xffaa44);
-        (meshRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.4;
+        (meshRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.6;
       }
     }
   }, [params, material, showWireframe, isLightOn, showPrintability, isCutaway, overhangMaterial]);
 
   useEffect(() => {
-    if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
-  }, [isLightOn]);
+    if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 15.0 : 0;
+    if (wallRef.current) wallRef.current.visible = showWalls && isLightOn;
+  }, [isLightOn, showWalls]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
       
+      {/* Thermal Safety Warning */}
+      <AnimatePresence>
+        {thermalWarning && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 left-1/2 -translate-x-1/2 z-30"
+          >
+            <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border backdrop-blur-md shadow-2xl ${
+              thermalWarning.level === 'critical' 
+                ? 'bg-red-500/20 border-red-500/50 text-red-200' 
+                : 'bg-amber-500/20 border-amber-500/50 text-amber-200'
+            }`}>
+              <ThermometerSun className={`w-4 h-4 ${thermalWarning.level === 'critical' ? 'animate-bounce' : 'animate-pulse'}`} />
+              <span className="text-[9px] font-black uppercase tracking-widest">{thermalWarning.msg}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Measurement Overlays */}
       {showMeasurements && (
         <div className="absolute inset-0 pointer-events-none z-10">
-          {/* Height Label */}
           <div className="absolute left-1/2 top-1/2 -translate-x-[120px] flex flex-col items-center" style={{ height: `${params.height * 10}px`, transform: `translate(-120px, -50%)` }}>
             <div className="w-px h-full bg-white/20 relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-px bg-white/40" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-px bg-white/40" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
                 <span className="text-[10px] font-black text-white whitespace-nowrap">{params.height}cm</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Top Diameter Label */}
-          <div className="absolute left-1/2 top-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${params.topRadius * 20}px` }}>
-            <div className="h-px w-full bg-white/20 relative">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Top: {params.topRadius * 2}cm</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Diameter Label */}
-          <div className="absolute left-1/2 bottom-24 -translate-x-1/2 flex flex-col items-center" style={{ width: `${params.bottomRadius * 20}px` }}>
-            <div className="h-px w-full bg-white/20 relative">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-px bg-white/40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-black text-white whitespace-nowrap">Bottom: {params.bottomRadius * 2}cm</span>
               </div>
             </div>
           </div>
@@ -313,11 +297,11 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         <Button 
           variant="secondary" 
           size="sm" 
-          onClick={() => setShowMeasurements(!showMeasurements)}
-          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showMeasurements ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
+          onClick={() => setShowWalls(!showWalls)}
+          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${showWalls ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
         >
-          <Ruler className="w-4 h-4" />
-          {showMeasurements ? 'Ruler On' : 'Ruler Off'}
+          <WallPreview className="w-4 h-4" />
+          {showWalls ? 'Walls On' : 'Walls Off'}
         </Button>
         <Button 
           variant="secondary" 
@@ -338,14 +322,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
           Reset View
         </Button>
       </div>
-      {showPrintability && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
-          <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhangs Detected</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -167,7 +167,7 @@ export function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   return Math.max(0.5, r);
 }
 
-function getDisplacementAt(angle: number, y: number, params: LampshadeParams): number {
+function getDisplacementAt(angle: number, y: number, params: LampshadeParams, precomputedPoints?: THREE.Vector3[]): number {
   const { type, seed, height, patternRotation = 0 } = params;
   const normY = (y + height / 2) / height;
   const rotatedAngle = angle + (patternRotation * Math.PI / 180) * normY;
@@ -176,18 +176,11 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
   switch (type) {
     case 'plain_wall': disp = 0; break;
     case 'voronoi_v3': {
-      const cells = params.cellCount || 30;
+      if (!precomputedPoints) return 0;
       const strength = params.noiseStrength || 1.2;
-      const points: THREE.Vector3[] = [];
-      for (let i = 0; i < cells; i++) {
-        const a = pseudoNoise(i, 1, 0, seed) * Math.PI * 2;
-        const h = (pseudoNoise(1, i, 0, seed) - 0.5) * height;
-        const r = getRadiusAtHeight(h, params);
-        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
-      }
       const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
       let minDist = Infinity;
-      points.forEach(p => {
+      precomputedPoints.forEach(p => {
         const d = v.distanceTo(p);
         if (d < minDist) minDist = d;
       });
@@ -333,19 +326,12 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
       break;
     }
     case 'voronoi_v2': {
-      const cells = params.cellCount || 20;
+      if (!precomputedPoints) return 0;
       const strength = params.noiseStrength || 1.0;
-      const points: THREE.Vector3[] = [];
-      for (let i = 0; i < cells; i++) {
-        const a = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
-        const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
-        const r = getRadiusAtHeight(h, params);
-        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
-      }
       const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
       let minDist = Infinity;
       let secondMinDist = Infinity;
-      points.forEach(p => {
+      precomputedPoints.forEach(p => {
         const d = v.distanceTo(p);
         if (d < minDist) { secondMinDist = minDist; minDist = d; } 
         else if (d < secondMinDist) { secondMinDist = d; }
@@ -353,29 +339,22 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
       disp = (secondMinDist - minDist) * strength * -0.5;
       break;
     }
+    case 'voronoi': {
+      if (!precomputedPoints) return 0;
+      const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
+      let minDist = Infinity;
+      precomputedPoints.forEach(p => {
+        const d = v.distanceTo(p);
+        if (d < minDist) minDist = d;
+      });
+      disp = -Math.exp(-minDist * 0.5) * 1.5;
+      break;
+    }
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 0.8;
       const segmentIndex = Math.round((rotatedAngle / (Math.PI * 2)) * (folds * 2));
       disp = segmentIndex % 2 !== 0 ? -depth : 0;
-      break;
-    }
-    case 'voronoi': {
-      const cells = params.cellCount || 12;
-      const points: THREE.Vector3[] = [];
-      for (let i = 0; i < cells; i++) {
-        const a = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
-        const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
-        const r = getRadiusAtHeight(h, params);
-        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
-      }
-      const v = new THREE.Vector3(Math.cos(rotatedAngle) * getRadiusAtHeight(y, params), y, Math.sin(rotatedAngle) * getRadiusAtHeight(y, params));
-      let minDist = Infinity;
-      points.forEach(p => {
-        const d = v.distanceTo(p);
-        if (d < minDist) minDist = d;
-      });
-      disp = -Math.exp(-minDist * 0.5) * 1.5;
       break;
     }
     case 'parametric_waves': {
@@ -403,7 +382,7 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const p = enforceConstraints(params);
-  const { type, height, bottomRadius, segments, thickness, lowDetail, splitSegments = 1, activePart = 0, jointType = 'none', supportFreeMode } = p;
+  const { type, height, bottomRadius, segments, thickness, lowDetail, splitSegments = 1, activePart = 0, jointType = 'none', supportFreeMode, seed } = p;
   
   const detailFactor = lowDetail ? 0.5 : 1.0;
   const effectiveSegments = Math.max(12, Math.round(segments * detailFactor));
@@ -411,6 +390,19 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
   const phiLength = (Math.PI * 2) / splitSegments;
   const phiStart = activePart * phiLength;
+
+  // Precompute Voronoi points if needed
+  let precomputedPoints: THREE.Vector3[] | undefined;
+  if (type.includes('voronoi')) {
+    const cells = p.cellCount || (type === 'voronoi_v3' ? 30 : type === 'voronoi_v2' ? 20 : 12);
+    precomputedPoints = [];
+    for (let i = 0; i < cells; i++) {
+      const a = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
+      const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
+      const r = getRadiusAtHeight(h, p);
+      precomputedPoints.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
+    }
+  }
 
   const getClosedProfilePoints = (steps = effectiveSteps, customThickness?: number) => {
     const points = [];
@@ -491,9 +483,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const ny = y + hStep;
           const nr = getRadiusAtHeight(ny, p);
           const offset = (j % 2 === 0) ? 0 : aStep / 2;
-          
-          // Apply a tilt to every brick using patternRotation
-          const tiltAngle = (p.patternRotation || 20) * (Math.PI / 180);
+          const tiltAngle = (p.patternRotation || 0) * (Math.PI / 180);
           
           for (let i = 0; i < effectiveSegments; i++) {
             const angle = i * aStep + offset;
@@ -647,7 +637,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const angle = Math.atan2(pz, px);
           const baseR = Math.sqrt(px * px + pz * pz);
           
-          let disp = getDisplacementAt(angle, py, p);
+          let disp = getDisplacementAt(angle, py, p, precomputedPoints);
           let totalR = baseR + disp;
 
           if (supportFreeMode && lastTotalR !== -1) {
@@ -717,6 +707,31 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const density = Math.round((p.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
+      
+      // Add top and bottom rims for structural integrity
+      const rimThick = thickness * 2;
+      const rimHeight = 0.2;
+      
+      const topR = getRadiusAtHeight(height / 2, p);
+      const topRimProfile = [
+        new THREE.Vector2(topR - rimThick, height / 2),
+        new THREE.Vector2(topR, height / 2),
+        new THREE.Vector2(topR, height / 2 + rimHeight),
+        new THREE.Vector2(topR - rimThick, height / 2 + rimHeight),
+        new THREE.Vector2(topR - rimThick, height / 2)
+      ];
+      geoms.push(new THREE.LatheGeometry(topRimProfile, effectiveSegments, phiStart, phiLength));
+
+      const botR = getRadiusAtHeight(-height / 2, p);
+      const botRimProfile = [
+        new THREE.Vector2(botR - rimThick, -height / 2),
+        new THREE.Vector2(botR, -height / 2),
+        new THREE.Vector2(botR, -height / 2 - rimHeight),
+        new THREE.Vector2(botR - rimThick, -height / 2 - rimHeight),
+        new THREE.Vector2(botR - rimThick, -height / 2)
+      ];
+      geoms.push(new THREE.LatheGeometry(botRimProfile, effectiveSegments, phiStart, phiLength));
+
       for (let i = 0; i < density; i++) {
         const angle = (i / density) * Math.PI * 2;
         if (!isAngleInPart(angle)) continue;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -102,6 +102,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   // History State
   const [history, setHistory] = useState<LampshadeParams[]>([]);
   const [redoStack, setRedoStack] = useState<LampshadeParams[]>([]);
+  const lastHistoryParams = useRef<LampshadeParams>(params);
   
   // Nozzle Settings
   const [nozzleSize, setNozzleSize] = useState(0.4);
@@ -162,7 +163,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const addToHistory = (currentParams: LampshadeParams) => {
-    setHistory(prev => [...prev.slice(-19), { ...currentParams }]);
+    // Only add to history if params have actually changed from the last saved state
+    if (JSON.stringify(currentParams) === JSON.stringify(lastHistoryParams.current)) return;
+    
+    setHistory(prev => [...prev.slice(-19), { ...lastHistoryParams.current }]);
+    lastHistoryParams.current = { ...currentParams };
     setRedoStack([]);
   };
 
@@ -171,6 +176,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     const prev = history[history.length - 1];
     setRedoStack(prevRedo => [...prevRedo, { ...params }]);
     setHistory(prevHist => prevHist.slice(0, -1));
+    lastHistoryParams.current = { ...prev };
     setParams(prev);
   };
 
@@ -179,11 +185,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     const next = redoStack[redoStack.length - 1];
     setHistory(prevHist => [...prevHist, { ...params }]);
     setRedoStack(prevRedo => prevRedo.slice(0, -1));
+    lastHistoryParams.current = { ...next };
     setParams(next);
   };
 
-  const updateParam = (key: keyof LampshadeParams, value: any, skipHistory = false) => {
-    if (!skipHistory) addToHistory(params);
+  const updateParam = (key: keyof LampshadeParams, value: any, commit = false) => {
+    if (commit) addToHistory(params);
     
     let finalValue = value;
     if (key === 'thickness' && snapToNozzle) {
@@ -245,7 +252,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Layout className="w-3 h-3" /> Design Type</Label>
-                <Select value={params.type} onValueChange={(v: LampshadeType) => updateParam('type', v)}>
+                <Select value={params.type} onValueChange={(v: LampshadeType) => updateParam('type', v, true)}>
                   <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TYPES.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}
@@ -255,7 +262,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Box className="w-3 h-3" /> Silhouette</Label>
-                <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v)}>
+                <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v, true)}>
                   <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {SILHOUETTES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
@@ -275,11 +282,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
-                      <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                      <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value))} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase text-slate-500">Wall (cm)</Label>
-                      <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                      <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
                   </div>
                   
@@ -310,11 +317,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase text-slate-500">Top Diameter (cm)</Label>
-                      <Input type="number" step={0.1} value={params.topRadius * 2} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                      <Input type="number" step={0.1} value={params.topRadius * 2} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) / 2)} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Diameter (cm)</Label>
-                      <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                      <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
                   </div>
                 </AccordionContent>
@@ -332,7 +339,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <Label className="text-[9px] font-black uppercase text-slate-500">Internal Ribs</Label>
                       <Switch 
                         checked={params.internalRibs > 0} 
-                        onCheckedChange={(v) => updateParam('internalRibs', v ? 4 : 0)} 
+                        onCheckedChange={(v) => updateParam('internalRibs', v ? 4 : 0, true)} 
                       />
                     </div>
                     {params.internalRibs > 0 && (
@@ -342,14 +349,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             <span>Rib Count</span>
                             <span>{params.internalRibs}</span>
                           </div>
-                          <Slider value={[params.internalRibs]} min={2} max={24} step={1} onValueChange={([v]) => updateParam('internalRibs', v)} />
+                          <Slider value={[params.internalRibs]} min={2} max={24} step={1} onValueChange={([v]) => updateParam('internalRibs', v)} onValueCommit={() => addToHistory(params)} />
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
                             <span>Rib Depth (cm)</span>
                             <span>{params.internalRibDepth || 0.5}</span>
                           </div>
-                          <Slider value={[params.internalRibDepth || 0.5]} min={0.1} max={2} step={0.1} onValueChange={([v]) => updateParam('internalRibDepth', v)} />
+                          <Slider value={[params.internalRibDepth || 0.5]} min={0.1} max={2} step={0.1} onValueChange={([v]) => updateParam('internalRibDepth', v)} onValueCommit={() => addToHistory(params)} />
                         </div>
                       </div>
                     )}
@@ -360,7 +367,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <Label className="text-[9px] font-black uppercase text-slate-500">Support Rims</Label>
                       <Switch 
                         checked={(params.rimThickness || 0) > 0} 
-                        onCheckedChange={(v) => updateParam('rimThickness', v ? 0.2 : 0)} 
+                        onCheckedChange={(v) => updateParam('rimThickness', v ? 0.2 : 0, true)} 
                       />
                     </div>
                     {(params.rimThickness || 0) > 0 && (
@@ -370,14 +377,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             <span>Rim Thickness (cm)</span>
                             <span>{params.rimThickness}</span>
                           </div>
-                          <Slider value={[params.rimThickness || 0.2]} min={0.05} max={1} step={0.01} onValueChange={([v]) => updateParam('rimThickness', v)} />
+                          <Slider value={[params.rimThickness || 0.2]} min={0.05} max={1} step={0.01} onValueChange={([v]) => updateParam('rimThickness', v)} onValueCommit={() => addToHistory(params)} />
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
                             <span>Rim Height (cm)</span>
                             <span>{params.rimHeight || 0.2}</span>
                           </div>
-                          <Slider value={[params.rimHeight || 0.2]} min={0.05} max={1} step={0.01} onValueChange={([v]) => updateParam('rimHeight', v)} />
+                          <Slider value={[params.rimHeight || 0.2]} min={0.05} max={1} step={0.01} onValueChange={([v]) => updateParam('rimHeight', v)} onValueCommit={() => addToHistory(params)} />
                         </div>
                       </div>
                     )}
@@ -393,7 +400,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
                   <Sliders className="w-3 h-3" /> Pattern Tuning
                 </Label>
-                <Button variant="ghost" size="sm" onClick={() => updateParam('seed', Math.random() * 10000)} className="h-6 text-[8px] font-black uppercase tracking-widest gap-1 text-indigo-600">
+                <Button variant="ghost" size="sm" onClick={() => updateParam('seed', Math.random() * 10000, true)} className="h-6 text-[8px] font-black uppercase tracking-widest gap-1 text-indigo-600">
                   <RefreshCw className="w-2.5 h-2.5" /> New Seed
                 </Button>
               </div>
@@ -415,6 +422,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         else if (params.type === 'bricks') updateParam('gridDensity', v);
                         else updateParam('ribCount', v);
                       }} 
+                      onValueCommit={() => addToHistory(params)}
                     />
                   </div>
                 )}
@@ -434,6 +442,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         if (params.type === 'bricks') updateParam('patternRotation', v);
                         else updateParam('twistAngle', v);
                       }} 
+                      onValueCommit={() => addToHistory(params)}
                     />
                   </div>
                 )}
@@ -445,14 +454,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <span>Frequency</span>
                         <span>{params.frequency || 5}</span>
                       </div>
-                      <Slider value={[params.frequency || 5]} min={1} max={30} step={0.1} onValueChange={([v]) => updateParam('frequency', v)} />
+                      <Slider value={[params.frequency || 5]} min={1} max={30} step={0.1} onValueChange={([v]) => updateParam('frequency', v)} onValueCommit={() => addToHistory(params)} />
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
                         <span>Amplitude</span>
                         <span>{params.amplitude || 1}</span>
                       </div>
-                      <Slider value={[params.amplitude || 1]} min={0} max={5} step={0.1} onValueChange={([v]) => updateParam('amplitude', v)} />
+                      <Slider value={[params.amplitude || 1]} min={0} max={5} step={0.1} onValueChange={([v]) => updateParam('amplitude', v)} onValueCommit={() => addToHistory(params)} />
                     </div>
                   </>
                 )}
@@ -464,14 +473,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <span>Noise Strength</span>
                         <span>{params.noiseStrength || 0.5}</span>
                       </div>
-                      <Slider value={[params.noiseStrength || 0.5]} min={0} max={3} step={0.01} onValueChange={([v]) => updateParam('noiseStrength', v)} />
+                      <Slider value={[params.noiseStrength || 0.5]} min={0} max={3} step={0.01} onValueChange={([v]) => updateParam('noiseStrength', v)} onValueCommit={() => addToHistory(params)} />
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
                         <span>Noise Scale</span>
                         <span>{params.noiseScale || 0.5}</span>
                       </div>
-                      <Slider value={[params.noiseScale || 0.5]} min={0.1} max={5} step={0.01} onValueChange={([v]) => updateParam('noiseScale', v)} />
+                      <Slider value={[params.noiseScale || 0.5]} min={0.1} max={5} step={0.01} onValueChange={([v]) => updateParam('noiseScale', v)} onValueCommit={() => addToHistory(params)} />
                     </div>
                   </>
                 )}
@@ -482,14 +491,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <span>Pattern Scale</span>
                       <span>{params.patternScale || 10}</span>
                     </div>
-                    <Slider value={[params.patternScale || 10]} min={1} max={50} step={0.1} onValueChange={([v]) => updateParam('patternScale', v)} />
+                    <Slider value={[params.patternScale || 10]} min={1} max={50} step={0.1} onValueChange={([v]) => updateParam('patternScale', v)} onValueCommit={() => addToHistory(params)} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
                       <span>Pattern Depth</span>
                       <span>{params.patternDepth || 0.3} mm</span>
                     </div>
-                    <Slider value={[params.patternDepth || 0.3]} min={0} max={5} step={0.01} onValueChange={([v]) => updateParam('patternDepth', v)} />
+                    <Slider value={[params.patternDepth || 0.3]} min={0} max={5} step={0.01} onValueChange={([v]) => updateParam('patternDepth', v)} onValueCommit={() => addToHistory(params)} />
                   </div>
                 </div>
               </div>
@@ -500,7 +509,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="p-4 bg-slate-50 rounded-2xl space-y-6">
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Anchor className="w-3 h-3" /> Fitter Type</Label>
-                <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
+                <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v, true)}>
                   <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
@@ -523,6 +532,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       max={params.height} 
                       step={0.1} 
                       onValueChange={([v]) => updateParam('fitterHeight', v)} 
+                      onValueCommit={() => addToHistory(params)}
                     />
                   </div>
 
@@ -537,6 +547,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       max={100} 
                       step={0.1} 
                       onValueChange={([v]) => updateParam('fitterDiameter', v)} 
+                      onValueCommit={() => addToHistory(params)}
                     />
                   </div>
 
@@ -551,6 +562,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       max={12} 
                       step={1} 
                       onValueChange={([v]) => updateParam('spokeCount', v)} 
+                      onValueCommit={() => addToHistory(params)}
                     />
                   </div>
 
@@ -562,6 +574,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         step={0.1} 
                         value={params.spokeWidth} 
                         onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} 
+                        onBlur={() => addToHistory(params)}
                         className="h-9 text-[10px] font-bold rounded-lg bg-white" 
                       />
                     </div>
@@ -572,6 +585,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         step={0.1} 
                         value={params.spokeThickness} 
                         onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} 
+                        onBlur={() => addToHistory(params)}
                         className="h-9 text-[10px] font-bold rounded-lg bg-white" 
                       />
                     </div>
@@ -601,6 +615,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       value={[params.splitSegments || 1]} 
                       min={1} max={8} step={1} 
                       onValueChange={([v]) => updateParam('splitSegments', v)} 
+                      onValueCommit={() => addToHistory(params)}
                     />
                   </div>
 
@@ -673,7 +688,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <Label className="text-[9px] font-black uppercase text-slate-500">Support-Free Mode</Label>
-                  <Switch checked={params.supportFreeMode} onCheckedChange={(v) => updateParam('supportFreeMode', v)} />
+                  <Switch checked={params.supportFreeMode} onCheckedChange={(v) => updateParam('supportFreeMode', v, true)} />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label className="text-[9px] font-black uppercase text-slate-500">Wireframe Mode</Label>

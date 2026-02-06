@@ -336,34 +336,40 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
               <div className="space-y-4">
                 {/* Dynamic Controls based on Type */}
-                {(params.type.includes('ribbed') || params.type.includes('spiral') || params.type === 'slotted' || params.type === 'origami') && (
+                {(params.type.includes('ribbed') || params.type.includes('spiral') || params.type === 'slotted' || params.type === 'origami' || params.type === 'bricks') && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
                       <span>Count / Density</span>
-                      <span>{params.ribCount || params.slotCount || params.foldCount || 24}</span>
+                      <span>{params.ribCount || params.slotCount || params.foldCount || params.gridDensity || 24}</span>
                     </div>
                     <Slider 
-                      value={[params.ribCount || params.slotCount || params.foldCount || 24]} 
+                      value={[params.ribCount || params.slotCount || params.foldCount || params.gridDensity || 24]} 
                       min={4} max={120} step={1} 
                       onValueChange={([v]) => {
                         if (params.type === 'slotted') updateParam('slotCount', v);
                         else if (params.type === 'origami') updateParam('foldCount', v);
+                        else if (params.type === 'bricks') updateParam('gridDensity', v);
                         else updateParam('ribCount', v);
                       }} 
                     />
                   </div>
                 )}
 
-                {(params.type.includes('twist') || params.type.includes('spiral') || params.type === 'lattice') && (
+                {(params.type.includes('twist') || params.type.includes('spiral') || params.type === 'lattice' || params.type === 'bricks') && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
-                      <span>Twist Angle</span>
-                      <span>{params.twistAngle || 0}°</span>
+                      <span>{params.type === 'bricks' ? 'Pattern Rotation' : 'Twist Angle'}</span>
+                      <span>{params.type === 'bricks' ? params.patternRotation : params.twistAngle || 0}°</span>
                     </div>
                     <Slider 
-                      value={[params.twistAngle || 0]} 
-                      min={-720} max={720} step={1} 
-                      onValueChange={([v]) => updateParam('twistAngle', v)} 
+                      value={[params.type === 'bricks' ? (params.patternRotation || 0) : (params.twistAngle || 0)]} 
+                      min={params.type === 'bricks' ? -90 : -720} 
+                      max={params.type === 'bricks' ? 90 : 720} 
+                      step={1} 
+                      onValueChange={([v]) => {
+                        if (params.type === 'bricks') updateParam('patternRotation', v);
+                        else updateParam('twistAngle', v);
+                      }} 
                     />
                   </div>
                 )}

@@ -412,7 +412,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
               <div className="space-y-4">
                 {/* Dynamic Controls based on Type */}
-                {(params.type.includes('ribbed') || params.type.includes('spiral') || params.type === 'slotted' || params.type === 'origami' || params.type === 'bricks') && (
+                {(params.type.includes('ribbed') || params.type.includes('spiral') || params.type === 'slotted' || params.type === 'origami' || params.type === 'bricks' || params.type.includes('honeycomb')) && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
                       <span>Count / Density</span>
@@ -424,7 +424,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       onValueChange={([v]) => {
                         if (params.type === 'slotted') updateParam('slotCount', v);
                         else if (params.type === 'origami') updateParam('foldCount', v);
-                        else if (params.type === 'bricks') updateParam('gridDensity', v);
+                        else if (params.type === 'bricks' || params.type.includes('honeycomb')) updateParam('gridDensity', v);
                         else updateParam('ribCount', v);
                       }} 
                       onValueCommit={() => addToHistory(params)}

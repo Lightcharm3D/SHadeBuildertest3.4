@@ -210,6 +210,31 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
   let disp = 0;
   switch (type) {
     case 'plain_wall': disp = 0; break;
+    case 'honeycomb':
+    case 'honeycomb_v2': {
+      const scale = params.gridDensity || 24;
+      const depth = params.patternDepth || 0.4;
+      
+      // Hexagonal grid logic
+      const q = (Math.sqrt(3)/3 * rotatedAngle * scale - 1/3 * normY * scale * 1.5);
+      const r = (2/3 * normY * scale * 1.5);
+      
+      const rx = Math.round(q);
+      const ry = Math.round(r);
+      const rz = Math.round(-q-r);
+      
+      const dq = Math.abs(rx - q);
+      const dr = Math.abs(ry - r);
+      const dz = Math.abs(rz - (-q-r));
+      
+      let fx = rx, fy = ry;
+      if (dq > dr && dq > dz) fx = -ry-rz;
+      else if (dr > dz) fy = -rx-rz;
+      
+      const dist = Math.sqrt(Math.pow(q - fx, 2) + Math.pow(r - fy, 2) + Math.pow((-q-r) - (-fx-fy), 2));
+      disp = dist > 0.4 ? depth : 0;
+      break;
+    }
     case 'voronoi_v3': {
       if (!precomputedPoints) return 0;
       const strength = params.noiseStrength || 1.2;
@@ -493,7 +518,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   switch (type) {
     case 'honeycomb':
     case 'honeycomb_v2': {
-      const density = Math.round((p.gridDensity || 12) * detailFactor);
+      const density = Math.round((p.gridDensity || 24) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
       const rows = density;

@@ -86,13 +86,6 @@ export interface LampshadeParams {
 }
 
 /**
- * Removes disconnected parts of the mesh that aren't grounded.
- */
-function removeFloatingIslands(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
-  return mergeVertices(geometry);
-}
-
-/**
  * Repairs and optimizes geometry for 3D printing.
  */
 export function repairGeometry(geometry: THREE.BufferGeometry, tolerance: number = 0.001): THREE.BufferGeometry {
@@ -586,17 +579,22 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(closedProfile, segs, phiStart, phiLength);
       const pos = geometry.attributes.position;
       const dy = height / effectiveSteps;
+      const profilePointsCount = closedProfile.length;
 
       // Apply displacement with slope clamping
       for (let s = 0; s <= segs; s++) {
         let lastTotalR = -1;
         for (let j = 0; j <= effectiveSteps; j++) {
-          const idx = s * (effectiveSteps + 1) + j;
-          if (idx >= pos.count) continue;
+          // Outer wall index
+          const outerIdx = s * profilePointsCount + j;
+          // Inner wall index (profile goes up outer then down inner)
+          const innerIdx = s * profilePointsCount + (profilePointsCount - 1 - j);
 
-          const px = pos.getX(idx);
-          const py = pos.getY(idx);
-          const pz = pos.getZ(idx);
+          if (outerIdx >= pos.count || innerIdx >= pos.count) continue;
+
+          const px = pos.getX(outerIdx);
+          const py = pos.getY(outerIdx);
+          const pz = pos.getZ(outerIdx);
           const angle = Math.atan2(pz, px);
           const baseR = Math.sqrt(px * px + pz * pz);
           
@@ -608,9 +606,20 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
             totalR = Math.max(lastTotalR - dy, Math.min(lastTotalR + dy, totalR));
           }
 
-          const factor = totalR / baseR;
-          pos.setX(idx, px * factor);
-          pos.setZ(idx, pz * factor);
+          // Apply to outer wall
+          const outerFactor = totalR / baseR;
+          pos.setX(outerIdx, px * outerFactor);
+          pos.setZ(outerIdx, pz * outerFactor);
+
+          // Apply to inner wall (maintain thickness)
+          const innerPx = pos.getX(innerIdx);
+          const innerPz = pos.getZ(innerIdx);
+          const innerBaseR = Math.sqrt(innerPx * innerPx + innerPz * innerPz);
+          const innerTotalR = totalR - thickness;
+          const innerFactor = innerTotalR / innerBaseR;
+          pos.setX(innerIdx, innerPx * innerFactor);
+          pos.setZ(innerIdx, innerPz * innerFactor);
+
           lastTotalR = totalR;
         }
       }

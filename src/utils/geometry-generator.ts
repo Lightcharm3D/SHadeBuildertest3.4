@@ -586,6 +586,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
+    case 'diamond_mesh':
     case 'diamond_lattice':
     case 'spiral_mesh':
     case 'crystal_lattice': {
@@ -610,7 +611,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
             const nAngle1 = i * aStep + nNormY * twist;
             const pUp1 = new THREE.Vector3(Math.cos(nAngle1) * nr, ny, Math.sin(nAngle1) * nr);
             geoms.push(createStrut(p1, pUp1, strutRadius));
-            if (type === 'diamond_lattice' || type === 'crystal_lattice') {
+            if (type === 'diamond_lattice' || type === 'crystal_lattice' || type === 'diamond_mesh') {
               const nAngle2 = (i + 1) * aStep + nNormY * twist;
               const pUp2 = new THREE.Vector3(Math.cos(nAngle2) * nr, ny, Math.sin(nAngle2) * nr);
               geoms.push(createStrut(p1, pUp2, strutRadius));

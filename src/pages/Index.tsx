@@ -153,17 +153,19 @@ const Index = () => {
     const newType = robustTypes[Math.floor(Math.random() * robustTypes.length)];
     const newSilhouette = silhouettes[Math.floor(Math.random() * silhouettes.length)];
     
-    // Fixed dimensions as requested: 15cm tall, 13cm wide (6.5cm radius)
+    // Fixed height: 15cm
+    // Diameter: random between 10cm and 15cm (radius 5cm to 7.5cm)
     const fixedHeight = 15;
-    const fixedRadius = 6.5;
+    const topR = 5 + Math.random() * 2.5;
+    const bottomR = 5 + Math.random() * 2.5;
 
     setParams({
       ...params,
       type: newType,
       silhouette: newSilhouette,
       height: fixedHeight,
-      topRadius: fixedRadius,
-      bottomRadius: fixedRadius,
+      topRadius: topR,
+      bottomRadius: bottomR,
       thickness: 0.15 + Math.random() * 0.15,
       seed: Math.random() * 10000,
       internalRibs: Math.random() > 0.8 ? Math.floor(Math.random() * 6) : 0,
@@ -178,7 +180,7 @@ const Index = () => {
       spokeCount: 3 + Math.floor(Math.random() * 3),
     });
     
-    showSuccess("New design generated (15x13cm)!");
+    showSuccess("New design generated (15cm height, max 15cm diameter)!");
   };
 
   return (

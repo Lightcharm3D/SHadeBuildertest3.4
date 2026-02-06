@@ -9,10 +9,10 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/accordion';
+import { LampshadeParams, FitterType, SilhouetteType, LampshadeType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 
@@ -40,6 +40,51 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Origami Fold': { type: 'origami', silhouette: 'straight', foldCount: 16, foldDepth: 1.2, height: 15, topRadius: 6, bottomRadius: 6 },
   'Lattice Shell': { type: 'lattice', silhouette: 'bell', gridDensity: 18, height: 18, topRadius: 5, bottomRadius: 10 },
 };
+
+const TYPES: { id: LampshadeType; label: string }[] = [
+  { id: 'ribbed_drum', label: 'Ribbed Drum' },
+  { id: 'spiral_twist', label: 'Spiral Twist' },
+  { id: 'voronoi', label: 'Voronoi' },
+  { id: 'wave_shell', label: 'Wave Shell' },
+  { id: 'geometric_poly', label: 'Geometric Poly' },
+  { id: 'lattice', label: 'Lattice' },
+  { id: 'origami', label: 'Origami' },
+  { id: 'perlin_noise', label: 'Perlin Noise' },
+  { id: 'slotted', label: 'Slotted' },
+  { id: 'double_wall', label: 'Double Wall' },
+  { id: 'organic_cell', label: 'Organic Cell' },
+  { id: 'bricks', label: 'Bricks' },
+  { id: 'petal_bloom', label: 'Petal Bloom' },
+  { id: 'faceted_gem', label: 'Faceted Gem' },
+  { id: 'honeycomb', label: 'Honeycomb' },
+  { id: 'diamond_mesh', label: 'Diamond Mesh' },
+  { id: 'knurled', label: 'Knurled' },
+  { id: 'wave_rings', label: 'Wave Rings' },
+  { id: 'spiral_vortex', label: 'Spiral Vortex' },
+  { id: 'ribbed_conic', label: 'Ribbed Conic' },
+  { id: 'parametric_waves', label: 'Parametric Waves' },
+  { id: 'scalloped_edge', label: 'Scalloped Edge' },
+  { id: 'twisted_column', label: 'Twisted Column' },
+];
+
+const SILHOUETTES: { id: SilhouetteType; label: string }[] = [
+  { id: 'straight', label: 'Straight' },
+  { id: 'hourglass', label: 'Hourglass' },
+  { id: 'bell', label: 'Bell' },
+  { id: 'convex', label: 'Convex' },
+  { id: 'concave', label: 'Concave' },
+  { id: 'tapered', label: 'Tapered' },
+  { id: 'bulbous', label: 'Bulbous' },
+  { id: 'flared', label: 'Flared' },
+  { id: 'waisted', label: 'Waisted' },
+  { id: 'asymmetric', label: 'Asymmetric' },
+  { id: 'trumpet', label: 'Trumpet' },
+  { id: 'teardrop', label: 'Teardrop' },
+  { id: 'diamond', label: 'Diamond' },
+  { id: 'stepped', label: 'Stepped' },
+  { id: 'wavy', label: 'Wavy' },
+  { id: 'onion', label: 'Onion' },
+];
 
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
   params, 
@@ -77,10 +122,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const shareDNA = () => {
     const dna = generateLampDNA(params);
-    // Construct URL that works with HashRouter on GitHub Pages
     const baseUrl = window.location.href.split('#')[0];
     const shareUrl = `${baseUrl}#/?dna=${dna}`;
-    
     navigator.clipboard.writeText(shareUrl);
     showSuccess("Share link with DNA copied to clipboard!");
   };
@@ -151,6 +194,28 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </TabsList>
 
           <TabsContent value="shape" className="space-y-4 pt-4">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Layout className="w-3 h-3" /> Design Type</Label>
+                <Select value={params.type} onValueChange={(v: LampshadeType) => updateParam('type', v)}>
+                  <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TYPES.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2"><Box className="w-3 h-3" /> Silhouette</Label>
+                <Select value={params.silhouette} onValueChange={(v: SilhouetteType) => updateParam('silhouette', v)}>
+                  <SelectTrigger className="h-9 text-[10px] font-bold rounded-lg bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SILHOUETTES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <Accordion type="single" collapsible className="w-full space-y-2">
               <AccordionItem value="presets" className="border-none">
                 <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">

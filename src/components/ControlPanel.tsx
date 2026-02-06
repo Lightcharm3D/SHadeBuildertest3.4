@@ -239,7 +239,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <AccordionItem value="dimensions" className="border-none">
                 <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Scale className="w-3 h-3 text-indigo-500" /> Dimensions
+                    <Ruler className="w-3 h-3 text-indigo-500" /> Dimensions
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="pt-4 space-y-4 px-2">
@@ -262,6 +262,71 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Diameter (cm)</Label>
                       <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="structure" className="border-none">
+                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <Layers className="w-3 h-3 text-indigo-500" /> Structure (Ribs & Rims)
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 space-y-6 px-2">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Internal Ribs</Label>
+                      <Switch 
+                        checked={params.internalRibs > 0} 
+                        onCheckedChange={(v) => updateParam('internalRibs', v ? 4 : 0)} 
+                      />
+                    </div>
+                    {params.internalRibs > 0 && (
+                      <div className="space-y-4 pl-2 border-l-2 border-indigo-100">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
+                            <span>Rib Count</span>
+                            <span>{params.internalRibs}</span>
+                          </div>
+                          <Slider value={[params.internalRibs]} min={2} max={24} step={1} onValueChange={([v]) => updateParam('internalRibs', v)} />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
+                            <span>Rib Depth (cm)</span>
+                            <span>{params.internalRibDepth || 0.5}</span>
+                          </div>
+                          <Slider value={[params.internalRibDepth || 0.5]} min={0.1} max={2} step={0.1} onValueChange={([v]) => updateParam('internalRibDepth', v)} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase text-slate-500">Support Rims</Label>
+                      <Switch 
+                        checked={(params.rimThickness || 0) > 0} 
+                        onCheckedChange={(v) => updateParam('rimThickness', v ? 0.2 : 0)} 
+                      />
+                    </div>
+                    {(params.rimThickness || 0) > 0 && (
+                      <div className="space-y-4 pl-2 border-l-2 border-indigo-100">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
+                            <span>Rim Thickness (cm)</span>
+                            <span>{params.rimThickness}</span>
+                          </div>
+                          <Slider value={[params.rimThickness || 0.2]} min={0.05} max={1} step={0.01} onValueChange={([v]) => updateParam('rimThickness', v)} />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
+                            <span>Rim Height (cm)</span>
+                            <span>{params.rimHeight || 0.2}</span>
+                          </div>
+                          <Slider value={[params.rimHeight || 0.2]} min={0.05} max={1} step={0.01} onValueChange={([v]) => updateParam('rimHeight', v)} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>

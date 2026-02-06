@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LampshadeParams, FitterType, SilhouetteType, LampshadeType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff, Search } from 'lucide-react';
+import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff, Search, Undo2, Redo2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { generateLampDNA, parseLampDNA } from '@/utils/dna-engine';
 import PresetGallery from './PresetGallery';
@@ -98,6 +98,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const [dnaInput, setDnaInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  
+  // History State
+  const [history, setHistory] = useState<LampshadeParams[]>([]);
+  const [redoStack, setRedoStack] = useState<LampshadeParams[]>([]);
+  
+  // Nozzle Settings
+  const [nozzleSize, setNozzleSize] = useState(0.4);
+  const [snapToNozzle, setSnapToNozzle] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('shade_gallery');
@@ -136,6 +144,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     }
     const importedParams = parseLampDNA(dnaInput);
     if (importedParams) {
+      addToHistory(params);
       setParams(importedParams);
       showSuccess("Design loaded successfully!");
       setDnaInput('');
@@ -152,8 +161,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const updateParam = (key: keyof LampshadeParams, value: any) => {
-    const roundedValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
+  const addToHistory = (currentParams: LampshadeParams) => {
+    setHistory(prev => [...prev.slice(-19), { ...currentParams }]);
+    setRedoStack([]);
+  };
+
+  const undo = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setRedoStack(prevRedo => [...prevRedo, { ...params }]);
+    setHistory(prevHist => prevHist.slice(0, -1));
+    setParams(prev);
+  };
+
+  const redo = () => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setHistory(prevHist => [...prevHist, { ...params }]);
+    setRedoStack(prevRedo => prevRedo.slice(0, -1));
+    setParams(next);
+  };
+
+  const updateParam = (key: keyof LampshadeParams, value: any, skipHistory = false) => {
+    if (!skipHistory) addToHistory(params);
+    
+    let finalValue = value;
+    if (key === 'thickness' && snapToNozzle) {
+      const perimeters = Math.max(1, Math.round(value / nozzleSize));
+      finalValue = perimeters * nozzleSize;
+    }
+
+    const roundedValue = typeof finalValue === 'number' ? parseFloat(finalValue.toFixed(3)) : finalValue;
     setParams({ ...params, [key]: roundedValue });
   };
 
@@ -169,17 +207,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Studio Controls</h2>
         </div>
         <div className="flex gap-1.5">
+          <Button variant="secondary" size="icon" onClick={undo} disabled={history.length === 0} className="h-8 w-8 bg-white border border-slate-200 text-slate-600 disabled:opacity-30">
+            <Undo2 className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="secondary" size="icon" onClick={redo} disabled={redoStack.length === 0} className="h-8 w-8 bg-white border border-slate-200 text-slate-600 disabled:opacity-30">
+            <Redo2 className="w-3.5 h-3.5" />
+          </Button>
+          <div className="w-px h-4 bg-slate-200 mx-1" />
           <Button variant="secondary" size="icon" onClick={onRandomize} title="Randomize Design" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="secondary" size="icon" onClick={shareDNA} title="Share Link" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
-            <Share2 className="w-3.5 h-3.5" />
-          </Button>
           <Button variant="secondary" size="icon" onClick={saveToGallery} title="Save to Gallery" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
             <Save className="w-3.5 h-3.5" />
-          </Button>
-          <Button variant="secondary" size="icon" onClick={onReset} title="Reset All" className="h-8 w-8 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm">
-            <RotateCcw className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
@@ -243,6 +282,31 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
                     </div>
                   </div>
+                  
+                  <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase text-indigo-600 flex items-center gap-1">
+                        <Zap className="w-3 h-3" /> Nozzle Snapping
+                      </Label>
+                      <Switch checked={snapToNozzle} onCheckedChange={setSnapToNozzle} />
+                    </div>
+                    {snapToNozzle && (
+                      <div className="space-y-2">
+                        <Select value={nozzleSize.toString()} onValueChange={(v) => setNozzleSize(parseFloat(v))}>
+                          <SelectTrigger className="h-8 text-[9px] font-bold bg-white"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.4">0.4mm Nozzle</SelectItem>
+                            <SelectItem value="0.6">0.6mm Nozzle</SelectItem>
+                            <SelectItem value="0.8">0.8mm Nozzle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[8px] text-indigo-400 font-bold uppercase leading-tight">
+                          Thickness will snap to multiples of {nozzleSize}mm for perfect perimeters.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase text-slate-500">Top Diameter (cm)</Label>
@@ -631,7 +695,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <PresetGallery 
         open={isGalleryOpen} 
         onOpenChange={setIsGalleryOpen} 
-        onSelect={(newParams) => setParams({ ...params, ...newParams })}
+        onSelect={(newParams) => {
+          addToHistory(params);
+          setParams({ ...params, ...newParams });
+        }}
         savedDesigns={gallery}
         onDeleteSaved={deleteFromGallery}
       />

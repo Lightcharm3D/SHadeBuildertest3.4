@@ -66,15 +66,17 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
     
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
     mainLight.position.set(300, 500, 300);
     mainLight.castShadow = true;
     scene.add(mainLight);
 
+    // Internal Bulb Light
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 1000);
+    bulbLight.position.set(0, (params.height * 10) / 2, 0);
     bulbLight.castShadow = true;
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
@@ -144,7 +146,11 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.geometry.dispose();
       meshRef.current.geometry = newGeom;
       meshRef.current.position.y = (params.height * 10) / 2;
-      if (bulbLightRef.current) bulbLightRef.current.position.y = (params.height * 10) / 2;
+      
+      if (bulbLightRef.current) {
+        bulbLightRef.current.position.y = (params.height * 10) / 2;
+        bulbLightRef.current.intensity = isLightOn ? 5.0 : 0;
+      }
       
       const mat = new THREE.MeshPhysicalMaterial({
         color: material.color, 
@@ -154,15 +160,13 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
         opacity: material.opacity, 
         transparent: material.opacity < 1,
         side: THREE.DoubleSide, 
-        wireframe: showWireframe
+        wireframe: showWireframe,
+        emissive: isLightOn ? new THREE.Color(0xffaa44) : new THREE.Color(0x000000),
+        emissiveIntensity: isLightOn ? 0.4 : 0
       });
       meshRef.current.material = mat;
     }
   }, [params, material, showWireframe, isLightOn, showPrintability]);
-
-  useEffect(() => {
-    if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
-  }, [isLightOn]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950 touch-none">

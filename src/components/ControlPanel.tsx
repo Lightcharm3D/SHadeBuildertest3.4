@@ -77,9 +77,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const shareDNA = () => {
     const dna = generateLampDNA(params);
-    const url = new URL(window.location.href);
-    url.searchParams.set('dna', dna);
-    navigator.clipboard.writeText(url.toString());
+    // Construct URL that works with HashRouter on GitHub Pages
+    const baseUrl = window.location.href.split('#')[0];
+    const shareUrl = `${baseUrl}#/?dna=${dna}`;
+    
+    navigator.clipboard.writeText(shareUrl);
     showSuccess("Share link with DNA copied to clipboard!");
   };
 

@@ -268,6 +268,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Support-Free Mode</Label>
+                  <Switch checked={params.supportFreeMode} onCheckedChange={(v) => updateParam('supportFreeMode', v)} />
+                </div>
+                <div className="flex items-center justify-between">
                   <Label className="text-[9px] font-black uppercase text-slate-500">Wireframe Mode</Label>
                   <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
                 </div>

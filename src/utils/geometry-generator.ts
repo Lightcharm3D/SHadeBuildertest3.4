@@ -494,6 +494,37 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const fallbackWall = new THREE.LatheGeometry(closedProfile, effectiveSegments, phiStart, phiLength);
 
   switch (type) {
+    case 'diamond_mesh': {
+      const density = Math.round((p.gridDensity || 12) * detailFactor);
+      const geoms: THREE.BufferGeometry[] = [];
+      const strutRadius = thickness / 1.5;
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / effectiveSegments;
+      
+      for (let j = 0; j < density; j++) {
+        const y = -height / 2 + j * hStep;
+        const ny = y + hStep;
+        const r = getRadiusAtHeight(y, p);
+        const nr = getRadiusAtHeight(ny, p);
+        
+        for (let i = 0; i < effectiveSegments; i++) {
+          const angle = i * aStep;
+          if (!isAngleInPart(angle)) continue;
+          
+          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+          
+          // Strut leaning right
+          const pRight = new THREE.Vector3(Math.cos(angle + aStep) * nr, ny, Math.sin(angle + aStep) * nr);
+          geoms.push(createStrut(p1, pRight, strutRadius));
+          
+          // Strut leaning left
+          const pLeft = new THREE.Vector3(Math.cos(angle - aStep) * nr, ny, Math.sin(angle - aStep) * nr);
+          geoms.push(createStrut(p1, pLeft, strutRadius));
+        }
+      }
+      geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
+      break;
+    }
     case 'bricks': {
       const density = Math.round((p.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
@@ -586,7 +617,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;
       break;
     }
-    case 'diamond_mesh':
     case 'diamond_lattice':
     case 'spiral_mesh':
     case 'crystal_lattice': {
@@ -611,7 +641,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
             const nAngle1 = i * aStep + nNormY * twist;
             const pUp1 = new THREE.Vector3(Math.cos(nAngle1) * nr, ny, Math.sin(nAngle1) * nr);
             geoms.push(createStrut(p1, pUp1, strutRadius));
-            if (type === 'diamond_lattice' || type === 'crystal_lattice' || type === 'diamond_mesh') {
+            if (type === 'diamond_lattice' || type === 'crystal_lattice') {
               const nAngle2 = (i + 1) * aStep + nNormY * twist;
               const pUp2 = new THREE.Vector3(Math.cos(nAngle2) * nr, ny, Math.sin(nAngle2) * nr);
               geoms.push(createStrut(p1, pUp2, strutRadius));

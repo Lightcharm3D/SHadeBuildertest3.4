@@ -102,6 +102,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Studio Controls</h2>
         </div>
         <div className="flex gap-1">
+          <Button variant="ghost" size="icon" onClick={onRandomize} title="Randomize Design" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={shareDNA} title="Share DNA" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
             <Share2 className="w-3.5 h-3.5" />
           </Button>

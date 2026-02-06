@@ -85,16 +85,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const handleImportDNA = () => {
     if (!dnaInput) {
-      showError("Please paste a DNA string first");
+      showError("Please paste a DNA string or link first");
       return;
     }
     const importedParams = parseLampDNA(dnaInput);
     if (importedParams) {
       setParams(importedParams);
-      showSuccess("Design loaded from DNA!");
+      showSuccess("Design loaded successfully!");
       setDnaInput('');
     } else {
-      showError("Invalid DNA string. Please check the code.");
+      showError("Invalid DNA format. Please check the code or link.");
     }
   };
 
@@ -214,7 +214,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </Label>
                 <div className="space-y-2">
                   <Input 
-                    placeholder="Paste Lamp DNA here..." 
+                    placeholder="Paste DNA string or link..." 
                     value={dnaInput} 
                     onChange={(e) => setDnaInput(e.target.value)}
                     className="h-9 text-[10px] font-bold rounded-lg bg-white"

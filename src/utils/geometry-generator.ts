@@ -466,26 +466,40 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
   switch (type) {
     case 'bricks': {
-      const scale = Math.round((p.patternScale || 12) * detailFactor);
+      const density = Math.round((p.gridDensity || 12) * detailFactor);
       const geoms: THREE.BufferGeometry[] = [];
-      const brickHeight = height / scale;
-      const brickWidth = (Math.PI * 2) / scale;
-      const brickThick = thickness;
+      const strutRadius = thickness / 1.5;
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / effectiveSegments;
       
-      for (let j = 0; j < scale; j++) {
-        const y = -height / 2 + j * brickHeight + brickHeight / 2;
-        const offset = (j % 2 === 0) ? 0 : brickWidth / 2;
-        for (let i = 0; i < scale; i++) {
-          const angle = i * brickWidth + offset;
-          if (!isAngleInPart(angle)) continue;
+      for (let j = 0; j <= density; j++) {
+        const y = -height / 2 + j * hStep;
+        const r = getRadiusAtHeight(y, p);
+        
+        // Horizontal Rings (Mortar)
+        const ringProfile = [
+          new THREE.Vector2(r - strutRadius, y),
+          new THREE.Vector2(r, y),
+          new THREE.Vector2(r, y + strutRadius),
+          new THREE.Vector2(r - strutRadius, y + strutRadius),
+          new THREE.Vector2(r - strutRadius, y)
+        ];
+        geoms.push(new THREE.LatheGeometry(ringProfile, effectiveSegments, phiStart, phiLength));
+
+        // Vertical Struts (Offset every other row)
+        if (j < density) {
+          const ny = y + hStep;
+          const nr = getRadiusAtHeight(ny, p);
+          const offset = (j % 2 === 0) ? 0 : aStep / 2;
           
-          const r = getRadiusAtHeight(y, p);
-          // Create a brick as a small box segment
-          const brick = new THREE.BoxGeometry(r * brickWidth * 0.9, brickHeight * 0.9, brickThick, 2, 2, 1);
-          brick.translate(0, 0, r);
-          brick.rotateY(angle);
-          brick.translate(0, y, 0);
-          geoms.push(brick);
+          for (let i = 0; i < effectiveSegments; i++) {
+            const angle = i * aStep + offset;
+            if (!isAngleInPart(angle)) continue;
+            
+            const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+            const p2 = new THREE.Vector3(Math.cos(angle) * nr, ny, Math.sin(angle) * nr);
+            geoms.push(createStrut(p1, p2, strutRadius));
+          }
         }
       }
       geometry = geoms.length > 0 ? mergeGeometries(geoms) : fallbackWall;

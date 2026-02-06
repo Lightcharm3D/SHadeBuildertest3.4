@@ -89,6 +89,7 @@ export function generateLithophaneGeometry(imageData: ImageData, params: Lithoph
     return { x, y, z: thickness };
   };
 
+  // Front vertices
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const u = i / (gridX - 1); const v = j / (gridY - 1);
@@ -106,6 +107,7 @@ export function generateLithophaneGeometry(imageData: ImageData, params: Lithoph
     }
   }
 
+  // Back vertices
   const backOffset = vertices.length / 3;
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
@@ -114,14 +116,61 @@ export function generateLithophaneGeometry(imageData: ImageData, params: Lithoph
     }
   }
 
+  // Faces and side walls
   for (let j = 0; j < gridY - 1; j++) {
     for (let i = 0; i < gridX; i++) {
       const nextI = (i + 1) % gridX;
       if (type !== 'cylinder' && i === gridX - 1) continue;
-      const a = j * gridX + i; const b = j * gridX + nextI; const c = (j + 1) * gridX + i; const d = (j + 1) * gridX + nextI;
-      if (validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d]) {
-        indices.push(a, c, b); indices.push(b, c, d);
-        indices.push(a + backOffset, b + backOffset, c + backOffset); indices.push(b + backOffset, d + backOffset, c + backOffset);
+
+      const a = j * gridX + i;
+      const b = j * gridX + nextI;
+      const c = (j + 1) * gridX + i;
+      const d = (j + 1) * gridX + nextI;
+
+      const quadValid = validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d];
+
+      if (quadValid) {
+        // Front face (CCW)
+        indices.push(a, c, b);
+        indices.push(b, c, d);
+
+        // Back face (CW relative to front, CCW from back)
+        indices.push(a + backOffset, b + backOffset, c + backOffset);
+        indices.push(b + backOffset, d + backOffset, c + backOffset);
+
+        // Side walls (Edge detection)
+        
+        // Bottom edge (AB)
+        const abNeighborValid = j > 0 && validPoints[(j-1)*gridX + i] && validPoints[(j-1)*gridX + nextI];
+        if (j === 0 || !abNeighborValid) {
+          indices.push(a, b, a + backOffset);
+          indices.push(b, b + backOffset, a + backOffset);
+        }
+
+        // Top edge (CD)
+        const cdNeighborValid = j < gridY - 2 && validPoints[(j+2)*gridX + i] && validPoints[(j+2)*gridX + nextI];
+        if (j === gridY - 2 || !cdNeighborValid) {
+          indices.push(c, c + backOffset, d);
+          indices.push(d, c + backOffset, d + backOffset);
+        }
+
+        // Left edge (AC)
+        if (type !== 'cylinder') {
+          const acNeighborValid = i > 0 && validPoints[j*gridX + i - 1] && validPoints[(j+1)*gridX + i - 1];
+          if (i === 0 || !acNeighborValid) {
+            indices.push(a, a + backOffset, c);
+            indices.push(c, a + backOffset, c + backOffset);
+          }
+        }
+
+        // Right edge (BD)
+        if (type !== 'cylinder') {
+          const bdNeighborValid = i < gridX - 2 && validPoints[j*gridX + i + 1] && validPoints[(j+1)*gridX + i + 1];
+          if (i === gridX - 1 || !bdNeighborValid) {
+            indices.push(b, d, b + backOffset);
+            indices.push(d, d + backOffset, b + backOffset);
+          }
+        }
       }
     }
   }

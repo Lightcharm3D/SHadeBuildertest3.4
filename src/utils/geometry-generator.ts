@@ -212,10 +212,10 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
     case 'plain_wall': disp = 0; break;
     case 'honeycomb':
     case 'honeycomb_v2': {
-      const scale = params.gridDensity || 24;
+      const scale = Math.round(params.gridDensity || 24);
       const depth = params.patternDepth || 0.4;
       
-      // Hexagonal grid logic
+      // Ensure scale is an integer for perfect circumferential wrap
       const q = (Math.sqrt(3)/3 * rotatedAngle * scale - 1/3 * normY * scale * 1.5);
       const r = (2/3 * normY * scale * 1.5);
       
@@ -248,14 +248,14 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'spiral_stairs_v2': {
-      const steps = params.ribCount || 16;
+      const steps = Math.round(params.ribCount || 16);
       const depth = params.ribDepth || 1.0;
       const stepIndex = Math.floor((rotatedAngle / (Math.PI * 2)) * steps + normY * steps * 2);
       disp = (stepIndex % 3 === 0) ? depth : 0;
       break;
     }
     case 'diamond_plate_v2': {
-      const scale = params.patternScale || 20;
+      const scale = Math.round(params.patternScale || 20);
       const depth = params.patternDepth || 0.4;
       const a = Math.sin(rotatedAngle * scale);
       const b = Math.sin(normY * scale * 3);
@@ -265,24 +265,25 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
     case 'organic_coral': {
       const scale = params.noiseScale || 1.5;
       const strength = params.noiseStrength || 1.0;
+      // Use cos/sin of angle to ensure periodicity
       const n = pseudoNoise(Math.cos(rotatedAngle) * scale, y * scale, Math.sin(rotatedAngle) * scale, seed);
       disp = n > 0.6 ? (n - 0.6) * strength * 4 : 0;
       break;
     }
     case 'geometric_stars': {
-      const count = params.ribCount || 6;
+      const count = Math.round(params.ribCount || 6);
       const depth = params.ribDepth || 0.8;
       disp = Math.abs(Math.sin(rotatedAngle * count)) * depth;
       break;
     }
     case 'ribbed_spiral': {
-      const count = params.ribCount || 12;
+      const count = Math.round(params.ribCount || 12);
       const twist = (params.twistAngle || 180) * (Math.PI / 180);
       disp = Math.sin(rotatedAngle * count + normY * twist) * (params.ribDepth || 0.5);
       break;
     }
     case 'faceted_poly': {
-      const sides = params.sides || 8;
+      const sides = Math.round(params.sides || 8);
       const strength = params.noiseStrength || 0.5;
       const step = (Math.PI * 2) / sides;
       const localAngle = Math.floor(rotatedAngle / step) * step;
@@ -290,16 +291,16 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'wave_shell_v2': {
-      const freq = params.frequency || 12;
+      const freq = Math.round(params.frequency || 12);
       const amp = params.amplitude || 0.8;
       disp = Math.sin(rotatedAngle * freq) * Math.cos(normY * freq * 0.5) * amp;
       break;
     }
-    case 'ribbed_drum': disp = Math.sin(rotatedAngle * (params.ribCount || 24)) * (params.ribDepth || 0.4); break;
-    case 'ribbed_conic': disp = Math.sin(rotatedAngle * (params.ribCount || 24)) * (params.ribDepth || 0.4) * normY; break;
+    case 'ribbed_drum': disp = Math.sin(rotatedAngle * Math.round(params.ribCount || 24)) * (params.ribDepth || 0.4); break;
+    case 'ribbed_conic': disp = Math.sin(rotatedAngle * Math.round(params.ribCount || 24)) * (params.ribDepth || 0.4) * normY; break;
     case 'spiral_ribs': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
-      disp = Math.sin(rotatedAngle * (params.ribCount || 24) + normY * twist) * (params.ribDepth || 0.4);
+      disp = Math.sin(rotatedAngle * Math.round(params.ribCount || 24) + normY * twist) * (params.ribDepth || 0.4);
       break;
     }
     case 'spiral_vortex': {
@@ -307,16 +308,16 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       disp = Math.sin(rotatedAngle * 5 + normY * twist) * (params.ribDepth || 0.8);
       break;
     }
-    case 'wave_shell': disp = Math.sin(rotatedAngle * (params.frequency || 5) + normY * Math.PI * 2) * (params.amplitude || 1); break;
+    case 'wave_shell': disp = Math.sin(rotatedAngle * Math.round(params.frequency || 5) + normY * Math.PI * 2) * (params.amplitude || 1); break;
     case 'wave_rings': disp = Math.sin(normY * (params.frequency || 10) * Math.PI) * (params.amplitude || 0.5); break;
     case 'knurled': {
-      const scale = params.patternScale || 10;
+      const scale = Math.round(params.patternScale || 10);
       const depth = params.patternDepth || 0.3;
       disp = (Math.sin(rotatedAngle * scale + normY * scale) * Math.sin(rotatedAngle * scale - normY * scale)) * depth;
       break;
     }
     case 'knurled_v2': {
-      const scale = params.patternScale || 15;
+      const scale = Math.round(params.patternScale || 15);
       const depth = params.patternDepth || 0.4;
       const a = Math.sin(rotatedAngle * scale + normY * scale);
       const b = Math.sin(rotatedAngle * scale - normY * scale);
@@ -324,13 +325,13 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'bubble_foam': {
-      const scale = params.patternScale || 10;
+      const scale = Math.round(params.patternScale || 10);
       const depth = params.patternDepth || 0.5;
       disp = (Math.sin(rotatedAngle * scale) * Math.cos(normY * scale * 2) + Math.sin(normY * scale) * Math.cos(rotatedAngle * scale * 2)) * depth;
       break;
     }
     case 'diamond_plate': {
-      const scale = params.patternScale || 15;
+      const scale = Math.round(params.patternScale || 15);
       const depth = params.patternDepth || 0.3;
       const a = Math.sin(rotatedAngle * scale);
       const b = Math.sin(normY * scale * 2);
@@ -338,7 +339,7 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'geometric_tiles': {
-      const scale = params.patternScale || 12;
+      const scale = Math.round(params.patternScale || 12);
       const depth = params.patternDepth || 0.4;
       const a = Math.floor(rotatedAngle * scale);
       const b = Math.floor(normY * scale);
@@ -346,7 +347,7 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'cellular_automata': {
-      const scale = params.patternScale || 20;
+      const scale = Math.round(params.patternScale || 20);
       const depth = params.patternDepth || 0.5;
       const x = Math.floor(rotatedAngle * scale);
       const yIdx = Math.floor(normY * scale);
@@ -354,14 +355,14 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'spiral_stairs': {
-      const steps = params.ribCount || 12;
+      const steps = Math.round(params.ribCount || 12);
       const depth = params.ribDepth || 0.8;
       const stepIndex = Math.floor((rotatedAngle / (Math.PI * 2)) * steps + normY * steps);
       disp = (stepIndex % 2 === 0) ? depth : 0;
       break;
     }
     case 'petal_bloom': {
-      const petals = params.ribCount || 8;
+      const petals = Math.round(params.ribCount || 8);
       const bloom = normY * 2;
       disp = Math.abs(Math.sin(rotatedAngle * petals / 2)) * bloom;
       break;
@@ -411,27 +412,27 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
       break;
     }
     case 'origami': {
-      const folds = params.foldCount || 12;
+      const folds = Math.round(params.foldCount || 12);
       const depth = params.foldDepth || 0.8;
       const segmentIndex = Math.round((rotatedAngle / (Math.PI * 2)) * (folds * 2));
       disp = segmentIndex % 2 !== 0 ? -depth : 0;
       break;
     }
     case 'parametric_waves': {
-      const freq = params.frequency || 8;
+      const freq = Math.round(params.frequency || 8);
       const amp = params.amplitude || 0.6;
       disp = Math.sin(rotatedAngle * freq + normY * Math.PI * 4) * Math.cos(normY * freq) * amp;
       break;
     }
     case 'scalloped_edge': {
-      const count = params.ribCount || 12;
+      const count = Math.round(params.ribCount || 12);
       const depth = params.ribDepth || 0.5;
       disp = Math.abs(Math.sin(rotatedAngle * count)) * depth * normY;
       break;
     }
     case 'twisted_column': {
       const twist = (params.twistAngle || 180) * (Math.PI / 180);
-      const count = params.ribCount || 6;
+      const count = Math.round(params.ribCount || 6);
       disp = Math.sin(rotatedAngle * count + normY * twist) * (params.ribDepth || 0.8);
       break;
     }
@@ -744,7 +745,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const profilePointsCount = closedProfile.length;
 
       for (let s = 0; s <= segs; s++) {
+        // Calculate angle directly from segment index to ensure perfect periodicity
+        const currentAngle = phiStart + (s / segs) * phiLength;
         let lastTotalR = -1;
+        
         for (let j = 0; j <= effectiveSteps; j++) {
           const outerIdx = s * profilePointsCount + j;
           const innerIdx = s * profilePointsCount + (profilePointsCount - 1 - j);
@@ -754,10 +758,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const px = pos.getX(outerIdx);
           const py = pos.getY(outerIdx);
           const pz = pos.getZ(outerIdx);
-          const angle = Math.atan2(pz, px);
           const baseR = Math.sqrt(px * px + pz * pz);
           
-          let disp = getDisplacementAt(angle, py, p, precomputedPoints);
+          let disp = getDisplacementAt(currentAngle, py, p, precomputedPoints);
           let totalR = baseR + disp;
 
           if (supportFreeMode && lastTotalR !== -1) {

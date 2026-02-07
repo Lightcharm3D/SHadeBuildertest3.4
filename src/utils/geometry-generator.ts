@@ -105,11 +105,14 @@ export function enforceConstraints(params: LampshadeParams): LampshadeParams {
   p.bottomRadius = Math.max(4, p.bottomRadius);
   p.topRadius = Math.max(2, p.topRadius);
   
+  // Ensure outer diameter is at least slightly larger than inner
+  p.fitterOuterDiameter = Math.max(p.fitterDiameter + 2, p.fitterOuterDiameter);
+  
   const fitterY = -p.height / 2 + p.fitterHeight;
   const shadeRadiusAtFitter = getRadiusAtHeight(fitterY, p);
-  const maxFitterRadius = (shadeRadiusAtFitter * 10) - 5;
+  const maxFitterRadius = (shadeRadiusAtFitter * 10) - 2;
   p.fitterDiameter = Math.min(p.fitterDiameter, maxFitterRadius * 2);
-  p.fitterHeight = Math.min(p.height - 1, Math.max(0.5, p.fitterHeight));
+  p.fitterHeight = Math.min(p.height, Math.max(0, p.fitterHeight));
 
   const maxDepth = Math.min(p.topRadius, p.bottomRadius) * 0.4;
   if (p.patternDepth !== undefined) p.patternDepth = Math.min(p.patternDepth, maxDepth);

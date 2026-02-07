@@ -54,6 +54,7 @@ const DEFAULT_PARAMS: LampshadeParams = {
   spokeCount: 4,
   rimThickness: 0.1,
   rimHeight: 0.1,
+  rimMode: 'both',
   internalRibDepth: 0.5,
   patternScale: 10,
   patternDepth: 0.3,
@@ -177,6 +178,7 @@ const Index = () => {
       noiseFrequency: 0.8 + Math.random() * 1.2,
       rimThickness: Math.random() > 0.7 ? 0.1 + Math.random() * 0.1 : 0,
       rimHeight: Math.random() > 0.7 ? 0.1 + Math.random() * 0.2 : 0,
+      rimMode: 'both',
       spokeCount: 3 + Math.floor(Math.random() * 3),
     });
     

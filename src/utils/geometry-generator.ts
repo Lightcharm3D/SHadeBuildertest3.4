@@ -26,6 +26,7 @@ export type SilhouetteType =
   | 'pagoda_v2' | 'lotus' | 'diamond_v2' | 'stepped_v2' | 'custom';
 
 export type FitterType = 'none' | 'spider' | 'uno';
+export type RimMode = 'both' | 'top' | 'bottom';
 
 export interface ControlPoint {
   x: number;
@@ -50,6 +51,7 @@ export interface LampshadeParams {
   ribThickness: number;
   rimThickness?: number;
   rimHeight?: number;
+  rimMode?: RimMode;
   internalRibDepth?: number;
   
   // Fitter params
@@ -443,7 +445,7 @@ export function getDisplacementAt(angle: number, y: number, params: LampshadePar
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const p = enforceConstraints(params);
-  const { type, height, bottomRadius, segments, thickness, lowDetail, splitSegments = 1, activePart = 0, jointType = 'none', supportFreeMode, seed } = p;
+  const { type, height, bottomRadius, segments, thickness, lowDetail, splitSegments = 1, activePart = 0, jointType = 'none', supportFreeMode, seed, rimMode = 'both' } = p;
   
   const detailFactor = lowDetail ? 0.5 : 1.0;
   const effectiveSegments = Math.max(12, Math.round(segments * detailFactor));
@@ -903,25 +905,34 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     const rimThick = p.rimThickness;
     const rimHeight = p.rimHeight || rimThick;
     const segs = type === 'geometric_poly' ? (p.sides || 6) : effectiveSegments;
-    const topRadiusAtEdge = getRadiusAtHeight(height / 2, p);
-    const topRimProfile = [
-      new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2),
-      new THREE.Vector2(topRadiusAtEdge, height / 2),
-      new THREE.Vector2(topRadiusAtEdge, height / 2 + rimHeight),
-      new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2 + rimHeight),
-      new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2)
-    ];
-    rimGeoms.push(new THREE.LatheGeometry(topRimProfile, segs, phiStart, phiLength));
-    const bottomRadiusAtEdge = getRadiusAtHeight(-height / 2, p);
-    const bottomRimProfile = [
-      new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2),
-      new THREE.Vector2(bottomRadiusAtEdge, -height / 2),
-      new THREE.Vector2(bottomRadiusAtEdge, -height / 2 - rimHeight),
-      new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2 - rimHeight),
-      new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2)
-    ];
-    rimGeoms.push(new THREE.LatheGeometry(bottomRimProfile, segs, phiStart, phiLength));
-    geometry = mergeGeometries([geometry, ...rimGeoms]);
+    
+    if (rimMode === 'both' || rimMode === 'top') {
+      const topRadiusAtEdge = getRadiusAtHeight(height / 2, p);
+      const topRimProfile = [
+        new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2),
+        new THREE.Vector2(topRadiusAtEdge, height / 2),
+        new THREE.Vector2(topRadiusAtEdge, height / 2 + rimHeight),
+        new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2 + rimHeight),
+        new THREE.Vector2(topRadiusAtEdge - rimThick, height / 2)
+      ];
+      rimGeoms.push(new THREE.LatheGeometry(topRimProfile, segs, phiStart, phiLength));
+    }
+
+    if (rimMode === 'both' || rimMode === 'bottom') {
+      const bottomRadiusAtEdge = getRadiusAtHeight(-height / 2, p);
+      const bottomRimProfile = [
+        new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2),
+        new THREE.Vector2(bottomRadiusAtEdge, -height / 2),
+        new THREE.Vector2(bottomRadiusAtEdge, -height / 2 - rimHeight),
+        new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2 - rimHeight),
+        new THREE.Vector2(bottomRadiusAtEdge - rimThick, -height / 2)
+      ];
+      rimGeoms.push(new THREE.LatheGeometry(bottomRimProfile, segs, phiStart, phiLength));
+    }
+    
+    if (rimGeoms.length > 0) {
+      geometry = mergeGeometries([geometry, ...rimGeoms]);
+    }
   }
 
   if (p.internalRibs > 0) {

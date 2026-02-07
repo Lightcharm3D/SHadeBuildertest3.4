@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { LampshadeParams, FitterType, SilhouetteType, LampshadeType, ControlPoint } from '@/utils/geometry-generator';
+import { LampshadeParams, FitterType, SilhouetteType, LampshadeType, ControlPoint, RimMode } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
 import { Download, RefreshCw, RotateCcw, Anchor, History, Trash2, MoveVertical, ShieldAlert, Cpu, Share2, FileInput, X, Layers, Box, Sliders, Save, FolderHeart, Scale, Clock, Scissors, Sparkles, Palette, Zap, Info, Wrench, Dna, Copy, Check, Layout, Ruler, Grid3X3, Waves, ZapOff, Search, Undo2, Redo2, MousePointer2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
@@ -378,6 +378,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     </div>
                     {(params.rimThickness || 0) > 0 && (
                       <div className="space-y-4 pl-2 border-l-2 border-indigo-100">
+                        <div className="space-y-1.5">
+                          <Label className="text-[9px] font-black uppercase text-slate-500">Rim Mode</Label>
+                          <Select value={params.rimMode || 'both'} onValueChange={(v: RimMode) => updateParam('rimMode', v, true)}>
+                            <SelectTrigger className="h-8 text-[9px] font-bold bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="both">Both Rims</SelectItem>
+                              <SelectItem value="top">Top Only</SelectItem>
+                              <SelectItem value="bottom">Bottom Only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-[8px] font-black uppercase text-slate-400">
                             <span>Rim Thickness (cm)</span>

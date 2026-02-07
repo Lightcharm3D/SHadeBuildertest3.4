@@ -569,6 +569,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
                   <div className="space-y-2">
                     <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span className="flex items-center gap-1"><Ruler className="w-2.5 h-2.5" /> Outer Diameter</span>
+                      <span>{params.fitterOuterDiameter.toFixed(1)} mm</span>
+                    </div>
+                    <Slider 
+                      value={[params.fitterOuterDiameter]} 
+                      min={10} 
+                      max={120} 
+                      step={0.1} 
+                      onValueChange={([v]) => updateParam('fitterOuterDiameter', v)} 
+                      onValueCommit={() => addToHistory(params)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                      <span className="flex items-center gap-1"><Scale className="w-2.5 h-2.5" /> Spoke Length</span>
+                      <span>{params.spokeLength ? `${params.spokeLength.toFixed(1)} mm` : 'Auto (Full)'}</span>
+                    </div>
+                    <Slider 
+                      value={[params.spokeLength || 0]} 
+                      min={0} 
+                      max={200} 
+                      step={1} 
+                      onValueChange={([v]) => updateParam('spokeLength', v === 0 ? undefined : v)} 
+                      onValueCommit={() => addToHistory(params)}
+                    />
+                    <p className="text-[7px] text-slate-400 font-bold uppercase">Set to 0 for automatic wall-reaching spokes.</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
                       <span>Spoke Amount</span>
                       <span>{params.spokeCount}</span>
                     </div>

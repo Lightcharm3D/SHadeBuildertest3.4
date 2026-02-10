@@ -992,14 +992,12 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   ring.translate(0, ringYPos, 0);
   geoms.push(ring);
   const wallThicknessCm = thickness;
-  const safetyMarginCm = 0.05; 
   
   const spokeInnerOverlapCm = (params.spokeInnerOverlap || 2) / 10;
   const spokeOuterLengthCm = params.spokeLength ? params.spokeLength / 10 : (params.bottomRadius + params.topRadius) * 2;
   const totalSpokeLength = spokeInnerOverlapCm + spokeOuterLengthCm;
   
   let spokeCount = params.spokeCount || 4;
-  const fuseDepthCm = wallThicknessCm * 0.5;
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
@@ -1029,14 +1027,22 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       
       const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
-      const absoluteLimitR = localOuterR - safetyMarginCm;
-      const targetFusionR = localInnerR + fuseDepthCm;
+      
+      // Target: penetrate 50% into the wall for a strong bond
+      const targetFusionR = localInnerR + (wallThicknessCm * 0.5);
+      
+      // Hard limit: 0.2mm before the outer surface to ensure it never pokes through
+      const absoluteLimitR = localOuterR - 0.02; 
+      
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       
-      // Only clip the outer end of the spoke if it's set to auto-length or exceeds the wall
+      // Only clip the outer end of the spoke if it exceeds the safe radius
       if (currentR > outerRadius + 0.01) {
         const factor = safeR / currentR;
-        if (factor < 1.0) { pos.setX(j, vx * factor); pos.setZ(j, vz * factor); }
+        if (factor < 1.0) { 
+          pos.setX(j, vx * factor); 
+          pos.setZ(j, vz * factor); 
+        }
       }
     }
     geoms.push(spoke);

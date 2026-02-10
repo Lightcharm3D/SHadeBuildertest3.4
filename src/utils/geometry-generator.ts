@@ -992,12 +992,14 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   ring.translate(0, ringYPos, 0);
   geoms.push(ring);
   const wallThicknessCm = thickness;
+  const safetyMarginCm = 0.1; // 1mm safety margin
   
   const spokeInnerOverlapCm = (params.spokeInnerOverlap || 2) / 10;
   const spokeOuterLengthCm = params.spokeLength ? params.spokeLength / 10 : (params.bottomRadius + params.topRadius) * 2;
   const totalSpokeLength = spokeInnerOverlapCm + spokeOuterLengthCm;
   
   let spokeCount = params.spokeCount || 4;
+  const fuseDepthCm = wallThicknessCm * 0.4; // Penetrate 40% into the wall
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
@@ -1019,23 +1021,20 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vz = pos.getZ(j);
       const currentR = Math.sqrt(vx * vx + vz * vz);
       
-      // Normalize angle for pattern matching
-      let currentAngle = Math.atan2(vz, vx);
-      if (currentAngle < 0) currentAngle += Math.PI * 2;
-      
+      // Use the spoke's main angle for the wall intersection to keep the end flat/square
       let baseR = getRadiusAtHeight(vy, params);
-      let disp = getDisplacementAt(currentAngle, vy, params);
+      let disp = getDisplacementAt(angle, vy, params);
       if (type === 'slotted') { baseR *= 0.8; disp = 0; } 
       else if (type === 'double_wall') { const gap = params.gapDistance || 0.5; baseR *= (1 - (gap / params.topRadius)); }
       
       const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
       
-      // Target: penetrate 30% into the wall for a strong bond
-      const targetFusionR = localInnerR + (wallThicknessCm * 0.3);
+      // Target: penetrate 40% into the wall for a strong bond
+      const targetFusionR = localInnerR + fuseDepthCm;
       
-      // Hard limit: 0.5mm before the outer surface to ensure it never pokes through
-      const absoluteLimitR = localOuterR - 0.05; 
+      // Hard limit: 1mm before the outer surface to ensure it never pokes through
+      const absoluteLimitR = localOuterR - safetyMarginCm; 
       
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       

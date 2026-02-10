@@ -311,7 +311,7 @@ const Index = () => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="hidden md:block shrink-0 border-l border-slate-200 bg-white h-full overflow-hidden"
             >
-              <div className="w-[400px]">
+              <div className="w-[400px] h-full">
                 <ControlPanel 
                   params={params} 
                   setParams={setParams} 

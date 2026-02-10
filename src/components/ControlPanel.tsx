@@ -229,7 +229,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <Tabs defaultValue="shape" className="w-full">
           <TabsList className="grid grid-cols-5 w-full h-10 bg-slate-100 p-1 rounded-xl">
             <TabsTrigger value="shape" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Shape</TabsTrigger>

@@ -1018,7 +1018,10 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vy = pos.getY(j);
       const vz = pos.getZ(j);
       const currentR = Math.sqrt(vx * vx + vz * vz);
-      const currentAngle = Math.atan2(vz, vx);
+      
+      // Normalize angle for pattern matching
+      let currentAngle = Math.atan2(vz, vx);
+      if (currentAngle < 0) currentAngle += Math.PI * 2;
       
       let baseR = getRadiusAtHeight(vy, params);
       let disp = getDisplacementAt(currentAngle, vy, params);
@@ -1028,11 +1031,11 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
       
-      // Target: penetrate 50% into the wall for a strong bond
-      const targetFusionR = localInnerR + (wallThicknessCm * 0.5);
+      // Target: penetrate 30% into the wall for a strong bond
+      const targetFusionR = localInnerR + (wallThicknessCm * 0.3);
       
-      // Hard limit: 0.2mm before the outer surface to ensure it never pokes through
-      const absoluteLimitR = localOuterR - 0.02; 
+      // Hard limit: 0.5mm before the outer surface to ensure it never pokes through
+      const absoluteLimitR = localOuterR - 0.05; 
       
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       

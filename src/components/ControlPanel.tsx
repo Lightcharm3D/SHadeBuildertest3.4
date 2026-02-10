@@ -239,7 +239,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <TabsTrigger value="tools" className="text-[8px] font-black uppercase tracking-widest rounded-lg">Tools</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="shape" className="space-y-4 pt-4">
+          <TabsContent value="shape" className="space-y-6 pt-4">
             <Button 
               onClick={() => setIsGalleryOpen(true)}
               className="w-full h-14 brand-gradient text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
@@ -277,25 +277,42 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               )}
             </div>
 
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <Ruler className="w-3 h-3 text-indigo-500" /> Core Dimensions
+              </span>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
+                  <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value))} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Wall (cm)</Label>
+                  <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Top Diameter (cm)</Label>
+                  <Input type="number" step={0.1} value={params.topRadius * 2} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) / 2)} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Diameter (cm)</Label>
+                  <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
+                </div>
+              </div>
+            </div>
+
             <Accordion type="single" collapsible className="w-full space-y-2">
-              <AccordionItem value="dimensions" className="border-none">
+              <AccordionItem value="advanced_dims" className="border-none">
                 <AccordionTrigger className="hover:no-underline py-2 px-4 bg-slate-50 rounded-xl">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Ruler className="w-3 h-3 text-indigo-500" /> Dimensions
+                    <Zap className="w-3 h-3 text-indigo-500" /> Advanced Printing
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="pt-4 space-y-4 px-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Height (cm)</Label>
-                      <Input type="number" step={0.1} value={params.height} onChange={(e) => updateParam('height', parseFloat(e.target.value))} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Wall (cm)</Label>
-                      <Input type="number" step={0.01} value={params.thickness} onChange={(e) => updateParam('thickness', parseFloat(e.target.value))} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                  </div>
-                  
                   <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-[9px] font-black uppercase text-indigo-600 flex items-center gap-1">
@@ -318,17 +335,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         </p>
                       </div>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Top Diameter (cm)</Label>
-                      <Input type="number" step={0.1} value={params.topRadius * 2} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) / 2)} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Bottom Diameter (cm)</Label>
-                      <Input type="number" step={0.1} value={params.bottomRadius * 2} onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) / 2)} onBlur={() => addToHistory(params)} className="h-9 text-[10px] font-bold rounded-lg bg-white" />
-                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>

@@ -1008,10 +1008,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
     
-    // Increase segments along width (Z) to allow the end to curve and match the wall
-    const widthSegments = Math.round(12 * detailFactor);
-    const spoke = new THREE.BoxGeometry(totalSpokeLength, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, widthSegments);
-    
+    const spoke = new THREE.BoxGeometry(totalSpokeLength, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, 1);
     // Position spoke so it starts at (outerRadius - spokeInnerOverlapCm)
     const spokeCenterX = outerRadius + (spokeOuterLengthCm - spokeInnerOverlapCm) / 2;
     spoke.translate(spokeCenterX, spokeYPos, 0);
@@ -1022,10 +1019,8 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vx = pos.getX(j);
       const vy = pos.getY(j);
       const vz = pos.getZ(j);
-      
-      // Calculate the world angle of this specific vertex
-      const currentAngle = Math.atan2(vz, vx);
       const currentR = Math.sqrt(vx * vx + vz * vz);
+      const currentAngle = Math.atan2(vz, vx);
       
       let baseR = getRadiusAtHeight(vy, params);
       let disp = getDisplacementAt(currentAngle, vy, params);
@@ -1038,18 +1033,10 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const targetFusionR = localInnerR + fuseDepthCm;
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       
-      // Only clip the outer end of the spoke if it exceeds the wall
-      if (currentR > outerRadius + 0.01 && currentR > safeR) {
-        // Instead of radial scaling (which causes pointing), we solve for the X coordinate 
-        // that puts the vertex exactly on the target radius while keeping its width (Z) constant.
-        // X^2 + Z^2 = R^2  =>  X = sqrt(R^2 - Z^2)
-        const localZ = vz; // Width component
-        const newX = Math.sqrt(Math.max(0, safeR * safeR - localZ * localZ));
-        
-        // Maintain the original sign of X
-        const signX = vx >= 0 ? 1 : -1;
-        pos.setX(j, newX * signX);
-        // Z remains unchanged to preserve spoke width
+      // Only clip the outer end of the spoke if it's set to auto-length or exceeds the wall
+      if (currentR > outerRadius + 0.01) {
+        const factor = safeR / currentR;
+        if (factor < 1.0) { pos.setX(j, vx * factor); pos.setZ(j, vz * factor); }
       }
     }
     geoms.push(spoke);

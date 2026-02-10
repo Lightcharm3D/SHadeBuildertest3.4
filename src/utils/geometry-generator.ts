@@ -64,6 +64,7 @@ export interface LampshadeParams {
   spokeWidth: number;     
   spokeCount?: number;    
   spokeLength?: number;
+  spokeInnerOverlap?: number;
   
   // Type-specific params
   ribCount?: number;
@@ -992,13 +993,13 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   geoms.push(ring);
   const wallThicknessCm = thickness;
   const safetyMarginCm = 0.05; 
-  const connectionOverlapCm = 0.2; 
+  
+  const spokeInnerOverlapCm = (params.spokeInnerOverlap || 2) / 10;
+  const spokeOuterLengthCm = params.spokeLength ? params.spokeLength / 10 : (params.bottomRadius + params.topRadius) * 2;
+  const totalSpokeLength = spokeInnerOverlapCm + spokeOuterLengthCm;
+  
   let spokeCount = params.spokeCount || 4;
   const fuseDepthCm = wallThicknessCm * 0.5;
-  
-  // Spoke length logic: if spokeLength is provided, use it as max length. 
-  // Otherwise use a large value to ensure it reaches the wall.
-  const maxSpokeLengthCm = params.spokeLength ? params.spokeLength / 10 : (params.bottomRadius + params.topRadius) * 2;
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
@@ -1007,9 +1008,12 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
     
-    const spoke = new THREE.BoxGeometry(maxSpokeLengthCm, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, 1);
-    spoke.translate(outerRadius + maxSpokeLengthCm / 2 - connectionOverlapCm, spokeYPos, 0);
+    const spoke = new THREE.BoxGeometry(totalSpokeLength, spokeThickCm, (params.spokeWidth || 10) / 10, Math.round(60 * detailFactor), 1, 1);
+    // Position spoke so it starts at (outerRadius - spokeInnerOverlapCm)
+    const spokeCenterX = outerRadius + (spokeOuterLengthCm - spokeInnerOverlapCm) / 2;
+    spoke.translate(spokeCenterX, spokeYPos, 0);
     spoke.rotateY(angle);
+    
     const pos = spoke.attributes.position;
     for (let j = 0; j < pos.count; j++) {
       const vx = pos.getX(j);
@@ -1017,15 +1021,19 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const vz = pos.getZ(j);
       const currentR = Math.sqrt(vx * vx + vz * vz);
       const currentAngle = Math.atan2(vz, vx);
+      
       let baseR = getRadiusAtHeight(vy, params);
       let disp = getDisplacementAt(currentAngle, vy, params);
       if (type === 'slotted') { baseR *= 0.8; disp = 0; } 
       else if (type === 'double_wall') { const gap = params.gapDistance || 0.5; baseR *= (1 - (gap / params.topRadius)); }
+      
       const localOuterR = baseR + disp;
       const localInnerR = localOuterR - wallThicknessCm;
       const absoluteLimitR = localOuterR - safetyMarginCm;
       const targetFusionR = localInnerR + fuseDepthCm;
       const safeR = Math.min(targetFusionR, absoluteLimitR);
+      
+      // Only clip the outer end of the spoke if it's set to auto-length or exceeds the wall
       if (currentR > outerRadius + 0.01) {
         const factor = safeR / currentR;
         if (factor < 1.0) { pos.setX(j, vx * factor); pos.setZ(j, vz * factor); }

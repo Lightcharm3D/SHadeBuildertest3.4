@@ -582,59 +582,81 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
-                      <span className="flex items-center gap-1"><Scale className="w-2.5 h-2.5" /> Spoke Length</span>
-                      <span>{params.spokeLength ? `${params.spokeLength.toFixed(1)} mm` : 'Auto (Full)'}</span>
+                  <div className="space-y-4 pt-2 border-t border-slate-200">
+                    <Label className="text-[9px] font-black uppercase text-slate-500 flex items-center gap-2">
+                      <Scale className="w-3 h-3" /> Spoke Dimensions
+                    </Label>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Inner Overlap</span>
+                        <span>{params.spokeInnerOverlap || 2} mm</span>
+                      </div>
+                      <Slider 
+                        value={[params.spokeInnerOverlap || 2]} 
+                        min={0} 
+                        max={20} 
+                        step={0.5} 
+                        onValueChange={([v]) => updateParam('spokeInnerOverlap', v)} 
+                        onValueCommit={() => addToHistory(params)}
+                      />
+                      <p className="text-[7px] text-slate-400 font-bold uppercase">How far the spoke goes into the ring.</p>
                     </div>
-                    <Slider 
-                      value={[params.spokeLength || 0]} 
-                      min={0} 
-                      max={200} 
-                      step={1} 
-                      onValueChange={([v]) => updateParam('spokeLength', v === 0 ? undefined : v)} 
-                      onValueCommit={() => addToHistory(params)}
-                    />
-                    <p className="text-[7px] text-slate-400 font-bold uppercase">Set to 0 for automatic wall-reaching spokes.</p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
-                      <span>Spoke Amount</span>
-                      <span>{params.spokeCount}</span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Outer Length</span>
+                        <span>{params.spokeLength ? `${params.spokeLength.toFixed(1)} mm` : 'Auto (Full)'}</span>
+                      </div>
+                      <Slider 
+                        value={[params.spokeLength || 0]} 
+                        min={0} 
+                        max={200} 
+                        step={1} 
+                        onValueChange={([v]) => updateParam('spokeLength', v === 0 ? undefined : v)} 
+                        onValueCommit={() => addToHistory(params)}
+                      />
+                      <p className="text-[7px] text-slate-400 font-bold uppercase">Set to 0 for automatic wall-reaching spokes.</p>
                     </div>
-                    <Slider 
-                      value={[params.spokeCount || 4]} 
-                      min={2} 
-                      max={12} 
-                      step={1} 
-                      onValueChange={([v]) => updateParam('spokeCount', v)} 
-                      onValueCommit={() => addToHistory(params)}
-                    />
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Width (mm)</Label>
-                      <Input 
-                        type="number" 
-                        step={0.1} 
-                        value={params.spokeWidth} 
-                        onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} 
-                        onBlur={() => addToHistory(params)}
-                        className="h-9 text-[10px] font-bold rounded-lg bg-white" 
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
+                        <span>Spoke Amount</span>
+                        <span>{params.spokeCount}</span>
+                      </div>
+                      <Slider 
+                        value={[params.spokeCount || 4]} 
+                        min={2} 
+                        max={12} 
+                        step={1} 
+                        onValueChange={([v]) => updateParam('spokeCount', v)} 
+                        onValueCommit={() => addToHistory(params)}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Thick (mm)</Label>
-                      <Input 
-                        type="number" 
-                        step={0.1} 
-                        value={params.spokeThickness} 
-                        onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} 
-                        onBlur={() => addToHistory(params)}
-                        className="h-9 text-[10px] font-bold rounded-lg bg-white" 
-                      />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Width (mm)</Label>
+                        <Input 
+                          type="number" 
+                          step={0.1} 
+                          value={params.spokeWidth} 
+                          onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} 
+                          onBlur={() => addToHistory(params)}
+                          className="h-9 text-[10px] font-bold rounded-lg bg-white" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-slate-500">Spoke Thick (mm)</Label>
+                        <Input 
+                          type="number" 
+                          step={0.1} 
+                          value={params.spokeThickness} 
+                          onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} 
+                          onBlur={() => addToHistory(params)}
+                          className="h-9 text-[10px] font-bold rounded-lg bg-white" 
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

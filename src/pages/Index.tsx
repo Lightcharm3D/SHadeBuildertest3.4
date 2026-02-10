@@ -52,6 +52,7 @@ const DEFAULT_PARAMS: LampshadeParams = {
   spokeThickness: 5,
   spokeWidth: 10,
   spokeCount: 4,
+  spokeInnerOverlap: 2,
   rimThickness: 0.1,
   rimHeight: 0.1,
   rimMode: 'both',

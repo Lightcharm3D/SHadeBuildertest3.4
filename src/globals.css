@@ -68,7 +68,6 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    /* Allow scrolling on UI elements */
     touch-action: manipulation;
   }
   #root {
@@ -82,18 +81,19 @@
     @apply w-6 h-6 !important;
   }
 
-  /* Custom Scrollbar for better visibility */
+  /* Custom Scrollbar - More visible */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: #f1f5f9;
   }
   ::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: #cbd5e1;
     border-radius: 10px;
+    border: 2px solid #f1f5f9;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #cbd5e1;
+    background: #94a3b8;
   }
 }

@@ -1015,20 +1015,18 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     // Position spoke so it starts at (outerRadius - spokeInnerOverlapCm)
     const spokeCenterX = outerRadius + (spokeOuterLengthCm - spokeInnerOverlapCm) / 2;
     spoke.translate(spokeCenterX, spokeYPos, 0);
-    spoke.rotateY(angle);
     
     const pos = spoke.attributes.position;
     for (let j = 0; j < pos.count; j++) {
-      const vx = pos.getX(j);
-      const vy = pos.getY(j);
-      const vz = pos.getZ(j);
+      const lx = pos.getX(j);
+      const ly = pos.getY(j);
+      const lz = pos.getZ(j);
       
-      // Calculate the world angle of this specific vertex
-      const currentAngle = Math.atan2(vz, vx);
-      const currentR = Math.sqrt(vx * vx + vz * vz);
+      // Calculate the world angle this vertex WOULD have after rotation
+      const currentAngle = angle + Math.atan2(lz, lx);
       
-      let baseR = getRadiusAtHeight(vy, params);
-      let disp = getDisplacementAt(currentAngle, vy, params);
+      let baseR = getRadiusAtHeight(ly, params);
+      let disp = getDisplacementAt(currentAngle, ly, params);
       if (type === 'slotted') { baseR *= 0.8; disp = 0; } 
       else if (type === 'double_wall') { const gap = params.gapDistance || 0.5; baseR *= (1 - (gap / params.topRadius)); }
       
@@ -1038,20 +1036,20 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       const targetFusionR = localInnerR + fuseDepthCm;
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       
+      // Current radius of the vertex in the spoke's local plane
+      const currentR = Math.sqrt(lx * lx + lz * lz);
+      
       // Only clip the outer end of the spoke if it exceeds the wall
-      if (currentR > outerRadius + 0.01 && currentR > safeR) {
-        // Instead of radial scaling (which causes pointing), we solve for the X coordinate 
-        // that puts the vertex exactly on the target radius while keeping its width (Z) constant.
+      if (lx > outerRadius + 0.01 && currentR > safeR) {
+        // Solve for X that puts the vertex exactly on the target radius while keeping its width (Z) constant.
         // X^2 + Z^2 = R^2  =>  X = sqrt(R^2 - Z^2)
-        const localZ = vz; // Width component
-        const newX = Math.sqrt(Math.max(0, safeR * safeR - localZ * localZ));
-        
-        // Maintain the original sign of X
-        const signX = vx >= 0 ? 1 : -1;
-        pos.setX(j, newX * signX);
-        // Z remains unchanged to preserve spoke width
+        const newX = Math.sqrt(Math.max(0, safeR * safeR - lz * lz));
+        pos.setX(j, newX);
       }
     }
+    
+    // Now rotate the clipped spoke into position
+    spoke.rotateY(angle);
     geoms.push(spoke);
   }
   return mergeGeometries(geoms);
